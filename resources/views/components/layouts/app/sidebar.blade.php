@@ -12,8 +12,17 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
+                <flux:navlist.group :heading="__('Platform')" expandable :expanded="true" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group :heading="__('Master')" expandable :expanded="true" class="grid">
+                    <flux:navlist.item icon="globe-alt" :href="route('masters.countries.index')" :current="request()->routeIs('masters.countries.*')" wire:navigate>{{ __('Countries') }}</flux:navlist.item>
+                    <flux:navlist.item icon="briefcase" :href="route('masters.positions.index')" :current="request()->routeIs('masters.positions.*')" wire:navigate>{{ __('Positions') }}</flux:navlist.item>
+                    <flux:navlist.item icon="user-group" :href="route('masters.user-groups.index')" :current="request()->routeIs('masters.user-groups.*')" wire:navigate>{{ __('User Groups') }}</flux:navlist.item>
+                    <flux:navlist.item icon="cube" :href="route('masters.uoms.index')" :current="request()->routeIs('masters.uoms.*')" wire:navigate>{{ __('UOMs') }}</flux:navlist.item>
+                    <flux:navlist.item icon="calculator" :href="route('masters.taxes.index')" :current="request()->routeIs('masters.taxes.*')" wire:navigate>{{ __('Taxes') }}</flux:navlist.item>
+                    <flux:navlist.item icon="building-office" :href="route('masters.warehouses.index')" :current="request()->routeIs('masters.warehouses.*')" wire:navigate>{{ __('Warehouses') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
