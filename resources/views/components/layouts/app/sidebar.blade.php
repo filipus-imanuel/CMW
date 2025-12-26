@@ -19,10 +19,24 @@
                 <flux:navlist.group :heading="__('Master')" expandable :expanded="true" class="grid">
                     <flux:navlist.item icon="globe-alt" :href="route('masters.countries.index')" :current="request()->routeIs('masters.countries.*')" wire:navigate>{{ __('Countries') }}</flux:navlist.item>
                     <flux:navlist.item icon="briefcase" :href="route('masters.positions.index')" :current="request()->routeIs('masters.positions.*')" wire:navigate>{{ __('Positions') }}</flux:navlist.item>
+                    <flux:navlist.item icon="users" :href="route('masters.employees.index')" :current="request()->routeIs('masters.employees.*')" wire:navigate>{{ __('Employees') }}</flux:navlist.item>
                     <flux:navlist.item icon="user-group" :href="route('masters.user-groups.index')" :current="request()->routeIs('masters.user-groups.*')" wire:navigate>{{ __('User Groups') }}</flux:navlist.item>
                     <flux:navlist.item icon="cube" :href="route('masters.uoms.index')" :current="request()->routeIs('masters.uoms.*')" wire:navigate>{{ __('UOMs') }}</flux:navlist.item>
+                    <flux:navlist.item icon="arrows-right-left" :href="route('masters.uom-conversions.index')" :current="request()->routeIs('masters.uom-conversions.*')" wire:navigate>{{ __('UOM Conversions') }}</flux:navlist.item>
                     <flux:navlist.item icon="calculator" :href="route('masters.taxes.index')" :current="request()->routeIs('masters.taxes.*')" wire:navigate>{{ __('Taxes') }}</flux:navlist.item>
+                    <flux:navlist.item icon="credit-card" :href="route('masters.credit-terms.index')" :current="request()->routeIs('masters.credit-terms.*')" wire:navigate>{{ __('Credit Terms') }}</flux:navlist.item>
                     <flux:navlist.item icon="building-office" :href="route('masters.warehouses.index')" :current="request()->routeIs('masters.warehouses.*')" wire:navigate>{{ __('Warehouses') }}</flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group :heading="__('Partners')" expandable :expanded="true" class="grid">
+                    <flux:navlist.item icon="truck" :href="route('partners.suppliers.index')" :current="request()->routeIs('partners.suppliers.*')" wire:navigate>{{ __('Suppliers') }}</flux:navlist.item>
+                    <flux:navlist.item icon="user-group" :href="route('partners.customers.index')" :current="request()->routeIs('partners.customers.*')" wire:navigate>{{ __('Customers') }}</flux:navlist.item>
+                    <flux:navlist.item icon="map-pin" :href="route('partners.customer-addresses.index')" :current="request()->routeIs('partners.customer-addresses.*')" wire:navigate>{{ __('Customer Addresses') }}</flux:navlist.item>
+                    <flux:navlist.item icon="map-pin" :href="route('partners.supplier-addresses.index')" :current="request()->routeIs('partners.supplier-addresses.*')" wire:navigate>{{ __('Supplier Addresses') }}</flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group :heading="__('Inventory')" expandable :expanded="true" class="grid">
+                    <flux:navlist.item icon="cube-transparent" :href="route('inventories.items.index')" :current="request()->routeIs('inventories.items.*')" wire:navigate>{{ __('Items') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 

@@ -3,12 +3,11 @@
 namespace App\Livewire\Masters\Country;
 
 use App\Models\CMW\Master\Country;
-use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
+use Rappasoft\LaravelLivewireTables\Views\Columns\BooleanColumn;
 
 class IndexDataTable extends DataTableComponent
 {
@@ -59,12 +58,8 @@ class IndexDataTable extends DataTableComponent
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Status', 'is_active')
-                ->sortable()
-                ->format(fn ($value) => $value
-                    ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">Active</span>'
-                    : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">Inactive</span>'
-                )->html(),
+            BooleanColumn::make('Status', 'is_active')
+                ->sortable(),
 
             Column::make('Created At', 'created_at')
                 ->sortable()

@@ -31,7 +31,7 @@
         <div class="flex gap-2 mt-6">
             <flux:spacer/>
             <flux:button variant="danger" wire:click="destroy">Delete</flux:button>
-            <flux:button variant="ghost" wire:click="$dispatch('close', { id: 'delete-warehouse-confirmation' })">Cancel</flux:button>
+            <flux:button variant="ghost" x-on:click="$flux.modal('delete-warehouse-confirmation').close()">Cancel</flux:button>
         </div>
     </flux:modal>
 </div>

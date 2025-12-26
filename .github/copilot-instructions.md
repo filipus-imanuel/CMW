@@ -55,6 +55,35 @@ composer run dev
 - **Flux icons ONLY** work: `<flux:icon.eye>`, `<flux:icon.pencil>`, `<flux:icon.trash>`
 - **Use pure Tailwind HTML** for badges/buttons in datatable columns
 - **Always check permissions** before rendering action buttons
+- **ALWAYS wrap IndexDataTable** in `<flux:card>` component in index views
+
+**Relationship Columns with Filters**:
+When displaying relationship data that's filtered in whereHas:
+- **NEVER add constraints to eager load** - use simple `->with(['relation'])`
+- **Use base column field** (e.g., `partner_id`) not nested path (e.g., `partner.name`)
+- **Format in format()** with null safety check
+- **Custom searchable** for relationship fields
+
+```php
+// ❌ WRONG - constraint on eager load causes null
+->with(['partner' => fn($q) => $q->where('is_customer', true)])
+
+// ✅ CORRECT - filter only in whereHas
+public function builder(): Builder {
+    return Model::query()
+        ->with(['partner'])  // Simple eager load
+        ->whereHas('partner', fn($q) => $q->where('is_customer', true));
+}
+
+// Column definition
+Column::make('Customer', 'partner_id')  // Use FK, not partner.name
+    ->sortable()
+    ->searchable(fn($query, $term) => 
+        $query->orWhereHas('partner', fn($q) => 
+            $q->where('name', 'like', "%{$term}%")))
+    ->format(fn($value, $row) => 
+        $row->partner ? "{$row->partner->name} ({$row->partner->code})" : 'N/A');
+```
 
 ### 3. Transactions & Data Integrity
 
@@ -99,7 +128,9 @@ class Create extends Component {
 ### 6. User Feedback & Events
 
 ```php
-// Toast notifications
+// Toast notifications (import Flux\Flux)
+use Flux\Flux;
+
 Flux::toast('Saved successfully', variant: 'success', position: 'top-end');
 
 // Dispatch events after state changes
@@ -109,12 +140,87 @@ $this->dispatch('shp.{module}.{entity}.{action}');
 $model = $model->fresh(['relations']);
 ```
 
-### 7. Livewire Component Lifecycle
+### 7. Livewire Component Input Properties
+
+**CRITICAL PATTERN**: Use `$inputs[]` array for all form input values instead of individual public properties.
 
 ```php
-public function mount($id) {
-    $this->authorize('action resource');  // Permission gate
-    $this->model = Model::findOrFail($id);
+use Livewire\Component;
+use Livewire\Attributes\{Title, On};
+use Illuminate\Support\Facades\{Auth, DB};
+use Flux\Flux;
+
+#[Title('Component Title')]
+class Create extends Component
+{
+    public $inputs = [];  // ✅ All form inputs in one array
+    public $dropdown_data = [];  // For select options
+    
+    // ❌ AVOID: Individual properties
+    // public $code;
+    // public $name;
+    // public $description;
+    
+    public function rules()
+    {
+        return [
+            'inputs.code' => 'required|string|max:50',
+            'inputs.name' => 'required|string|max:100',
+            'inputs.description' => 'nullable|string|max:500',
+        ];
+    }
+    
+    #[On('module.entity.create.open')]
+    public function openModal()
+    {
+        $this->authorize('create entity');
+        $this->reset(['inputs']);
+        $this->resetValidation();
+        $this->loadDropdownData();
+        $this->modal('create-entity')->show();
+    }
+    
+    public function save()
+    {
+        $this->authorize('create entity');
+        $validated = $this->validate();
+        
+        DB::transaction(function () use ($validated) {
+            Entity::create([
+                ...$validated['inputs'],
+                'is_active' => true,
+                'created_by' => Auth::id(),
+            ]);
+        });
+        
+        Flux::toast('Created successfully', variant: 'success', position: 'top-end');
+        $this->dispatch('module.entity.refresh');
+        $this->modal('create-entity')->close();
+    }
+}
+```
+
+**Blade Binding**:
+```blade
+<flux:input wire:model="inputs.code" label="Code" />
+<flux:input wire:model="inputs.name" label="Name" />
+<flux:textarea wire:model="inputs.description" label="Description" />
+```
+
+### 8. Livewire Component Lifecycle
+
+```php
+use Livewire\Component;
+use Livewire\Attributes\{Title, On};
+use Illuminate\Support\Facades\{Auth, DB};
+use Flux\Flux;
+
+#[Title('Component Title')]  // No Layout attribute - handled at app level
+class ComponentName extends Component
+{
+    public function mount($id) {
+        $this->authorize('action resource');  // Permission gate
+        $this->model = Model::findOrFail($id);
     
     // Status guard - redirect if not editable
     if ($this->model->status != 'DRAFT') {
@@ -141,7 +247,75 @@ public function save() {
 }
 ```
 
-### 8. Permissions (Spatie)
+### 8. Delete Confirmation Pattern
+
+**ALWAYS implement standardized delete flow on Index components:**
+
+```php
+// Index.php Component
+use Flux\Flux;
+use Illuminate\Support\Facades\{Auth, DB};
+
+public $deleteId = null;
+
+#[On('module.entity.delete')]  // Or #[On('delete')] for generic pattern
+public function confirmDelete($id): void
+{
+    $this->deleteId = $id;
+    $this->modal('delete-entity-confirmation')->show();
+}
+
+public function destroy(): void
+{
+    if (!$this->deleteId) {
+        return;
+    }
+
+    $this->authorize('delete entity');
+
+    try {
+        DB::transaction(function () {
+            $entity = Model::findOrFail($this->deleteId);
+            $entity->update(['deleted_by' => Auth::id()]);
+            $entity->delete();
+
+            Flux::toast('Entity deleted successfully', variant: 'success', position: 'top right');
+            $this->dispatch('module.entity.refresh');
+        });
+
+        $this->deleteId = null;
+        $this->modal('delete-entity-confirmation')->close();
+    } catch (\Illuminate\Database\QueryException $e) {
+        Flux::toast('Cannot delete entity. It may be in use.', variant: 'danger', position: 'top right');
+    } catch (\Exception $e) {
+        Flux::toast('An error occurred while deleting the entity.', variant: 'danger', position: 'top right');
+    }
+}
+```
+
+**index.blade.php view:**
+```blade
+{{-- Delete Confirmation Modal --}}
+<flux:modal name="delete-entity-confirmation">
+    <flux:heading>Delete Entity</flux:heading>
+    <flux:subheading>Are you sure you want to delete this entity? This action cannot be undone.</flux:subheading>
+
+    <div class="flex gap-2 mt-6">
+        <flux:spacer/>
+        <flux:button variant="danger" wire:click="destroy">Delete</flux:button>
+        <flux:button variant="ghost" x-on:click="$flux.modal('delete-entity-confirmation').close()">Cancel</flux:button>
+    </div>
+</flux:modal>
+```
+
+**Key Points:**
+- Use `x-on:click="$flux.modal('modal-name').close()"` for Cancel button (Alpine.js)
+- Store `deleteId` to track what's being deleted
+- Always wrap deletion in DB transaction
+- Update `deleted_by` for audit trail before deleting
+- Provide user-friendly error messages for constraint violations
+
+### 9. Permissions (Spatie)
 
 ```php
 // 1. Add to PermissionHelper::master()
@@ -165,14 +339,44 @@ public function action() {
 
 **Naming**: Singular resource + action (e.g., `create sales request`, not `create sales requests`)
 
-### 9. Code Generation
+### 10. DataTable Action Column Pattern
+
+**ALWAYS place Actions column first and use standardized component:**
+
+```php
+// IndexDataTable.php
+public function columns(): array
+{
+    return [
+        Column::make('Actions', 'id')
+            ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
+                'rowId' => $row->id,
+                'showEdit' => Auth::user()?->can('edit entity'),
+                'editDispatchEvent' => 'module.entity.edit.open',
+                'showDelete' => Auth::user()?->can('delete entity'),
+                'deleteDispatchEvent' => 'module.entity.delete',  // Or 'delete' for generic
+            ])),
+
+        // ... other columns
+    ];
+}
+```
+
+**Key Points:**
+- Actions column ALWAYS first
+- Use `datatable-action` component for consistency
+- Check permissions before showing buttons
+- Use `BooleanColumn` for boolean fields (is_active, is_default)
+- Never use custom HTML for action buttons
+
+### 11. Code Generation
 
 - **Orders**: `TYPE/YYMM/####` - `CodeGeneratorHelper::generateOrderNumber('SO')`
 - **Deliveries**: `DLV/TYPE/YYMM/####` - `CodeGeneratorHelper::generateDeliveryNumber('SO')`
 - **Billing**: `BILL/TYPE/YYMM/####` - `CodeGeneratorHelper::generateBillingNumber('SO')`
 - **Items**: Use `ItemCodeGeneratorHelper` for SKU generation
 
-### 10. Production Workflow
+### 12. Production Workflow
 
 **Status Flow**: `INIT` → `WAREHOUSE` → `WASHING` → `PRODUCTION` → `FINISHED`
 

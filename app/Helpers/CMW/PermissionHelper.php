@@ -18,10 +18,29 @@ class PermissionHelper
             'master' => [
                 'country' => ['view', 'create', 'edit', 'delete'],
                 'position' => ['view', 'create', 'edit', 'delete'],
+                'employee' => ['view', 'create', 'edit', 'delete'],
                 'user group' => ['view', 'create', 'edit', 'delete'],
                 'uom' => ['view', 'create', 'edit', 'delete'],
+                'uom conversion' => ['view', 'create', 'edit', 'delete'],
                 'tax' => ['view', 'create', 'edit', 'delete'],
+                'credit term' => ['view', 'create', 'edit', 'delete'],
                 'warehouse' => ['view', 'create', 'edit', 'delete'],
+            ],
+
+            // ══════════════════════════════════════════════════════════════
+            // PARTNERS
+            // ══════════════════════════════════════════════════════════════
+            'partners' => [
+                'supplier' => ['view', 'create', 'edit', 'delete'],
+                'customer' => ['view', 'create', 'edit', 'delete'],
+                'partner address' => ['view', 'create', 'edit', 'delete'],
+            ],
+
+            // ══════════════════════════════════════════════════════════════
+            // INVENTORY
+            // ══════════════════════════════════════════════════════════════
+            'inventory' => [
+                'item' => ['view', 'create', 'edit', 'delete'],
             ],
 
             // ══════════════════════════════════════════════════════════════
