@@ -2,8 +2,8 @@
 
 namespace App\Models\CMW\Transaction;
 
-use App\Models\AccountCvSetting;
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\CompanySetting;
 use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Uom;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +16,7 @@ class SalesOrderDetail extends BaseModel
         'sales_order_header_id',
         'item_id',
         'uom_id',
+        'company_setting_id',
         'quantity',
         'price',
         'discount',
@@ -50,8 +51,8 @@ class SalesOrderDetail extends BaseModel
         return $this->belongsTo(Uom::class);
     }
 
-    public function accountCvSetting(): BelongsTo
+    public function companySetting(): BelongsTo
     {
-        return $this->belongsTo(AccountCvSetting::class, 'account_cv_setting_id');
+        return $this->belongsTo(CompanySetting::class, 'company_setting_id');
     }
 }

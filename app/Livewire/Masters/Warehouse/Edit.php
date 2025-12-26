@@ -37,7 +37,7 @@ class Edit extends Component
     public function update(): void
     {
         $this->authorize('edit warehouse');
-        
+
         try {
             $validated = $this->validate();
 
@@ -62,11 +62,11 @@ class Edit extends Component
             if ($e->getCode() === '23000') {
                 Flux::toast('Warehouse with this name or code already exists', variant: 'danger', position: 'top right');
             } else {
-                Flux::toast('Database error: ' . $e->getMessage(), variant: 'danger', position: 'top right');
+                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
             }
             throw $e;
         } catch (\Exception $e) {
-            Flux::toast('Failed to update warehouse: ' . $e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('Failed to update warehouse: '.$e->getMessage(), variant: 'danger', position: 'top right');
             throw $e;
         }
     }

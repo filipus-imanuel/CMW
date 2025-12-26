@@ -29,7 +29,7 @@ class Index extends Component
 
     public function destroy(): void
     {
-        if (!$this->deleteId) {
+        if (! $this->deleteId) {
             return;
         }
 
@@ -51,12 +51,12 @@ class Index extends Component
             if ($e->getCode() === '23000') {
                 Flux::toast('Cannot delete warehouse: It is being used by other records', variant: 'danger', position: 'top right');
             } else {
-                Flux::toast('Database error: ' . $e->getMessage(), variant: 'danger', position: 'top right');
+                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
             }
             $this->deleteId = null;
             $this->modal('delete-warehouse-confirmation')->close();
         } catch (\Exception $e) {
-            Flux::toast('Failed to delete warehouse: ' . $e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('Failed to delete warehouse: '.$e->getMessage(), variant: 'danger', position: 'top right');
             $this->deleteId = null;
             $this->modal('delete-warehouse-confirmation')->close();
         }

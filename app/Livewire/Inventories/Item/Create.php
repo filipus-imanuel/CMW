@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Inventories\Item;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Item;
-use App\Models\CMW\Master\Uom;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +16,7 @@ class Create extends Component
 {
     public $inputs = [];
 
-    public $uoms = [];
+    public $dropdown_uom = [];
 
     public function rules()
     {
@@ -30,6 +30,7 @@ class Create extends Component
             'inputs.min_stock' => 'nullable|numeric|min:0',
             'inputs.max_stock' => 'nullable|numeric|min:0',
             'inputs.remarks' => 'nullable|string|max:500',
+            'inputs.is_active' => 'boolean',
         ];
     }
 
@@ -46,6 +47,14 @@ class Create extends Component
         ];
     }
 
+    private function handlePopulateUom(): void
+    {
+        $this->dropdown_uom = PopulateDataHelper::getUoms(['labelFormat' => 'name_code']);
+
+        // Set default value to first item (index 0 since no prependDefault)
+        $this->inputs['uom_id'] = $this->dropdown_uom[0]['value'] ?? null;
+    }
+
     #[On('cmw.inventories.item.create.open')]
     public function openModal()
     {
@@ -57,23 +66,12 @@ class Create extends Component
         $this->inputs['sell_price'] = 0;
         $this->inputs['min_stock'] = 0;
         $this->inputs['max_stock'] = 0;
+        $this->inputs['is_active'] = true;
 
         $this->resetValidation();
-        $this->loadUoms();
+        $this->handlePopulateUom();
 
         $this->modal('create-item')->show();
-    }
-
-    public function loadUoms()
-    {
-        $this->uoms = Uom::where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($uom) => [
-                'value' => $uom->id,
-                'label' => "{$uom->name} ({$uom->code})",
-            ])
-            ->toArray();
     }
 
     public function save()
@@ -85,7 +83,6 @@ class Create extends Component
         DB::transaction(function () use ($validated) {
             Item::create([
                 ...$validated['inputs'],
-                'is_active' => true,
                 'created_by' => Auth::id(),
             ]);
         });

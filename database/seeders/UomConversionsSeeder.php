@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class UomConversionsSeeder extends Seeder
 {
@@ -26,7 +25,7 @@ class UomConversionsSeeder extends Seeder
                 'ROLL',
                 'KG',
                 'BALL',
-                'GROSS'
+                'GROSS',
             ])
             ->pluck('id', 'code');
 

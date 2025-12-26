@@ -40,7 +40,7 @@
                     placeholder="Select UOM"
                     searchable
                 >
-                    @foreach($uoms as $uom)
+                    @foreach($dropdown_uom as $uom)
                         <flux:select.option value="{{ $uom['value'] }}">{{ $uom['label'] }}</flux:select.option>
                     @endforeach
                 </flux:select>
@@ -89,6 +89,11 @@
                     rows="3"
                     placeholder="Enter remarks (optional)"
                     maxlength="500"
+                />
+
+                <flux:switch 
+                    wire:model="inputs.is_active" 
+                    label="Active"
                 />
             </div>
 

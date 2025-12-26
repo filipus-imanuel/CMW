@@ -2,7 +2,6 @@
 
 namespace App\Models\CMW\Master;
 
-use App\Models\Category;
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\InventoryLedger;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +19,7 @@ class Item extends BaseModel
         'min_stock',
         'max_stock',
         'remarks',
+        'is_active',
     ];
 
     protected function casts(): array

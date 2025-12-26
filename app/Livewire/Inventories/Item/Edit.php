@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Inventories\Item;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Item;
-use App\Models\CMW\Master\Uom;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ class Edit extends Component
 
     public $inputs = [];
 
-    public $uoms = [];
+    public $dropdown_uom = [];
 
     public function rules()
     {
@@ -49,6 +49,11 @@ class Edit extends Component
         ];
     }
 
+    private function handlePopulateUom(): void
+    {
+        $this->dropdown_uom = PopulateDataHelper::getUoms(['labelFormat' => 'name_code']);
+    }
+
     #[On('cmw.inventories.item.edit.open')]
     public function openModal($id)
     {
@@ -65,24 +70,12 @@ class Edit extends Component
         $this->inputs['min_stock'] = $this->item->min_stock;
         $this->inputs['max_stock'] = $this->item->max_stock;
         $this->inputs['remarks'] = $this->item->remarks;
-        $this->inputs['is_active'] = $this->item->is_active;
+        $this->inputs['is_active'] = (bool) $this->item->is_active;
 
         $this->resetValidation();
-        $this->loadUoms();
+        $this->handlePopulateUom();
 
         $this->modal('edit-item')->show();
-    }
-
-    public function loadUoms()
-    {
-        $this->uoms = Uom::where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($uom) => [
-                'value' => $uom->id,
-                'label' => "{$uom->name} ({$uom->code})",
-            ])
-            ->toArray();
     }
 
     public function save()

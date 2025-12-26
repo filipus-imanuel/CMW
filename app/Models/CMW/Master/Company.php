@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class AccountCv extends BaseModel
+class Company extends BaseModel
 {
     protected $fillable = [
         'code',
@@ -13,8 +13,8 @@ class AccountCv extends BaseModel
         'remarks',
     ];
 
-    public function accountCvSettings(): HasMany
+    public function companySettings(): HasMany
     {
-        return $this->hasMany(AccountCvSetting::class);
+        return $this->hasMany(CompanySetting::class);
     }
 }

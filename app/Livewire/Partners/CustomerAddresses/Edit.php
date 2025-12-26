@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Partners\CustomerAddresses;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Partner;
 use App\Models\CMW\Master\PartnerAddress;
 use Flux\Flux;
@@ -18,7 +19,7 @@ class Edit extends Component
 
     public $inputs = [];
 
-    public $partners = [];
+    public $dropdown_customer = [];
 
     public function rules()
     {
@@ -44,6 +45,11 @@ class Edit extends Component
         ];
     }
 
+    private function handlePopulateCustomer(): void
+    {
+        $this->dropdown_customer = PopulateDataHelper::getCustomers(['labelFormat' => 'name_code']);
+    }
+
     #[On('cmw.partners.customer-addresses.edit.open')]
     public function openModal($id)
     {
@@ -59,25 +65,12 @@ class Edit extends Component
         $this->inputs['contact_person'] = $this->partnerAddress->contact_person;
         $this->inputs['is_default'] = $this->partnerAddress->is_default;
         $this->inputs['remarks'] = $this->partnerAddress->remarks;
-        $this->inputs['is_active'] = $this->partnerAddress->is_active;
+        $this->inputs['is_active'] = (bool) $this->partnerAddress->is_active;
 
         $this->resetValidation();
-        $this->loadPartners();
+        $this->handlePopulateCustomer();
 
         $this->modal('edit-customer-address')->show();
-    }
-
-    public function loadPartners()
-    {
-        $this->partners = Partner::where('is_active', true)
-            ->where('is_customer', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($partner) => [
-                'value' => $partner->id,
-                'label' => "{$partner->name} ({$partner->code})",
-            ])
-            ->toArray();
     }
 
     public function save()

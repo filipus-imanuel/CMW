@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Masters\UomConversion;
 
-use App\Models\CMW\Master\Uom;
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\UomConversion;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,9 @@ class Edit extends Component
 
     public $inputs = [];
 
-    public $uoms = [];
+    public $dropdown_from_uom = [];
+
+    public $dropdown_to_uom = [];
 
     public function rules()
     {
@@ -43,6 +45,14 @@ class Edit extends Component
         ];
     }
 
+    private function handlePopulateUom(): void
+    {
+        // Both dropdowns share the same data
+        $uomData = PopulateDataHelper::getUoms(['labelFormat' => 'name_code']);
+        $this->dropdown_from_uom = $uomData;
+        $this->dropdown_to_uom = $uomData;
+    }
+
     #[On('cmw.master.uom-conversion.edit.open')]
     public function openModal($id)
     {
@@ -54,24 +64,12 @@ class Edit extends Component
         $this->inputs['to_uom_id'] = $this->conversion->to_uom_id;
         $this->inputs['conversion_rate'] = $this->conversion->conversion_rate;
         $this->inputs['remarks'] = $this->conversion->remarks;
-        $this->inputs['is_active'] = $this->conversion->is_active;
+        $this->inputs['is_active'] = (bool) $this->conversion->is_active;
 
         $this->resetValidation();
-        $this->loadUoms();
+        $this->handlePopulateUom();
 
         $this->modal('edit-uom-conversion')->show();
-    }
-
-    public function loadUoms()
-    {
-        $this->uoms = Uom::where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($uom) => [
-                'value' => $uom->id,
-                'label' => "{$uom->name} ({$uom->code})",
-            ])
-            ->toArray();
     }
 
     public function save()

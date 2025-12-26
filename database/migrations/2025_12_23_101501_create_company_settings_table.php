@@ -4,17 +4,18 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('account_cv_settings', function (Blueprint $table) {
+        Schema::create('company_settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->nullable()->constrained('categories');
             $table->foreignId('employee_id')->nullable()->constrained('employees');
-            $table->foreignId('account_cv_id')->nullable()->constrained('account_cvs');
+            $table->foreignId('company_id')->nullable()->constrained('companies');
 
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
@@ -33,6 +34,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('account_cv_settings');
+        Schema::dropIfExists('company_settings');
     }
 };

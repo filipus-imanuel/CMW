@@ -3,11 +3,10 @@
 namespace Database\Seeders;
 
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class AccountCvSettingSeeder extends Seeder
+class CompanySeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,47 +15,47 @@ class AccountCvSettingSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        DB::table('account_cv_settings')->insert([
+        DB::table('companies')->insert([
             [
-                'category_id' => 1,
-                'employee_id' => 5,
-                'account_cv_id' => 1,
+                'code' => 'COM-001',
+                'name' => 'Company 1',
+                'remarks' => 'Initial Company 1',
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 2,
-                'employee_id' => 5,
-                'account_cv_id' => 1,
+                'code' => 'COM-002',
+                'name' => 'Company 2',
+                'remarks' => 'Initial Company 2',
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 3,
-                'employee_id' => 5,
-                'account_cv_id' => 2,
+                'code' => 'COM-003',
+                'name' => 'Company 3',
+                'remarks' => 'Initial Company 3',
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 4,
-                'employee_id' => 5,
-                'account_cv_id' => 3,
+                'code' => 'COM-004',
+                'name' => 'Company 4',
+                'remarks' => 'Initial Company 4',
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 5,
-                'employee_id' => 5,
-                'account_cv_id' => 4,
+                'code' => 'COM-005',
+                'name' => 'Company 5',
+                'remarks' => 'Initial Company 5',
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,

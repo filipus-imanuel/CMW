@@ -35,7 +35,7 @@ class Edit extends Component
     public function update(): void
     {
         $this->authorize('edit position');
-        
+
         try {
             $validated = $this->validate();
 
@@ -59,11 +59,11 @@ class Edit extends Component
             if ($e->getCode() === '23000') {
                 Flux::toast('Position with this name or code already exists', variant: 'danger', position: 'top right');
             } else {
-                Flux::toast('Database error: ' . $e->getMessage(), variant: 'danger', position: 'top right');
+                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
             }
             throw $e;
         } catch (\Exception $e) {
-            Flux::toast('Failed to update position: ' . $e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('Failed to update position: '.$e->getMessage(), variant: 'danger', position: 'top right');
             throw $e;
         }
     }
@@ -80,7 +80,7 @@ class Edit extends Component
             'code' => $this->position->code,
             'name' => $this->position->name,
             'remarks' => $this->position->remarks,
-            'is_active' => $this->position->is_active,
+            'is_active' => (bool) $this->position->is_active,
         ];
 
         $this->modal('edit-position')->show();

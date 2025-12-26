@@ -12,7 +12,7 @@
                         placeholder="Select customer"
                         searchable
                     >
-                        @foreach($partners as $partner)
+                        @foreach($dropdown_customer as $partner)
                             <flux:select.option value="{{ $partner['value'] }}">{{ $partner['label'] }}</flux:select.option>
                         @endforeach
                     </flux:select>

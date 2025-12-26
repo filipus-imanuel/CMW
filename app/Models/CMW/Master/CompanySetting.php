@@ -1,21 +1,20 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
-use App\Models\CMW\Master\Employee;
 use App\Models\CMW\Transaction\SalesOrderDetail;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class AccountCvSetting extends BaseModel
+class CompanySetting extends BaseModel
 {
-    protected $table = 'account_cv_settings';
+    protected $table = 'company_settings';
 
     protected $fillable = [
         'category_id',
         'partner_id',
-        'account_cv_id',
+        'company_id',
     ];
 
     public function salesOrderDetails(): HasMany
@@ -33,8 +32,8 @@ class AccountCvSetting extends BaseModel
         return $this->belongsTo(Category::class);
     }
 
-    public function accountCv(): BelongsTo
+    public function company(): BelongsTo
     {
-        return $this->belongsTo(AccountCv::class);
+        return $this->belongsTo(Company::class);
     }
 }

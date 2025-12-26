@@ -40,7 +40,7 @@
                     placeholder="Select UOM"
                     searchable
                 >
-                    @foreach($uoms as $uom)
+                    @foreach($dropdown_uom as $uom)
                         <flux:select.option value="{{ $uom['value'] }}">{{ $uom['label'] }}</flux:select.option>
                     @endforeach
                 </flux:select>

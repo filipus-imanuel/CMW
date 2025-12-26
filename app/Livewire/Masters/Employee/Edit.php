@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Masters\Employee;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Employee;
-use App\Models\CMW\Master\Position;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ class Edit extends Component
 
     public $inputs = [];
 
-    public $positions = [];
+    public $dropdown_position = [];
 
     public function rules()
     {
@@ -45,6 +45,11 @@ class Edit extends Component
         ];
     }
 
+    private function handlePopulatePosition(): void
+    {
+        $this->dropdown_position = PopulateDataHelper::getPositions();
+    }
+
     #[On('cmw.master.employee.edit.open')]
     public function openModal($id)
     {
@@ -59,24 +64,12 @@ class Edit extends Component
         $this->inputs['phone'] = $this->employee->phone;
         $this->inputs['address'] = $this->employee->address;
         $this->inputs['remarks'] = $this->employee->remarks;
-        $this->inputs['is_active'] = $this->employee->is_active;
+        $this->inputs['is_active'] = (bool) $this->employee->is_active;
 
         $this->resetValidation();
-        $this->loadPositions();
+        $this->handlePopulatePosition();
 
         $this->modal('edit-employee')->show();
-    }
-
-    public function loadPositions()
-    {
-        $this->positions = Position::where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($position) => [
-                'value' => $position->id,
-                'label' => $position->name,
-            ])
-            ->toArray();
     }
 
     public function save()

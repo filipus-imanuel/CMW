@@ -38,7 +38,7 @@
                     placeholder="Select partner address (optional)"
                     searchable
                 >
-                    @foreach($partner_addresses as $address)
+                    @foreach($dropdown_partner_address as $address)
                         <flux:select.option value="{{ $address['value'] }}">{{ $address['label'] }}</flux:select.option>
                     @endforeach
                 </flux:select>
@@ -57,6 +57,11 @@
                     rows="3"
                     placeholder="Enter remarks (optional)"
                     maxlength="500"
+                />
+
+                <flux:switch 
+                    wire:model="inputs.is_active" 
+                    label="Active"
                 />
             </div>
 

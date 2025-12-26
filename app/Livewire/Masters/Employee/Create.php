@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Masters\Employee;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Employee;
-use App\Models\CMW\Master\Position;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +16,7 @@ class Create extends Component
 {
     public $inputs = [];
 
-    public $positions = [];
+    public $dropdown_position = [];
 
     public function rules()
     {
@@ -28,6 +28,7 @@ class Create extends Component
             'inputs.phone' => 'nullable|string|max:20',
             'inputs.address' => 'nullable|string|max:500',
             'inputs.remarks' => 'nullable|string|max:500',
+            'inputs.is_active' => 'boolean',
         ];
     }
 
@@ -42,29 +43,26 @@ class Create extends Component
         ];
     }
 
+    private function handlePopulatePosition(): void
+    {
+        $this->dropdown_position = PopulateDataHelper::getPositions();
+
+        // Set default value to first item (index 0 since no prependDefault)
+        $this->inputs['position_id'] = $this->dropdown_position[0]['value'] ?? null;
+    }
+
     #[On('cmw.master.employee.create.open')]
     public function openModal()
     {
         $this->authorize('create employee');
 
         $this->reset(['inputs']);
+        $this->inputs['is_active'] = true;
         $this->resetValidation();
 
-        $this->loadPositions();
+        $this->handlePopulatePosition();
 
         $this->modal('create-employee')->show();
-    }
-
-    public function loadPositions()
-    {
-        $this->positions = Position::where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($position) => [
-                'value' => $position->id,
-                'label' => $position->name,
-            ])
-            ->toArray();
     }
 
     public function save()
@@ -76,7 +74,6 @@ class Create extends Component
         DB::transaction(function () use ($validated) {
             Employee::create([
                 ...$validated['inputs'],
-                'is_active' => true,
                 'created_by' => Auth::id(),
             ]);
         });

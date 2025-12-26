@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Masters\CreditTerm;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\CreditTerm;
-use App\Models\CMW\Master\PartnerAddress;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ class Edit extends Component
 
     public $inputs = [];
 
-    public $partner_addresses = [];
+    public $dropdown_partner_address = [];
 
     public function rules()
     {
@@ -46,6 +46,11 @@ class Edit extends Component
         ];
     }
 
+    private function handlePopulatePartnerAddress(): void
+    {
+        $this->dropdown_partner_address = PopulateDataHelper::getPartnerAddresses();
+    }
+
     #[On('cmw.master.credit-term.edit.open')]
     public function openModal($id)
     {
@@ -59,24 +64,12 @@ class Edit extends Component
         $this->inputs['days'] = $this->creditTerm->days;
         $this->inputs['description'] = $this->creditTerm->description;
         $this->inputs['remarks'] = $this->creditTerm->remarks;
-        $this->inputs['is_active'] = $this->creditTerm->is_active;
+        $this->inputs['is_active'] = (bool) $this->creditTerm->is_active;
 
         $this->resetValidation();
-        $this->loadPartnerAddresses();
+        $this->handlePopulatePartnerAddress();
 
         $this->modal('edit-credit-term')->show();
-    }
-
-    public function loadPartnerAddresses()
-    {
-        $this->partner_addresses = PartnerAddress::with('partner')
-            ->where('is_active', true)
-            ->get()
-            ->map(fn ($address) => [
-                'value' => $address->id,
-                'label' => "{$address->partner->name} - {$address->label}",
-            ])
-            ->toArray();
     }
 
     public function save()

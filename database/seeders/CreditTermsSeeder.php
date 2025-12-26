@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class CreditTermsSeeder extends Seeder
 {
@@ -25,7 +24,7 @@ class CreditTermsSeeder extends Seeder
             ->where('is_active', true)
             ->value('id');
 
-        if (!$defaultAddressId) {
+        if (! $defaultAddressId) {
             throw new \Exception('Tidak ditemukan partner address default untuk credit term seeder.');
         }
 

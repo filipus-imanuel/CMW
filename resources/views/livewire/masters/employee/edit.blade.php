@@ -20,7 +20,7 @@
                         placeholder="Select position"
                         searchable
                     >
-                        @foreach($positions as $position)
+                        @foreach($dropdown_position as $position)
                             <flux:select.option value="{{ $position['value'] }}">{{ $position['label'] }}</flux:select.option>
                         @endforeach
                     </flux:select>

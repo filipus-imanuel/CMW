@@ -20,7 +20,7 @@
                         placeholder="Select position"
                         searchable
                     >
-                        @foreach($positions as $position)
+                        @foreach($dropdown_position as $position)
                             <flux:select.option value="{{ $position['value'] }}">{{ $position['label'] }}</flux:select.option>
                         @endforeach
                     </flux:select>
@@ -65,6 +65,11 @@
                     rows="3"
                     placeholder="Enter remarks (optional)"
                     maxlength="500"
+                />
+
+                <flux:switch 
+                    wire:model="inputs.is_active" 
+                    label="Active"
                 />
             </div>
 

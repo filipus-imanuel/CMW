@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
-use App\Models\CMW\Master\Item;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends BaseModel
@@ -19,8 +18,8 @@ class Category extends BaseModel
         return $this->hasMany(Item::class);
     }
 
-    public function accountCvSettings(): HasMany
+    public function companySettings(): HasMany
     {
-        return $this->hasMany(AccountCvSetting::class);
+        return $this->hasMany(CompanySetting::class);
     }
 }

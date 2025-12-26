@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Masters\UomConversion;
 
-use App\Models\CMW\Master\Uom;
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\UomConversion;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +16,9 @@ class Create extends Component
 {
     public $inputs = [];
 
-    public $uoms = [];
+    public $dropdown_from_uom = [];
+
+    public $dropdown_to_uom = [];
 
     public function rules()
     {
@@ -25,6 +27,7 @@ class Create extends Component
             'inputs.to_uom_id' => 'required|exists:uoms,id',
             'inputs.conversion_rate' => 'required|numeric|min:0.000001',
             'inputs.remarks' => 'nullable|string|max:500',
+            'inputs.is_active' => 'boolean',
         ];
     }
 
@@ -40,29 +43,30 @@ class Create extends Component
         ];
     }
 
+    private function handlePopulateUom(): void
+    {
+        // Both dropdowns share the same data
+        $uomData = PopulateDataHelper::getUoms(['labelFormat' => 'name_code']);
+        $this->dropdown_from_uom = $uomData;
+        $this->dropdown_to_uom = $uomData;
+
+        // Set default values to first item (index 0 since no prependDefault)
+        $this->inputs['from_uom_id'] = $uomData[0]['value'] ?? null;
+        $this->inputs['to_uom_id'] = $uomData[1]['value'] ?? $uomData[0]['value'] ?? null;
+    }
+
     #[On('cmw.master.uom-conversion.create.open')]
     public function openModal()
     {
         $this->authorize('create uom conversion');
 
         $this->reset(['inputs']);
+        $this->inputs['is_active'] = true;
         $this->resetValidation();
 
-        $this->loadUoms();
+        $this->handlePopulateUom();
 
         $this->modal('create-uom-conversion')->show();
-    }
-
-    public function loadUoms()
-    {
-        $this->uoms = Uom::where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($uom) => [
-                'value' => $uom->id,
-                'label' => "{$uom->name} ({$uom->code})",
-            ])
-            ->toArray();
     }
 
     public function save()
@@ -85,7 +89,6 @@ class Create extends Component
         DB::transaction(function () use ($validated) {
             UomConversion::create([
                 ...$validated['inputs'],
-                'is_active' => true,
                 'created_by' => Auth::id(),
             ]);
         });

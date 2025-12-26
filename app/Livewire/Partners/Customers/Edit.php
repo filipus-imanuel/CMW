@@ -46,7 +46,7 @@ class Edit extends Component
         $this->inputs['code'] = $this->customer->code;
         $this->inputs['name'] = $this->customer->name;
         $this->inputs['remarks'] = $this->customer->remarks;
-        $this->inputs['is_active'] = $this->customer->is_active;
+        $this->inputs['is_active'] = (bool) $this->customer->is_active;
 
         $this->resetValidation();
 

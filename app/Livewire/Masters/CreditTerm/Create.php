@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Masters\CreditTerm;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\CreditTerm;
-use App\Models\CMW\Master\PartnerAddress;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +16,7 @@ class Create extends Component
 {
     public $inputs = [];
 
-    public $partner_addresses = [];
+    public $dropdown_partner_address = [];
 
     public function rules()
     {
@@ -27,6 +27,7 @@ class Create extends Component
             'inputs.days' => 'required|integer|min:0|max:365',
             'inputs.description' => 'nullable|string|max:500',
             'inputs.remarks' => 'nullable|string|max:500',
+            'inputs.is_active' => 'boolean',
         ];
     }
 
@@ -43,29 +44,26 @@ class Create extends Component
         ];
     }
 
+    private function handlePopulatePartnerAddress(): void
+    {
+        $this->dropdown_partner_address = PopulateDataHelper::getPartnerAddresses();
+
+        // Set default value to first item (index 0 since no prependDefault)
+        $this->inputs['partner_address_id'] = $this->dropdown_partner_address[0]['value'] ?? null;
+    }
+
     #[On('cmw.master.credit-term.create.open')]
     public function openModal()
     {
         $this->authorize('create credit term');
 
         $this->reset(['inputs']);
+        $this->inputs['is_active'] = true;
         $this->resetValidation();
 
-        $this->loadPartnerAddresses();
+        $this->handlePopulatePartnerAddress();
 
         $this->modal('create-credit-term')->show();
-    }
-
-    public function loadPartnerAddresses()
-    {
-        $this->partner_addresses = PartnerAddress::with('partner')
-            ->where('is_active', true)
-            ->get()
-            ->map(fn ($address) => [
-                'value' => $address->id,
-                'label' => "{$address->partner->name} - {$address->label}",
-            ])
-            ->toArray();
     }
 
     public function save()
@@ -77,7 +75,6 @@ class Create extends Component
         DB::transaction(function () use ($validated) {
             CreditTerm::create([
                 ...$validated['inputs'],
-                'is_active' => true,
                 'created_by' => Auth::id(),
             ]);
         });

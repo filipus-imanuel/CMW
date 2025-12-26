@@ -3,11 +3,10 @@
 namespace Database\Seeders;
 
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class AccountCvSeeder extends Seeder
+class CompanySettingSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,47 +15,47 @@ class AccountCvSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        DB::table('account_cvs')->insert([
+        DB::table('company_settings')->insert([
             [
-                'code' => 'ACV-001',
-                'name' => 'Account CV 1',
-                'remarks' => 'Initial Account CV 1',
+                'category_id' => 1,
+                'employee_id' => 5,
+                'company_id' => 1,
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'code' => 'ACV-002',
-                'name' => 'Account CV 2',
-                'remarks' => 'Initial Account CV 2',
+                'category_id' => 2,
+                'employee_id' => 5,
+                'company_id' => 1,
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'code' => 'ACV-003',
-                'name' => 'Account CV 3',
-                'remarks' => 'Initial Account CV 3',
+                'category_id' => 3,
+                'employee_id' => 5,
+                'company_id' => 2,
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'code' => 'ACV-004',
-                'name' => 'Account CV 4',
-                'remarks' => 'Initial Account CV 4',
+                'category_id' => 4,
+                'employee_id' => 5,
+                'company_id' => 3,
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
-                'code' => 'ACV-005',
-                'name' => 'Account CV 5',
-                'remarks' => 'Initial Account CV 5',
+                'category_id' => 5,
+                'employee_id' => 5,
+                'company_id' => 4,
                 'version_number' => 1,
                 'created_by' => 1,
                 'created_at' => $now,

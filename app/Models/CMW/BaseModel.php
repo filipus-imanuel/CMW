@@ -13,6 +13,20 @@ class BaseModel extends Model
     use SoftDeletes;
 
     /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'is_edit_locked' => 'boolean',
+            'is_delete_locked' => 'boolean',
+        ];
+    }
+
+    /**
      * Get the looping attribute for displaying in dropdowns.
      */
     public function getLoopingAttribute(): string
