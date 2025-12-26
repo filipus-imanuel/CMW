@@ -17,16 +17,19 @@ class DatabaseSeeder extends Seeder
 
         $this->call(UserSeeder::class);
 
-        // $this->call(PartnersSeeder::class);
-        // $this->call(PartnerAddressesSeeder::class);
-        // $this->call(CreditTermsSeeder::class);
+        $this->call(PartnersSeeder::class);
+        $this->call(PartnerAddressesSeeder::class);
+        $this->call(CreditTermsSeeder::class);
         $this->call(UomsSeeder::class);
+        $this->call(CategorySeeder::class);
         $this->call(ItemsSeeder::class);
+        $this->call(PositionsSeeder::class);
+        $this->call(EmployeesSeeder::class);
+        $this->call(AccountCvSeeder::class);
+        $this->call(AccountCvSettingSeeder::class);
         $this->call(UomConversionsSeeder::class);
         $this->call(WarehousesSeeder::class);
         $this->call(TaxesSeeder::class);
-        $this->call(PositionsSeeder::class);
-        $this->call(EmployeesSeeder::class);
         $this->call(AssetsSeeder::class);
         $this->call(CoasSeeder::class);
         $this->call(CoaOpeningBalancesSeeder::class);
