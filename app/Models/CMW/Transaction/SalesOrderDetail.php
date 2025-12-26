@@ -2,6 +2,7 @@
 
 namespace App\Models\CMW\Transaction;
 
+use App\Models\AccountCvSetting;
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Uom;
@@ -47,5 +48,10 @@ class SalesOrderDetail extends BaseModel
     public function uom(): BelongsTo
     {
         return $this->belongsTo(Uom::class);
+    }
+
+    public function accountCvSetting(): BelongsTo
+    {
+        return $this->belongsTo(AccountCvSetting::class, 'account_cv_setting_id');
     }
 }

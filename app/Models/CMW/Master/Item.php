@@ -2,6 +2,7 @@
 
 namespace App\Models\CMW\Master;
 
+use App\Models\Category;
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\InventoryLedger;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -44,5 +45,10 @@ class Item extends BaseModel
     public function inventoryLedgers(): HasMany
     {
         return $this->hasMany(InventoryLedger::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 }

@@ -4,22 +4,18 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('items', function (Blueprint $table) {
+        Schema::create('account_cv_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
-            $table->string('name', 100);
-            $table->string('type', 50)->nullable(); // raw_material, finished_goods, etc.
             $table->foreignId('category_id')->nullable()->constrained('categories');
-            $table->foreignId('uom_id')->constrained('uoms');
-            $table->decimal('cost_price', 18, 2)->default(0);
-            $table->decimal('sell_price', 18, 2)->default(0);
-            $table->decimal('min_stock', 18, 4)->default(0);
-            $table->decimal('max_stock', 18, 4)->default(0);
-            $table->text('remarks')->nullable();
+            $table->foreignId('employee_id')->nullable()->constrained('employees');
+            $table->foreignId('account_cv_id')->nullable()->constrained('account_cvs');
+
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);
@@ -32,8 +28,11 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('items');
+        Schema::dropIfExists('account_cv_settings');
     }
 };
