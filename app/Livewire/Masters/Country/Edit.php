@@ -56,14 +56,10 @@ class Edit extends Component
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->getCode() === '23000') {
-                Flux::toast('Country with this name or code already exists', variant: 'danger', position: 'top right');
-            } else {
-                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
-            }
+            Flux::toast('Country with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
         } catch (\Exception $e) {
-            Flux::toast('Failed to update country: '.$e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('An error occurred while updating country', variant: 'danger', position: 'top right');
             throw $e;
         }
     }

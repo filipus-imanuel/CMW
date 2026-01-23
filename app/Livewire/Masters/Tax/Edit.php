@@ -37,7 +37,7 @@ class Edit extends Component
     public function update(): void
     {
         $this->authorize('edit tax');
-
+        
         try {
             $validated = $this->validate();
 
@@ -59,14 +59,10 @@ class Edit extends Component
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->getCode() === '23000') {
-                Flux::toast('Tax with this name or code already exists', variant: 'danger', position: 'top right');
-            } else {
-                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
-            }
+            Flux::toast('Tax with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
         } catch (\Exception $e) {
-            Flux::toast('Failed to update tax: '.$e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('An error occurred while updating tax', variant: 'danger', position: 'top right');
             throw $e;
         }
     }
@@ -84,7 +80,7 @@ class Edit extends Component
             'name' => $this->tax->name,
             'rate' => $this->tax->rate,
             'remarks' => $this->tax->remarks,
-            'is_active' => (bool) $this->tax->is_active,
+            'is_active' => $this->tax->is_active,
         ];
 
         $this->modal('edit-tax')->show();

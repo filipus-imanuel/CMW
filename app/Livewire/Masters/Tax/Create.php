@@ -40,7 +40,7 @@ class Create extends Component
     public function save(): void
     {
         $this->authorize('create tax');
-
+        
         try {
             $validated = $this->validate();
 
@@ -62,14 +62,10 @@ class Create extends Component
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->getCode() === '23000') {
-                Flux::toast('Tax with this name or code already exists', variant: 'danger', position: 'top right');
-            } else {
-                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
-            }
+            Flux::toast('Tax with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
         } catch (\Exception $e) {
-            Flux::toast('Failed to create tax: '.$e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('An error occurred while creating tax', variant: 'danger', position: 'top right');
             throw $e;
         }
     }

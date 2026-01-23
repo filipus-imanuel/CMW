@@ -48,15 +48,11 @@ class Index extends Component
             $this->deleteId = null;
             $this->modal('delete-country-confirmation')->close();
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->getCode() === '23000') {
-                Flux::toast('Cannot delete country: It is being used by other records', variant: 'danger', position: 'top right');
-            } else {
-                Flux::toast('Database error: '.$e->getMessage(), variant: 'danger', position: 'top right');
-            }
+            Flux::toast('Cannot delete country. It may be in use.', variant: 'danger', position: 'top right');
             $this->deleteId = null;
             $this->modal('delete-country-confirmation')->close();
         } catch (\Exception $e) {
-            Flux::toast('Failed to delete country: '.$e->getMessage(), variant: 'danger', position: 'top right');
+            Flux::toast('An error occurred while deleting the country.', variant: 'danger', position: 'top right');
             $this->deleteId = null;
             $this->modal('delete-country-confirmation')->close();
         }
