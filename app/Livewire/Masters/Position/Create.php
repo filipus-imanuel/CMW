@@ -3,9 +3,12 @@
 namespace App\Livewire\Masters\Position;
 
 use App\Models\CMW\Master\Position;
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -38,7 +41,7 @@ class Create extends Component
     public function save(): void
     {
         $this->authorize('create position');
-        
+
         try {
             $validated = $this->validate();
 
@@ -55,13 +58,13 @@ class Create extends Component
                 $this->dispatch('cmw.master.position.refresh');
                 $this->modal('create-position')->close();
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Position with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while creating position', variant: 'danger', position: 'top right');
             throw $e;
         }

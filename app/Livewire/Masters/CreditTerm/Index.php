@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Masters\CreditTerm;
 
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
@@ -47,9 +49,9 @@ class Index extends Component
 
             $this->deleteId = null;
             $this->modal('delete-credit-term-confirmation')->close();
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Cannot delete credit term. It may be in use.', variant: 'danger', position: 'top right');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while deleting the credit term.', variant: 'danger', position: 'top right');
         }
     }

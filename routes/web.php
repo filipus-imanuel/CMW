@@ -1,9 +1,12 @@
 <?php
 
 use App\Livewire\Inventories\Item\Index as ItemIndex;
+use App\Livewire\Masters\Company\Index as CompanyIndex;
 use App\Livewire\Masters\Country\Index as CountryIndex;
 use App\Livewire\Masters\CreditTerm\Index as CreditTermIndex;
+use App\Livewire\Masters\Currency\Index as CurrencyIndex;
 use App\Livewire\Masters\Employee\Index as EmployeeIndex;
+use App\Livewire\Masters\ExchangeRate\Index as ExchangeRateIndex;
 use App\Livewire\Masters\Position\Index as PositionIndex;
 use App\Livewire\Masters\Tax\Index as TaxIndex;
 use App\Livewire\Masters\Uom\Index as UomIndex;
@@ -55,6 +58,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('taxes', TaxIndex::class)->name('taxes.index');
             Route::get('credit-terms', CreditTermIndex::class)->name('credit-terms.index');
             Route::get('warehouses', WarehouseIndex::class)->name('warehouses.index');
+            Route::get('currencies', CurrencyIndex::class)->name('currencies.index');
+            Route::get('exchange-rates', ExchangeRateIndex::class)->name('exchange-rates.index');
+            Route::get('companies', CompanyIndex::class)->name('companies.index');
         });
 
         Route::prefix('partners')->name('partners.')->group(function () {

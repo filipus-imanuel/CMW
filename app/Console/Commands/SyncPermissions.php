@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Helpers\CMW\PermissionHelper;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Spatie\Permission\Models\Role;
 
 class SyncPermissions extends Command
 {
@@ -34,6 +35,38 @@ class SyncPermissions extends Command
 
         $this->info('✓ Permissions synced successfully.');
         $this->info('Total permissions: '.count(PermissionHelper::all()));
+
+        // Sync roles and their permissions
+        $this->info("\nSyncing roles and permissions...");
+
+        $roles = [
+            'Super Admin',
+            'Finance',
+            'Sales',
+            'Purchasing',
+            'Warehouse',
+            'Management',
+            'Admin',
+        ];
+
+        $rolePermissionCounts = [];
+
+        foreach ($roles as $roleName) {
+            $role = Role::firstOrCreate(
+                ['name' => $roleName, 'guard_name' => 'web']
+            );
+
+            $permissions = PermissionHelper::getRolePermissions($roleName);
+            $role->syncPermissions($permissions);
+
+            $rolePermissionCounts[] = [
+                'Role' => $roleName,
+                'Permissions' => count($permissions),
+            ];
+        }
+
+        $this->table(['Role', 'Permissions'], $rolePermissionCounts);
+        $this->info('✓ All roles synced successfully.');
 
         // Assign to user if specified
         if ($userId = $this->option('user')) {

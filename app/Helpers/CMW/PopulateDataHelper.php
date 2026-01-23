@@ -4,6 +4,19 @@ declare(strict_types=1);
 
 namespace App\Helpers\CMW;
 
+use App\Models\CMW\Master\Company;
+use App\Models\CMW\Master\Country;
+use App\Models\CMW\Master\CreditTerm;
+use App\Models\CMW\Master\Currency;
+use App\Models\CMW\Master\Employee;
+use App\Models\CMW\Master\Item;
+use App\Models\CMW\Master\Partner;
+use App\Models\CMW\Master\PartnerAddress;
+use App\Models\CMW\Master\Position;
+use App\Models\CMW\Master\Tax;
+use App\Models\CMW\Master\Uom;
+use App\Models\CMW\Master\UserGroup;
+use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -197,7 +210,7 @@ class PopulateDataHelper
      */
     public static function getPositions(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Position::class, array_merge([
+        return self::get(Position::class, array_merge([
             'labelFormat' => 'name', // Positions typically don't show code
         ], $options));
     }
@@ -210,7 +223,7 @@ class PopulateDataHelper
      */
     public static function getUoms(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Uom::class, $options);
+        return self::get(Uom::class, $options);
     }
 
     /**
@@ -221,7 +234,7 @@ class PopulateDataHelper
      */
     public static function getWarehouses(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Warehouse::class, $options);
+        return self::get(Warehouse::class, $options);
     }
 
     /**
@@ -232,7 +245,7 @@ class PopulateDataHelper
      */
     public static function getTaxes(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Tax::class, $options);
+        return self::get(Tax::class, $options);
     }
 
     /**
@@ -243,7 +256,29 @@ class PopulateDataHelper
      */
     public static function getCountries(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Country::class, $options);
+        return self::get(Country::class, $options);
+    }
+
+    /**
+     * Get currencies dropdown data.
+     *
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getCurrencies(array $options = []): array
+    {
+        return self::get(Currency::class, $options);
+    }
+
+    /**
+     * Get companies dropdown data.
+     *
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getCompanies(array $options = []): array
+    {
+        return self::get(Company::class, $options);
     }
 
     /**
@@ -254,7 +289,7 @@ class PopulateDataHelper
      */
     public static function getCreditTerms(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\CreditTerm::class, $options);
+        return self::get(CreditTerm::class, $options);
     }
 
     /**
@@ -265,7 +300,7 @@ class PopulateDataHelper
      */
     public static function getUserGroups(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\UserGroup::class, array_merge([
+        return self::get(UserGroup::class, array_merge([
             'labelFormat' => 'name', // User groups typically don't show code
         ], $options));
     }
@@ -278,7 +313,7 @@ class PopulateDataHelper
      */
     public static function getEmployees(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Employee::class, $options);
+        return self::get(Employee::class, $options);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -293,7 +328,7 @@ class PopulateDataHelper
      */
     public static function getSuppliers(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Partner::class, array_merge([
+        return self::get(Partner::class, array_merge([
             'filters' => ['is_supplier' => true],
         ], $options));
     }
@@ -306,7 +341,7 @@ class PopulateDataHelper
      */
     public static function getCustomers(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Partner::class, array_merge([
+        return self::get(Partner::class, array_merge([
             'filters' => ['is_customer' => true],
         ], $options));
     }
@@ -326,7 +361,7 @@ class PopulateDataHelper
             $filters['partner_id'] = $customerId;
         }
 
-        return self::get(\App\Models\CMW\Master\PartnerAddress::class, array_merge([
+        return self::get(PartnerAddress::class, array_merge([
             'with' => ['partner'],
             'filters' => $filters,
             'labelFormat' => fn ($item) => "{$item->partner->name} - {$item->label}",
@@ -348,7 +383,7 @@ class PopulateDataHelper
             $filters['partner_id'] = $supplierId;
         }
 
-        return self::get(\App\Models\CMW\Master\PartnerAddress::class, array_merge([
+        return self::get(PartnerAddress::class, array_merge([
             'with' => ['partner'],
             'filters' => $filters,
             'labelFormat' => fn ($item) => "{$item->partner->name} - {$item->label}",
@@ -370,7 +405,7 @@ class PopulateDataHelper
             $filters['partner_id'] = $partnerId;
         }
 
-        return self::get(\App\Models\CMW\Master\PartnerAddress::class, array_merge([
+        return self::get(PartnerAddress::class, array_merge([
             'with' => ['partner'],
             'filters' => $filters,
             'labelFormat' => fn ($item) => "{$item->partner->name} - {$item->label}",
@@ -389,7 +424,7 @@ class PopulateDataHelper
      */
     public static function getItems(array $options = []): array
     {
-        return self::get(\App\Models\CMW\Master\Item::class, $options);
+        return self::get(Item::class, $options);
     }
 
     // ══════════════════════════════════════════════════════════════════════════

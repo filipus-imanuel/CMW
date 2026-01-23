@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Masters\UomConversion;
 
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
@@ -47,9 +49,9 @@ class Index extends Component
 
             $this->deleteId = null;
             $this->modal('delete-uom-conversion-confirmation')->close();
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Cannot delete UOM conversion. It may be in use.', variant: 'danger', position: 'top right');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while deleting the UOM conversion.', variant: 'danger', position: 'top right');
         }
     }

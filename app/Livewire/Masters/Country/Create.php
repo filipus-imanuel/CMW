@@ -3,9 +3,12 @@
 namespace App\Livewire\Masters\Country;
 
 use App\Models\CMW\Master\Country;
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -55,13 +58,13 @@ class Create extends Component
                 $this->dispatch('cmw.master.country.refresh');
                 $this->modal('create-country')->close();
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Country with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while creating country', variant: 'danger', position: 'top right');
             throw $e;
         }

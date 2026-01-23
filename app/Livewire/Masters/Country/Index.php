@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Masters\Country;
 
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
@@ -47,11 +49,11 @@ class Index extends Component
 
             $this->deleteId = null;
             $this->modal('delete-country-confirmation')->close();
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Cannot delete country. It may be in use.', variant: 'danger', position: 'top right');
             $this->deleteId = null;
             $this->modal('delete-country-confirmation')->close();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while deleting the country.', variant: 'danger', position: 'top right');
             $this->deleteId = null;
             $this->modal('delete-country-confirmation')->close();

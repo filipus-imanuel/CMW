@@ -25,6 +25,9 @@ class PermissionHelper
                 'tax' => ['view', 'create', 'edit', 'delete'],
                 'credit term' => ['view', 'create', 'edit', 'delete'],
                 'warehouse' => ['view', 'create', 'edit', 'delete'],
+                'currency' => ['view', 'create', 'edit', 'delete'],
+                'exchange rate' => ['view', 'create', 'edit', 'delete'],
+                'company' => ['view', 'create', 'edit', 'delete'],
             ],
 
             // ══════════════════════════════════════════════════════════════
@@ -98,6 +101,79 @@ class PermissionHelper
         }
 
         return $grouped;
+    }
+
+    /**
+     * Get permissions for a specific role.
+     *
+     * @param  string  $role
+     * @return array<string>
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function getRolePermissions(string $role): array
+    {
+        $allPermissions = self::all();
+
+        return match ($role) {
+            'Super Admin' => $allPermissions,
+            'Management' => array_values(array_filter($allPermissions, fn ($p) => str_contains($p, 'view'))),
+            'Admin' => array_values(array_filter($allPermissions, function ($permission) {
+                // Admin gets full CRUD on all master, partners, and inventory resources
+                return str_contains($permission, 'country')
+                    || str_contains($permission, 'position')
+                    || str_contains($permission, 'employee')
+                    || str_contains($permission, 'user group')
+                    || str_contains($permission, 'uom')
+                    || str_contains($permission, 'tax')
+                    || str_contains($permission, 'credit term')
+                    || str_contains($permission, 'warehouse')
+                    || str_contains($permission, 'currency')
+                    || str_contains($permission, 'exchange rate')
+                    || str_contains($permission, 'company')
+                    || str_contains($permission, 'supplier')
+                    || str_contains($permission, 'customer')
+                    || str_contains($permission, 'partner address')
+                    || str_contains($permission, 'item');
+            })),
+            'Finance' => array_values(array_filter($allPermissions, function ($permission) {
+                // Finance gets full CRUD on financial master data
+                return str_contains($permission, 'tax')
+                    || str_contains($permission, 'currency')
+                    || str_contains($permission, 'exchange rate')
+                    || str_contains($permission, 'credit term')
+                    || str_contains($permission, 'company');
+            })),
+            'Sales' => array_values(array_filter($allPermissions, function ($permission) {
+                // Sales gets full CRUD on customers/addresses, view on financial master data and items
+                $isSalesResource = str_contains($permission, 'customer') || str_contains($permission, 'partner address');
+                $isViewOnly = str_contains($permission, 'view') && (
+                    str_contains($permission, 'currency')
+                    || str_contains($permission, 'tax')
+                    || str_contains($permission, 'credit term')
+                    || str_contains($permission, 'item')
+                );
+
+                return $isSalesResource || $isViewOnly;
+            })),
+            'Purchasing' => array_values(array_filter($allPermissions, function ($permission) {
+                // Purchasing gets full CRUD on suppliers/addresses, view on financial master data and items
+                $isPurchasingResource = str_contains($permission, 'supplier') || str_contains($permission, 'partner address');
+                $isViewOnly = str_contains($permission, 'view') && (
+                    str_contains($permission, 'currency')
+                    || str_contains($permission, 'tax')
+                    || str_contains($permission, 'credit term')
+                    || str_contains($permission, 'item')
+                );
+
+                return $isPurchasingResource || $isViewOnly;
+            })),
+            'Warehouse' => array_values(array_filter($allPermissions, function ($permission) {
+                // Warehouse gets full CRUD on warehouse and items
+                return str_contains($permission, 'warehouse') || str_contains($permission, 'item');
+            })),
+            default => throw new \InvalidArgumentException("Unknown role: {$role}"),
+        };
     }
 
     /**

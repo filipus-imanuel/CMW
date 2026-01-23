@@ -3,9 +3,12 @@
 namespace App\Livewire\Masters\Tax;
 
 use App\Models\CMW\Master\Tax;
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -37,7 +40,7 @@ class Edit extends Component
     public function update(): void
     {
         $this->authorize('edit tax');
-        
+
         try {
             $validated = $this->validate();
 
@@ -55,13 +58,13 @@ class Edit extends Component
                 $this->dispatch('cmw.master.tax.refresh');
                 $this->modal('edit-tax')->close();
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Tax with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while updating tax', variant: 'danger', position: 'top right');
             throw $e;
         }
