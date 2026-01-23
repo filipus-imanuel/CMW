@@ -9,10 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Warehouse extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'address',
-        'remarks',
     ];
 
     public function inventoryLedgers(): HasMany

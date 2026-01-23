@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Partner;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,9 +13,9 @@ class ApInvoiceHeader extends BaseModel
     protected $table = 'ap_invoice_headers';
 
     protected $fillable = [
-        'code',
         'date',
         'due_date',
+        'currency_id',
         'partner_id',
         'goods_receipt_header_id',
         'subtotal',
@@ -23,7 +24,6 @@ class ApInvoiceHeader extends BaseModel
         'paid',
         'balance',
         'status',
-        'remarks',
     ];
 
     protected function casts(): array
@@ -31,12 +31,17 @@ class ApInvoiceHeader extends BaseModel
         return [
             'date' => 'date',
             'due_date' => 'date',
-            'subtotal' => 'decimal:2',
-            'tax' => 'decimal:2',
-            'total' => 'decimal:2',
-            'paid' => 'decimal:2',
-            'balance' => 'decimal:2',
+            'subtotal' => 'decimal:5',
+            'tax' => 'decimal:5',
+            'total' => 'decimal:5',
+            'paid' => 'decimal:5',
+            'balance' => 'decimal:5',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function partner(): BelongsTo

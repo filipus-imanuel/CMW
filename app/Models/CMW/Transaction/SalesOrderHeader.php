@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Partner;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,26 +13,30 @@ class SalesOrderHeader extends BaseModel
     protected $table = 'sales_order_headers';
 
     protected $fillable = [
-        'code',
         'date',
+        'currency_id',
         'partner_id',
         'status',
         'subtotal',
         'discount',
         'tax',
         'total',
-        'remarks',
     ];
 
     protected function casts(): array
     {
         return [
             'date' => 'date',
-            'subtotal' => 'decimal:2',
-            'discount' => 'decimal:2',
-            'tax' => 'decimal:2',
-            'total' => 'decimal:2',
+            'subtotal' => 'decimal:5',
+            'discount' => 'decimal:5',
+            'tax' => 'decimal:5',
+            'total' => 'decimal:5',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function partner(): BelongsTo

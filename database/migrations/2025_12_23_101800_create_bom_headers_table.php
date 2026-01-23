@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::create('bom_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->string('name', 100);
             $table->foreignId('item_id')->constrained('items'); // The finished product
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

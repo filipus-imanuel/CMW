@@ -21,7 +21,6 @@ class InventoryLedger extends BaseModel
         'quantity_out',
         'balance',
         'unit_cost',
-        'remarks',
     ];
 
     protected function casts(): array

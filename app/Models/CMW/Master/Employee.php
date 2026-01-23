@@ -9,13 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Employee extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'position_id',
         'email',
         'phone',
         'address',
-        'remarks',
     ];
 
     public function position(): BelongsTo

@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Partner;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,13 +14,12 @@ class PurchaseReturnHeader extends BaseModel
     protected $table = 'purchase_return_headers';
 
     protected $fillable = [
-        'code',
         'date',
+        'currency_id',
         'partner_id',
         'warehouse_id',
         'goods_receipt_header_id',
         'status',
-        'remarks',
     ];
 
     protected function casts(): array
@@ -27,6 +27,11 @@ class PurchaseReturnHeader extends BaseModel
         return [
             'date' => 'date',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function partner(): BelongsTo

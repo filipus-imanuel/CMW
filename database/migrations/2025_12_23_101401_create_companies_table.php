@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->string('name', 100);
-            $table->text('remarks')->nullable();
+            $table->decimal('sales_limit', 18, 5)->default(0.00000);
+            $table->foreignId('currency_id')->constrained('currencies');
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

@@ -12,9 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('coa_id')->constrained('coas');
             $table->string('period', 7); // Format: YYYY-MM
-            $table->decimal('debit', 18, 2)->default(0);
-            $table->decimal('credit', 18, 2)->default(0);
-            $table->text('remarks')->nullable();
+            $table->foreignId('currency_id')->nullable()->constrained('currencies');
+            $table->decimal('debit', 18, 5)->default(0);
+            $table->decimal('credit', 18, 5)->default(0);
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

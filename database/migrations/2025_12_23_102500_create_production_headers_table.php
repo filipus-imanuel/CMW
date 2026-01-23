@@ -10,15 +10,16 @@ return new class extends Migration
     {
         Schema::create('production_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->date('date');
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('item_id')->constrained('items'); // Finished product
             $table->foreignId('bom_header_id')->nullable()->constrained('bom_headers');
             $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->decimal('quantity', 18, 4)->default(0);
             $table->foreignId('uom_id')->constrained('uoms');
             $table->string('status', 20)->default('draft');
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

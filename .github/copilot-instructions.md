@@ -20,7 +20,32 @@ composer run dev
 
 ---
 
-## 📁 Tech Stack
+## � Debugging & Verification
+
+**CRITICAL RULE**: Never use `php artisan tinker` for verification scripts
+
+**ALWAYS use `temp_debug/` folder**:
+- Create standalone PHP scripts in `temp_debug/` directory for verification/debugging
+- Run scripts with: `php temp_debug/script_name.php`
+- Use descriptive names: `verify_permissions.php`, `check_roles.php`, etc.
+- Include proper Laravel bootstrapping: `require __DIR__.'/../vendor/autoload.php'`
+- Scripts are gitignored - safe for temporary debugging
+
+**Script Template**:
+```php
+<?php
+
+require __DIR__.'/../vendor/autoload.php';
+
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
+
+// Your verification code here
+```
+
+---
+
+## Tech Stack
 
 - **Backend**: Laravel 12, SQLite (dev), Spatie Permissions
 - **Frontend**: Livewire 3, Flux Pro (UI), Volt (SFC), Vite
@@ -48,7 +73,106 @@ composer run dev
 - **Form Fields**: Use `label="..."` and `badge="Required"` attributes directly on inputs
 - **Modal Control**: `Flux::modal('name')->show()` to open, `$this->modal('name')->close()` to close
 
-### 2. DataTable Components (Rappasoft LaravelLivewireTables)
+### 2. Database Schema Rules
+
+**Field Type Standards**:
+- **code**: Always `string(50)`, never enum
+- **name**: `string(100)` for standard names, `string(255)` for longer names
+- **remarks**: Always `string(1024)`, never `text`
+- **description**: `string(1024)` for short descriptions, `text` only for long-form content (articles, HTML, etc.)
+
+**Decimal Precision Standards**:
+- **Monetary amounts & prices**: Always `decimal(18, 5)` - supports up to 9,999,999,999,999.99999 (13 digits before decimal, 5 after)
+  - Examples: `rate`, `price`, `amount`, `cost_price`, `sell_price`, `subtotal`, `discount`, `tax`, `total`, `paid`, `balance`, `unit_cost`, `debit`, `credit`
+- **Quantities**: Always `decimal(18, 4)` - supports up to 99,999,999,999,999.9999 (14 digits before decimal, 4 after)
+  - Examples: `quantity`, `min_stock`, `max_stock`, `balance`, `quantity_in`, `quantity_out`, `quantity_system`, `quantity_actual`
+- **Exchange/Conversion rates**: Always `decimal(18, 5)` - for currency/unit conversions
+  - Examples: `conversion_rate` in uom_conversions, `rate` in exchange_rates
+- **Tax rates (percentages)**: Always `decimal(8, 5)` - supports 0.00000% to 999.99999%
+  - Examples: `rate` in taxes table
+- **NEVER use** `decimal(12, 5)`, `decimal(15, 2)`, `decimal(18, 2)`, `decimal(18, 6)`, or `decimal(8, 4)` - these are legacy patterns
+
+**Import Standards**:
+- **Always use `use` statements** after namespace declaration, never inline fully qualified class names (FQCN)
+- **Applies to**: Models, Helpers, Facades, Exceptions, and all PHP classes
+- ❌ WRONG: `\App\Models\CMW\Master\Position::class`, `catch (\Illuminate\Database\QueryException $e)`, `catch (\Exception $e)`
+- ✅ CORRECT: Add `use` statements at top, then use short class names
+
+```php
+// ❌ WRONG - Inline FQCN
+class Create extends Component
+{
+    public function save()
+    {
+        try {
+            $model = \App\Models\CMW\Master\Position::create([...]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // handle error
+        } catch (\Exception $e) {
+            // handle error
+        }
+    }
+}
+
+// ✅ CORRECT - Use statements
+use App\Models\CMW\Master\Position;
+use Exception;
+use Illuminate\Database\QueryException;
+
+class Create extends Component
+{
+    public function save()
+    {
+        try {
+            $model = Position::create([...]);
+        } catch (QueryException $e) {
+            // handle error
+        } catch (Exception $e) {
+            // handle error
+        }
+    }
+}
+```
+
+**Common Exception Imports**:
+```php
+use Exception;
+use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
+```
+
+**Model Fillable Standards**:
+- **Always check BaseModel first** before defining `$fillable` in child models
+- **Never duplicate fields** that are already in `BaseModel::getFillable()` (code, name, remarks, is_edit_locked, is_delete_locked, is_active, version_number, created_by, updated_by, deleted_by)
+- **Only include model-specific fields** in child model's `$fillable` array
+
+```php
+// ❌ WRONG - Duplicating BaseModel fields
+class Currency extends BaseModel
+{
+    protected $fillable = [
+        'code',           // Already in BaseModel
+        'name',           // Already in BaseModel
+        'symbol',         // Currency-specific ✓
+        'rate',           // Currency-specific ✓
+        'remarks',        // Already in BaseModel
+        'is_active',      // Already in BaseModel
+        'created_by',     // Already in BaseModel
+    ];
+}
+
+// ✅ CORRECT - Only model-specific fields
+class Currency extends BaseModel
+{
+    protected $fillable = [
+        'symbol',
+        'symbol_position',
+        'rate',
+    ];
+}
+```
+
+### 3. DataTable Components (Rappasoft LaravelLivewireTables)
 
 **CRITICAL RESTRICTION**:
 - **NO Flux components** in `Column::format()` except icons
@@ -85,7 +209,7 @@ Column::make('Customer', 'partner_id')  // Use FK, not partner.name
         $row->partner ? "{$row->partner->name} ({$row->partner->code})" : 'N/A');
 ```
 
-### 3. Transactions & Data Integrity
+### 4. Transactions & Data Integrity
 
 ```php
 // ALWAYS wrap DB mutations in transactions
@@ -101,7 +225,7 @@ DB::transaction(function() {
 });
 ```
 
-### 4. Totals Calculation
+### 5. Totals Calculation
 
 - **Use TransactionHelper** - never recalculate manually in components
 - **Formula**: `grand_total = total_amount - total_discount + tax_amount + total_cost`
@@ -109,7 +233,7 @@ DB::transaction(function() {
 - **Tax EX** (exclusive): Tax added on subtotal after discount
 - **Always use** `sanitize_numeric()` on user input before arithmetic
 
-### 5. File Uploads
+### 6. File Uploads
 
 ```php
 use Livewire\WithFileUploads;  // ⚠️ CRITICAL: Always add this trait!
@@ -125,7 +249,7 @@ class Create extends Component {
 }
 ```
 
-### 6. User Feedback & Events
+### 7. User Feedback & Events
 
 ```php
 // Toast notifications (import Flux\Flux)
@@ -140,7 +264,7 @@ $this->dispatch('shp.{module}.{entity}.{action}');
 $model = $model->fresh(['relations']);
 ```
 
-### 7. Livewire Component Input Properties
+### 8. Livewire Component Input Properties
 
 **CRITICAL PATTERN**: Use `$inputs[]` array for all form input values instead of individual public properties.
 
@@ -207,7 +331,7 @@ class Create extends Component
 <flux:textarea wire:model="inputs.description" label="Description" />
 ```
 
-### 8. Livewire Component Lifecycle
+### 9. Livewire Component Lifecycle
 
 ```php
 use Livewire\Component;
@@ -247,7 +371,7 @@ public function save() {
 }
 ```
 
-### 8. Delete Confirmation Pattern
+### 10. Delete Confirmation Pattern
 
 **ALWAYS implement standardized delete flow on Index components:**
 
@@ -315,7 +439,7 @@ public function destroy(): void
 - Update `deleted_by` for audit trail before deleting
 - Provide user-friendly error messages for constraint violations
 
-### 9. Permissions (Spatie)
+### 11. Permissions (Spatie)
 
 ```php
 // 1. Add to PermissionHelper::master()
@@ -339,7 +463,7 @@ public function action() {
 
 **Naming**: Singular resource + action (e.g., `create sales request`, not `create sales requests`)
 
-### 10. DataTable Action Column Pattern
+### 12. DataTable Action Column Pattern
 
 **ALWAYS place Actions column first and use standardized component:**
 
@@ -369,14 +493,14 @@ public function columns(): array
 - Use `BooleanColumn` for boolean fields (is_active, is_default)
 - Never use custom HTML for action buttons
 
-### 11. Code Generation
+### 13. Code Generation
 
 - **Orders**: `TYPE/YYMM/####` - `CodeGeneratorHelper::generateOrderNumber('SO')`
 - **Deliveries**: `DLV/TYPE/YYMM/####` - `CodeGeneratorHelper::generateDeliveryNumber('SO')`
 - **Billing**: `BILL/TYPE/YYMM/####` - `CodeGeneratorHelper::generateBillingNumber('SO')`
 - **Items**: Use `ItemCodeGeneratorHelper` for SKU generation
 
-### 12. Production Workflow
+### 14. Production Workflow
 
 **Status Flow**: `INIT` → `WAREHOUSE` → `WASHING` → `PRODUCTION` → `FINISHED`
 
@@ -428,6 +552,8 @@ app/
 - [ ] Permissions added to `PermissionHelper::master()` + synced
 - [ ] Transaction wrapper + `lockForUpdate()` for financial mutations
 - [ ] Events dispatched after state changes
+- [ ] **Routes added to `routes/web.php`**
+- [ ] **Navigation added to `sidebar.blade.php` (keep items sorted A-Z within each group)**
 - [ ] Module docs updated in `docs/{module}/`
 - [ ] No debug calls (`dd()`, `dump()`, `var_dump()`)
 

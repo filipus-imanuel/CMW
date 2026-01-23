@@ -13,7 +13,6 @@ class ArPaymentDetail extends BaseModel
         'ar_payment_header_id',
         'ar_invoice_header_id',
         'amount',
-        'remarks',
     ];
 
     protected function casts(): array

@@ -10,26 +10,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Item extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'type',
+        'category_id',
         'uom_id',
+        'currency_id',
         'cost_price',
         'sell_price',
         'min_stock',
         'max_stock',
-        'remarks',
-        'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'cost_price' => 'decimal:2',
-            'sell_price' => 'decimal:2',
+            'cost_price' => 'decimal:5',
+            'sell_price' => 'decimal:5',
             'min_stock' => 'decimal:4',
             'max_stock' => 'decimal:4',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function uom(): BelongsTo

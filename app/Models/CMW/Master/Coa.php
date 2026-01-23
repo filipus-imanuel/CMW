@@ -8,11 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Coa extends BaseModel
 {
-    protected $fillable = [
-        'code',
-        'name',
-        'remarks',
-    ];
+    protected $fillable = [];
 
     public function setting(): HasOne
     {

@@ -10,21 +10,26 @@ class CoaOpeningBalance extends BaseModel
     protected $fillable = [
         'coa_id',
         'period',
+        'currency_id',
         'debit',
         'credit',
-        'remarks',
     ];
 
     protected function casts(): array
     {
         return [
-            'debit' => 'decimal:2',
-            'credit' => 'decimal:2',
+            'debit' => 'decimal:5',
+            'credit' => 'decimal:5',
         ];
     }
 
     public function coa(): BelongsTo
     {
         return $this->belongsTo(Coa::class);
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 }

@@ -15,10 +15,10 @@ return new class extends Migration
             $table->foreignId('uom_id')->constrained('uoms');
             $table->foreignId('company_setting_id')->nullable()->constrained('company_settings');
             $table->decimal('quantity', 18, 4)->default(0);
-            $table->decimal('price', 18, 2)->default(0);
-            $table->decimal('discount', 18, 2)->default(0);
-            $table->decimal('tax', 18, 2)->default(0);
-            $table->decimal('total', 18, 2)->default(0);
+            $table->decimal('price', 18, 5)->default(0);
+            $table->decimal('discount', 18, 5)->default(0);
+            $table->decimal('tax', 18, 5)->default(0);
+            $table->decimal('total', 18, 5)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

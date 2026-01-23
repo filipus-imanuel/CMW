@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,12 +13,11 @@ class TransferHeader extends BaseModel
     protected $table = 'transfer_headers';
 
     protected $fillable = [
-        'code',
         'date',
+        'currency_id',
         'warehouse_from_id',
         'warehouse_to_id',
         'status',
-        'remarks',
     ];
 
     protected function casts(): array
@@ -25,6 +25,11 @@ class TransferHeader extends BaseModel
         return [
             'date' => 'date',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function warehouseFrom(): BelongsTo

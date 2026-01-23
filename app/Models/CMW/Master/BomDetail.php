@@ -14,7 +14,6 @@ class BomDetail extends BaseModel
         'item_id',
         'uom_id',
         'quantity',
-        'remarks',
     ];
 
     protected function casts(): array

@@ -10,11 +10,12 @@ return new class extends Migration
     {
         Schema::create('stock_adjustment_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->date('date');
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->string('status', 20)->default('draft');
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

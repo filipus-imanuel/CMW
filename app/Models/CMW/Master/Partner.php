@@ -8,11 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Partner extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'is_supplier',
         'is_customer',
-        'remarks',
     ];
 
     protected function casts(): array

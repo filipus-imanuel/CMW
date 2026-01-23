@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,11 +13,10 @@ class StockAdjustmentHeader extends BaseModel
     protected $table = 'stock_adjustment_headers';
 
     protected $fillable = [
-        'code',
         'date',
+        'currency_id',
         'warehouse_id',
         'status',
-        'remarks',
     ];
 
     protected function casts(): array
@@ -24,6 +24,11 @@ class StockAdjustmentHeader extends BaseModel
         return [
             'date' => 'date',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function warehouse(): BelongsTo

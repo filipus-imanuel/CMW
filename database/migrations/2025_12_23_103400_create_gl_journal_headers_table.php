@@ -10,13 +10,14 @@ return new class extends Migration
     {
         Schema::create('gl_journal_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->date('date');
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->string('description', 255)->nullable();
-            $table->decimal('total_debit', 18, 2)->default(0);
-            $table->decimal('total_credit', 18, 2)->default(0);
+            $table->decimal('total_debit', 18, 5)->default(0);
+            $table->decimal('total_credit', 18, 5)->default(0);
             $table->string('status', 20)->default('draft'); // draft, posted, void
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

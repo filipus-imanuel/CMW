@@ -11,10 +11,7 @@ class BomHeader extends BaseModel
     protected $table = 'bom_headers';
 
     protected $fillable = [
-        'code',
-        'name',
         'item_id',
-        'remarks',
     ];
 
     public function item(): BelongsTo

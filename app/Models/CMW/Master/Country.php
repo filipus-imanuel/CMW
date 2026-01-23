@@ -6,9 +6,5 @@ use App\Models\CMW\BaseModel;
 
 class Country extends BaseModel
 {
-    protected $fillable = [
-        'code',
-        'name',
-        'remarks',
-    ];
+    protected $fillable = [];
 }

@@ -10,13 +10,14 @@ return new class extends Migration
     {
         Schema::create('ar_payment_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->date('date');
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
-            $table->decimal('amount', 18, 2)->default(0);
+            $table->decimal('amount', 18, 5)->default(0);
             $table->string('payment_method', 50)->nullable();
             $table->string('reference', 100)->nullable();
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

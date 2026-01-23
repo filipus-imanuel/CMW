@@ -8,12 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CreditTerm extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'partner_address_id',
         'days',
         'description',
-        'remarks',
     ];
 
     protected function casts(): array

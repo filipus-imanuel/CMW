@@ -17,7 +17,6 @@ class GoodsReceiptDetail extends BaseModel
         'uom_id',
         'quantity',
         'price',
-        'remarks',
     ];
 
     protected function casts(): array

@@ -9,14 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Menu extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'parent_id',
         'user_group_id',
         'url',
         'icon',
         'order',
-        'remarks',
     ];
 
     protected function casts(): array

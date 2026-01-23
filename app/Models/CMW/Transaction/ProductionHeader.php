@@ -4,6 +4,7 @@ namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Master\BomHeader;
+use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Uom;
 use App\Models\CMW\Master\Warehouse;
@@ -15,15 +16,14 @@ class ProductionHeader extends BaseModel
     protected $table = 'production_headers';
 
     protected $fillable = [
-        'code',
         'date',
+        'currency_id',
         'item_id',
         'bom_header_id',
         'warehouse_id',
         'quantity',
         'uom_id',
         'status',
-        'remarks',
     ];
 
     protected function casts(): array
@@ -32,6 +32,11 @@ class ProductionHeader extends BaseModel
             'date' => 'date',
             'quantity' => 'decimal:4',
         ];
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function item(): BelongsTo

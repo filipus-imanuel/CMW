@@ -16,7 +16,6 @@ class PartnerAddress extends BaseModel
         'phone',
         'contact_person',
         'is_default',
-        'remarks',
     ];
 
     protected function casts(): array

@@ -15,7 +15,6 @@ class GlJournalDetail extends BaseModel
         'coa_id',
         'debit',
         'credit',
-        'remarks',
     ];
 
     protected function casts(): array

@@ -7,11 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UserGroup extends BaseModel
 {
-    protected $fillable = [
-        'code',
-        'name',
-        'remarks',
-    ];
+    protected $fillable = [];
 
     public function menus(): HasMany
     {

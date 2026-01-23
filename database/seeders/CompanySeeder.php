@@ -19,6 +19,8 @@ class CompanySeeder extends Seeder
             [
                 'code' => 'COM-001',
                 'name' => 'Company 1',
+                'sales_limit' => 0.00000,
+                'currency_id' => 1, // IDR
                 'remarks' => 'Initial Company 1',
                 'version_number' => 1,
                 'created_by' => 1,
@@ -28,6 +30,8 @@ class CompanySeeder extends Seeder
             [
                 'code' => 'COM-002',
                 'name' => 'Company 2',
+                'sales_limit' => 0.00000,
+                'currency_id' => 1, // IDR
                 'remarks' => 'Initial Company 2',
                 'version_number' => 1,
                 'created_by' => 1,
@@ -37,6 +41,8 @@ class CompanySeeder extends Seeder
             [
                 'code' => 'COM-003',
                 'name' => 'Company 3',
+                'sales_limit' => 0.00000,
+                'currency_id' => 1, // IDR
                 'remarks' => 'Initial Company 3',
                 'version_number' => 1,
                 'created_by' => 1,
@@ -46,6 +52,8 @@ class CompanySeeder extends Seeder
             [
                 'code' => 'COM-004',
                 'name' => 'Company 4',
+                'sales_limit' => 0.00000,
+                'currency_id' => 1, // IDR
                 'remarks' => 'Initial Company 4',
                 'version_number' => 1,
                 'created_by' => 1,
@@ -55,6 +63,8 @@ class CompanySeeder extends Seeder
             [
                 'code' => 'COM-005',
                 'name' => 'Company 5',
+                'sales_limit' => 0.00000,
+                'currency_id' => 1, // IDR
                 'remarks' => 'Initial Company 5',
                 'version_number' => 1,
                 'created_by' => 1,

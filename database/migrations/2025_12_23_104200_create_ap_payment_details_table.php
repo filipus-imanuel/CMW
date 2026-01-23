@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('ap_payment_header_id')->constrained('ap_payment_headers');
             $table->foreignId('ap_invoice_header_id')->constrained('ap_invoice_headers');
-            $table->decimal('amount', 18, 2)->default(0);
+            $table->decimal('amount', 18, 5)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

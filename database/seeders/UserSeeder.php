@@ -10,7 +10,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => 'demo@demo.com'],
             [
                 'name' => 'Developer',
@@ -19,5 +19,10 @@ class UserSeeder extends Seeder
 
             ]
         );
+
+        // Assign Super Admin role
+        $user->assignRole('Super Admin');
+
+        $this->command->info('✓ User created and assigned Super Admin role.');
     }
 }

@@ -15,7 +15,15 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
+        // Permissions and Roles must be seeded early (before UserSeeder for role assignment)
+        $this->call(PermissionSeeder::class);
+        $this->call(RoleSeeder::class);
+
+        // User must be seeded before other tables (created_by FK dependency)
         $this->call(UserSeeder::class);
+
+        // Currency must be seeded before Company (FK dependency)
+        $this->call(CurrencySeeder::class);
 
         $this->call(PartnersSeeder::class);
         $this->call(PartnerAddressesSeeder::class);

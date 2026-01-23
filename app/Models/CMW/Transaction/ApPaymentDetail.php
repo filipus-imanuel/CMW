@@ -13,7 +13,6 @@ class ApPaymentDetail extends BaseModel
         'ap_payment_header_id',
         'ap_invoice_header_id',
         'amount',
-        'remarks',
     ];
 
     protected function casts(): array

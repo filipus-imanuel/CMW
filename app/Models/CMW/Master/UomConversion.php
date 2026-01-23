@@ -11,7 +11,6 @@ class UomConversion extends BaseModel
         'from_uom_id',
         'to_uom_id',
         'conversion_rate',
-        'remarks',
     ];
 
     protected function casts(): array

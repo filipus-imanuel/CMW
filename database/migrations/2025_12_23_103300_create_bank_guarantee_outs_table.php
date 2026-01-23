@@ -10,15 +10,16 @@ return new class extends Migration
     {
         Schema::create('bank_guarantee_outs', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45)->unique();
+            $table->string('code', 50)->unique();
             $table->date('date');
             $table->date('due_date')->nullable();
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
-            $table->decimal('amount', 18, 2)->default(0);
+            $table->decimal('amount', 18, 5)->default(0);
             $table->string('bank_name', 100)->nullable();
             $table->string('reference', 100)->nullable();
             $table->string('status', 20)->default('active');
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

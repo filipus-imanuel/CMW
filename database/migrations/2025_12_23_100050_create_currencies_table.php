@@ -6,16 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('transfer_headers', function (Blueprint $table) {
+        Schema::create('currencies', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
-            $table->date('date');
-            $table->foreignId('currency_id')->default(1)->constrained('currencies');
-            $table->foreignId('warehouse_from_id')->constrained('warehouses');
-            $table->foreignId('warehouse_to_id')->constrained('warehouses');
-            $table->string('status', 20)->default('draft');
+            $table->string('name', 100);
+            $table->string('symbol', 10);
+            $table->string('symbol_position', 10)->default('BEFORE');
+            $table->decimal('rate', 18, 5)->default(1.00000);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
@@ -29,8 +31,11 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('transfer_headers');
+        Schema::dropIfExists('currencies');
     }
 };

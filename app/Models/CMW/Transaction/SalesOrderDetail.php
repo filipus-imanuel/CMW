@@ -22,7 +22,6 @@ class SalesOrderDetail extends BaseModel
         'discount',
         'tax',
         'total',
-        'remarks',
     ];
 
     protected function casts(): array

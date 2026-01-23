@@ -8,10 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CoaSetting extends BaseModel
 {
     protected $fillable = [
-        'code',
-        'name',
         'coa_id',
-        'remarks',
     ];
 
     public function coa(): BelongsTo
