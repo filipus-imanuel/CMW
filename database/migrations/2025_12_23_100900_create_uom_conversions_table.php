@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('from_uom_id')->constrained('uoms');
             $table->foreignId('to_uom_id')->constrained('uoms');
-            $table->decimal('conversion_rate', 18, 5);
+            $table->decimal('conversion_rate', 13, 2);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

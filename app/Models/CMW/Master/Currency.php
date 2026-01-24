@@ -20,7 +20,7 @@ class Currency extends BaseModel
     protected function casts(): array
     {
         return array_merge(parent::casts(), [
-            'rate' => 'decimal:5',
+            'rate' => 'decimal:2',
         ]);
     }
 
@@ -28,9 +28,9 @@ class Currency extends BaseModel
      * Format an amount with this currency's symbol.
      *
      * @param  float|int|string  $amount  The amount to format
-     * @param  int  $decimals  Number of decimal places (default: 5)
+     * @param  int  $decimals  Number of decimal places (default: 2)
      */
-    public function formatAmount(float|int|string $amount, int $decimals = 5): string
+    public function formatAmount(float|int|string $amount, int $decimals = 2): string
     {
         $formattedAmount = number_format((float) $amount, $decimals);
 

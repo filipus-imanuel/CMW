@@ -27,9 +27,9 @@ class InventoryLedger extends BaseModel
     {
         return [
             'date' => 'date',
-            'quantity_in' => 'decimal:4',
-            'quantity_out' => 'decimal:4',
-            'balance' => 'decimal:4',
+            'quantity_in' => 'decimal:2',
+            'quantity_out' => 'decimal:2',
+            'balance' => 'decimal:2',
             'unit_cost' => 'decimal:2',
         ];
     }

@@ -27,10 +27,10 @@ class SalesOrderHeader extends BaseModel
     {
         return [
             'date' => 'date',
-            'subtotal' => 'decimal:5',
-            'discount' => 'decimal:5',
-            'tax' => 'decimal:5',
-            'total' => 'decimal:5',
+            'subtotal' => 'decimal:2',
+            'discount' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'total' => 'decimal:2',
         ];
     }
 

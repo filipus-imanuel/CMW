@@ -16,7 +16,7 @@ class UomConversion extends BaseModel
     protected function casts(): array
     {
         return [
-            'conversion_rate' => 'decimal:6',
+            'conversion_rate' => 'decimal:2',
         ];
     }
 

@@ -24,10 +24,10 @@ class Item extends BaseModel
     protected function casts(): array
     {
         return [
-            'cost_price' => 'decimal:5',
-            'sell_price' => 'decimal:5',
-            'min_stock' => 'decimal:4',
-            'max_stock' => 'decimal:4',
+            'cost_price' => 'decimal:2',
+            'sell_price' => 'decimal:2',
+            'min_stock' => 'decimal:2',
+            'max_stock' => 'decimal:2',
         ];
     }
 

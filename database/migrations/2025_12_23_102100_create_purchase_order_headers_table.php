@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('partner_id')->constrained('partners');
             $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->string('status', 20)->default('draft'); // draft, approved, completed, cancelled
-            $table->decimal('subtotal', 18, 5)->default(0);
-            $table->decimal('discount', 18, 5)->default(0);
-            $table->decimal('tax', 18, 5)->default(0);
-            $table->decimal('total', 18, 5)->default(0);
+            $table->decimal('subtotal', 13, 2)->default(0);
+            $table->decimal('discount', 13, 2)->default(0);
+            $table->decimal('tax', 13, 2)->default(0);
+            $table->decimal('total', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

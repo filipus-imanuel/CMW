@@ -23,8 +23,8 @@ class HistoryItemPrice extends Model
     protected function casts(): array
     {
         return [
-            'old_price' => 'decimal:5',
-            'new_price' => 'decimal:5',
+            'old_price' => 'decimal:2',
+            'new_price' => 'decimal:2',
         ];
     }
 

@@ -62,7 +62,7 @@ class IndexDataTable extends DataTableComponent
 
             Column::make('Rate', 'rate')
                 ->sortable()
-                ->format(fn ($value) => number_format((float) $value, 6)),
+                ->format(fn ($value) => number_format((float) $value, 2)),
 
             Column::make('Remarks', 'remarks')
                 ->sortable()

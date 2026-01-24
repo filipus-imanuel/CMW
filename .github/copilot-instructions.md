@@ -84,15 +84,13 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 - **description**: `string(1024)` for short descriptions, `text` only for long-form content (articles, HTML, etc.)
 
 **Decimal Precision Standards**:
-- **Monetary amounts & prices**: Always `decimal(18, 5)` - supports up to 9,999,999,999,999.99999 (13 digits before decimal, 5 after)
-  - Examples: `rate`, `price`, `amount`, `cost_price`, `sell_price`, `subtotal`, `discount`, `tax`, `total`, `paid`, `balance`, `unit_cost`, `debit`, `credit`
-- **Quantities**: Always `decimal(18, 4)` - supports up to 99,999,999,999,999.9999 (14 digits before decimal, 4 after)
-  - Examples: `quantity`, `min_stock`, `max_stock`, `balance`, `quantity_in`, `quantity_out`, `quantity_system`, `quantity_actual`
-- **Exchange/Conversion rates**: Always `decimal(18, 5)` - for currency/unit conversions
-  - Examples: `conversion_rate` in uom_conversions, `rate` in exchange_rates
-- **Tax rates (percentages)**: Always `decimal(8, 5)` - supports 0.00000% to 999.99999%
+- **Monetary amounts, prices, quantities, rates**: Always `decimal(13, 2)` - supports up to 99,999,999,999.99 (11 digits before decimal, 2 after)
+  - Examples: `rate`, `price`, `amount`, `cost_price`, `sell_price`, `subtotal`, `discount`, `tax`, `total`, `paid`, `balance`, `unit_cost`, `debit`, `credit`, `quantity`, `min_stock`, `max_stock`, `quantity_in`, `quantity_out`, `quantity_system`, `quantity_actual`, `conversion_rate`
+- **Tax rates (percentages)**: Always `decimal(5, 2)` - supports 0.00% to 999.99%
   - Examples: `rate` in taxes table
-- **NEVER use** `decimal(12, 5)`, `decimal(15, 2)`, `decimal(18, 2)`, `decimal(18, 6)`, or `decimal(8, 4)` - these are legacy patterns
+- **Model casts**: Always use `'decimal:2'` for all numeric fields, `'boolean'` for all boolean fields
+- **UI formatting**: Always use `number_format($value, 2)` for display
+- **NEVER use** `decimal(18, 5)`, `decimal(18, 4)`, `decimal(12, 5)`, `decimal(15, 2)`, `decimal(18, 6)`, or `decimal(8, 4)` - these are legacy patterns
 
 **Import Standards**:
 - **Always use `use` statements** after namespace declaration, never inline fully qualified class names (FQCN)

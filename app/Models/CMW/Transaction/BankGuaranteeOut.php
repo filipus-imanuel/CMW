@@ -27,7 +27,7 @@ class BankGuaranteeOut extends BaseModel
         return [
             'date' => 'date',
             'due_date' => 'date',
-            'amount' => 'decimal:5',
+            'amount' => 'decimal:2',
         ];
     }
 

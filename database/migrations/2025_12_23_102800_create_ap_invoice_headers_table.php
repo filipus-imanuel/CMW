@@ -16,11 +16,11 @@ return new class extends Migration
             $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
             $table->foreignId('goods_receipt_header_id')->nullable()->constrained('goods_receipt_headers');
-            $table->decimal('subtotal', 18, 5)->default(0);
-            $table->decimal('tax', 18, 5)->default(0);
-            $table->decimal('total', 18, 5)->default(0);
-            $table->decimal('paid', 18, 5)->default(0);
-            $table->decimal('balance', 18, 5)->default(0);
+            $table->decimal('subtotal', 13, 2)->default(0);
+            $table->decimal('tax', 13, 2)->default(0);
+            $table->decimal('total', 13, 2)->default(0);
+            $table->decimal('paid', 13, 2)->default(0);
+            $table->decimal('balance', 13, 2)->default(0);
             $table->string('status', 20)->default('unpaid'); // unpaid, partial, paid
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);

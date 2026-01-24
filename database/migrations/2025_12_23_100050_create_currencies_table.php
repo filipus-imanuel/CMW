@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('symbol', 10);
             $table->string('symbol_position', 10)->default('BEFORE');
-            $table->decimal('rate', 18, 5)->default(1.00000);
+            $table->decimal('rate', 13, 2)->default(1.00);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

@@ -18,8 +18,8 @@ class Asset extends BaseModel
     {
         return [
             'acquisition_date' => 'date',
-            'acquisition_cost' => 'decimal:5',
-            'current_value' => 'decimal:5',
+            'acquisition_cost' => 'decimal:2',
+            'current_value' => 'decimal:2',
         ];
     }
 

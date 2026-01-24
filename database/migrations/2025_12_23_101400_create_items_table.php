@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained('item_categories');
             $table->foreignId('uom_id')->constrained('uoms');
             $table->foreignId('currency_id')->nullable()->constrained('currencies');
-            $table->decimal('cost_price', 18, 5)->default(0);
-            $table->decimal('sell_price', 18, 5)->default(0);
-            $table->decimal('min_stock', 18, 4)->default(0);
-            $table->decimal('max_stock', 18, 4)->default(0);
+            $table->decimal('cost_price', 13, 2)->default(0);
+            $table->decimal('sell_price', 13, 2)->default(0);
+            $table->decimal('min_stock', 13, 2)->default(0);
+            $table->decimal('max_stock', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

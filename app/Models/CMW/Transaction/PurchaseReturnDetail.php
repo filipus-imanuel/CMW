@@ -22,7 +22,7 @@ class PurchaseReturnDetail extends BaseModel
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:4',
+            'quantity' => 'decimal:2',
             'price' => 'decimal:2',
         ];
     }

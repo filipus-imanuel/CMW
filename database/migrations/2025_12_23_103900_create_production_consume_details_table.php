@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('production_header_id')->constrained('production_headers');
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('uom_id')->constrained('uoms');
-            $table->decimal('quantity', 18, 4)->default(0);
+            $table->decimal('quantity', 13, 2)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

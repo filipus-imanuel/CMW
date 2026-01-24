@@ -14,8 +14,8 @@ return new class extends Migration
             $table->string('name', 100);
             $table->date('acquisition_date')->nullable();
             $table->foreignId('currency_id')->nullable()->constrained('currencies');
-            $table->decimal('acquisition_cost', 18, 5)->default(0);
-            $table->decimal('current_value', 18, 5)->default(0);
+            $table->decimal('acquisition_cost', 13, 2)->default(0);
+            $table->decimal('current_value', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

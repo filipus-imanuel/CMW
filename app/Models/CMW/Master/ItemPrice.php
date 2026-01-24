@@ -20,7 +20,7 @@ class ItemPrice extends BaseModel
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:5',
+            'price' => 'decimal:2',
         ];
     }
 

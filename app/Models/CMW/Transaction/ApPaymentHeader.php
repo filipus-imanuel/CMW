@@ -25,7 +25,7 @@ class ApPaymentHeader extends BaseModel
     {
         return [
             'date' => 'date',
-            'amount' => 'decimal:5',
+            'amount' => 'decimal:2',
         ];
     }
 

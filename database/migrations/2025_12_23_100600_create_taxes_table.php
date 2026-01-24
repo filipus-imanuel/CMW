@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('code', 20)->unique();
             $table->string('name', 100);
-            $table->decimal('rate', 8, 5)->default(0);
+            $table->decimal('rate', 5, 2)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

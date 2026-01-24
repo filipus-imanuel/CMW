@@ -56,7 +56,7 @@ class IndexDataTable extends DataTableComponent
 
             Column::make('Sales Limit', 'sales_limit')
                 ->sortable()
-                ->format(fn ($value, $row) => $row->currency ? $row->currency->formatAmount($value) : number_format($value, 5)),
+                ->format(fn ($value, $row) => $row->currency ? $row->currency->formatAmount($value) : number_format($value, 2)),
 
             Column::make('Currency', 'currency_id')
                 ->sortable()

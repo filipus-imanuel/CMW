@@ -61,11 +61,11 @@ class IndexDataTable extends DataTableComponent
 
             Column::make('Conversion Rate', 'conversion_rate')
                 ->sortable()
-                ->format(fn ($value) => rtrim(rtrim(number_format($value, 6, '.', ''), '0'), '.')),
+                ->format(fn ($value) => number_format($value, 2)),
 
             Column::make('Formula')
                 ->label(fn ($row) => ($row->fromUom && $row->toUom)
-                    ? "1 {$row->fromUom->code} = ".rtrim(rtrim(number_format($row->conversion_rate, 6, '.', ''), '0'), '.')." {$row->toUom->code}"
+                    ? "1 {$row->fromUom->code} = ".number_format($row->conversion_rate, 2)." {$row->toUom->code}"
                     : '-'),
 
             BooleanColumn::make('Status', 'is_active')

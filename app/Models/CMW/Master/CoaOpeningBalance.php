@@ -18,8 +18,8 @@ class CoaOpeningBalance extends BaseModel
     protected function casts(): array
     {
         return [
-            'debit' => 'decimal:5',
-            'credit' => 'decimal:5',
+            'debit' => 'decimal:2',
+            'credit' => 'decimal:2',
         ];
     }
 

@@ -22,7 +22,7 @@ class Company extends BaseModel
     protected function casts(): array
     {
         return array_merge(parent::casts(), [
-            'sales_limit' => 'decimal:5',
+            'sales_limit' => 'decimal:2',
         ]);
     }
 

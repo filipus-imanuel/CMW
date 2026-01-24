@@ -30,7 +30,7 @@ class ProductionHeader extends BaseModel
     {
         return [
             'date' => 'date',
-            'quantity' => 'decimal:4',
+            'quantity' => 'decimal:2',
         ];
     }
 

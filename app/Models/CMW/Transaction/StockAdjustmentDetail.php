@@ -25,9 +25,9 @@ class StockAdjustmentDetail extends BaseModel
     protected function casts(): array
     {
         return [
-            'quantity_system' => 'decimal:4',
-            'quantity_actual' => 'decimal:4',
-            'quantity_difference' => 'decimal:4',
+            'quantity_system' => 'decimal:2',
+            'quantity_actual' => 'decimal:2',
+            'quantity_difference' => 'decimal:2',
         ];
     }
 

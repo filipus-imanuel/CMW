@@ -16,10 +16,10 @@ return new class extends Migration
             $table->string('type', 50); // purchase, sales, transfer_in, transfer_out, adjustment, production_in, production_out
             $table->string('reference_type', 100)->nullable(); // Model class
             $table->unsignedBigInteger('reference_id')->nullable();
-            $table->decimal('quantity_in', 18, 4)->default(0);
-            $table->decimal('quantity_out', 18, 4)->default(0);
-            $table->decimal('balance', 18, 4)->default(0);
-            $table->decimal('unit_cost', 18, 5)->default(0);
+            $table->decimal('quantity_in', 13, 2)->default(0);
+            $table->decimal('quantity_out', 13, 2)->default(0);
+            $table->decimal('balance', 13, 2)->default(0);
+            $table->decimal('unit_cost', 13, 2)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

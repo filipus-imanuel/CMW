@@ -21,7 +21,7 @@ class TransferDetail extends BaseModel
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:4',
+            'quantity' => 'decimal:2',
         ];
     }
 

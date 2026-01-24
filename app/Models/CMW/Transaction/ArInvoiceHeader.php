@@ -31,11 +31,11 @@ class ArInvoiceHeader extends BaseModel
         return [
             'date' => 'date',
             'due_date' => 'date',
-            'subtotal' => 'decimal:5',
-            'tax' => 'decimal:5',
-            'total' => 'decimal:5',
-            'paid' => 'decimal:5',
-            'balance' => 'decimal:5',
+            'subtotal' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'total' => 'decimal:2',
+            'paid' => 'decimal:2',
+            'balance' => 'decimal:2',
         ];
     }
 

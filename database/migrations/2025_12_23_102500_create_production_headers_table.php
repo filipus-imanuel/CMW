@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('item_id')->constrained('items'); // Finished product
             $table->foreignId('bom_header_id')->nullable()->constrained('bom_headers');
             $table->foreignId('warehouse_id')->constrained('warehouses');
-            $table->decimal('quantity', 18, 4)->default(0);
+            $table->decimal('quantity', 13, 2)->default(0);
             $table->foreignId('uom_id')->constrained('uoms');
             $table->string('status', 20)->default('draft');
             $table->string('remarks', 1024)->nullable();

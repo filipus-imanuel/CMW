@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('gl_journal_header_id')->constrained('gl_journal_headers');
             $table->foreignId('coa_id')->constrained('coas');
-            $table->decimal('debit', 18, 5)->default(0);
-            $table->decimal('credit', 18, 5)->default(0);
+            $table->decimal('debit', 13, 2)->default(0);
+            $table->decimal('credit', 13, 2)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

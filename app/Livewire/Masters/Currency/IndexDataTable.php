@@ -64,7 +64,7 @@ class IndexDataTable extends DataTableComponent
 
             Column::make('Rate', 'rate')
                 ->sortable()
-                ->format(fn ($value) => number_format($value, 5)),
+                ->format(fn ($value) => number_format($value, 2)),
 
             BooleanColumn::make('Edit Locked', 'is_edit_locked')
                 ->sortable(),

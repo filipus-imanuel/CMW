@@ -65,9 +65,9 @@ class CurrencyValidationHelper
      * Get validation rules for monetary amount fields.
      *
      * @param  float  $min  Minimum allowed value (default: 0)
-     * @param  float  $max  Maximum allowed value (default: 9999999999999 - 13 digits for decimal(18,5))
+     * @param  float  $max  Maximum allowed value (default: 99999999999 - 11 digits for decimal(13,2))
      */
-    public static function amountRules(float $min = 0, float $max = 9999999999999): string
+    public static function amountRules(float $min = 0, float $max = 99999999999): string
     {
         return "required|numeric|min:{$min}|max:{$max}";
     }
@@ -76,9 +76,9 @@ class CurrencyValidationHelper
      * Get validation rules for nullable monetary amount fields.
      *
      * @param  float  $min  Minimum allowed value (default: 0)
-     * @param  float  $max  Maximum allowed value (default: 9999999999999 - 13 digits for decimal(18,5))
+     * @param  float  $max  Maximum allowed value (default: 99999999999 - 11 digits for decimal(13,2))
      */
-    public static function amountNullableRules(float $min = 0, float $max = 9999999999999): string
+    public static function amountNullableRules(float $min = 0, float $max = 99999999999): string
     {
         return "nullable|numeric|min:{$min}|max:{$max}";
     }
@@ -88,7 +88,7 @@ class CurrencyValidationHelper
      */
     public static function exchangeRateRules(): string
     {
-        return 'required|numeric|min:0.00001|max:9999999999999';
+        return 'required|numeric|min:0.01|max:99999999999';
     }
 
     /**

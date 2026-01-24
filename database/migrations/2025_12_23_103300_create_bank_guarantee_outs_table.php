@@ -15,7 +15,7 @@ return new class extends Migration
             $table->date('due_date')->nullable();
             $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
-            $table->decimal('amount', 18, 5)->default(0);
+            $table->decimal('amount', 13, 2)->default(0);
             $table->string('bank_name', 100)->nullable();
             $table->string('reference', 100)->nullable();
             $table->string('status', 20)->default('active');

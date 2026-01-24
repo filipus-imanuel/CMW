@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('category_price_id')->constrained('category_prices');
-            $table->decimal('old_price', 18, 5)->default(0);
-            $table->decimal('new_price', 18, 5)->default(0);
+            $table->decimal('old_price', 13, 2)->default(0);
+            $table->decimal('new_price', 13, 2)->default(0);
             $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
 

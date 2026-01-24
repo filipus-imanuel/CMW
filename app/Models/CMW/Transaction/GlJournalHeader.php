@@ -24,8 +24,8 @@ class GlJournalHeader extends BaseModel
     {
         return [
             'date' => 'date',
-            'total_debit' => 'decimal:5',
-            'total_credit' => 'decimal:5',
+            'total_debit' => 'decimal:2',
+            'total_credit' => 'decimal:2',
         ];
     }
 

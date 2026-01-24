@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('category_price_id')->constrained('category_prices');
-            $table->decimal('price', 18, 5)->default(0);
+            $table->decimal('price', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
