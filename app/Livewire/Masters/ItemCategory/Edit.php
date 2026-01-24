@@ -29,11 +29,6 @@ class Edit extends Component
 
     public $dropdown_data = [];
 
-    public function mount(): void
-    {
-        $this->loadDropdownData();
-    }
-
     public function rules(): array
     {
         return [

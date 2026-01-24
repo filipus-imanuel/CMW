@@ -24,11 +24,6 @@ class Create extends Component
         'is_active' => true,
     ];
 
-    public function mount(): void
-    {
-        $this->authorize('create warehouse');
-    }
-
     public function rules(): array
     {
         return [
@@ -40,7 +35,7 @@ class Create extends Component
         ];
     }
 
-    public function save(): void
+    public function store(): void
     {
         $this->authorize('create warehouse');
 
@@ -76,6 +71,8 @@ class Create extends Component
     #[On('cmw.master.warehouse.create.open')]
     public function openModal(): void
     {
+        $this->authorize('create warehouse');
+
         $this->inputs = [
             'code' => '',
             'name' => '',

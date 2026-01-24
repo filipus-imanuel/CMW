@@ -53,7 +53,7 @@ class Edit extends Component
         $this->modal('edit-customer')->show();
     }
 
-    public function save()
+    public function update()
     {
         $this->authorize('edit customer');
 

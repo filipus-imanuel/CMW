@@ -78,7 +78,7 @@ class Edit extends Component
         $this->modal('edit-item')->show();
     }
 
-    public function save()
+    public function update()
     {
         $this->authorize('edit item');
 

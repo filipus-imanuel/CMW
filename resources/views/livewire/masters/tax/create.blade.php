@@ -1,5 +1,5 @@
 <flux:modal name="create-tax" class="w-full max-w-2xl">
-    <form wire:submit="save">
+    <form wire:submit="store">
         <div class="space-y-6">
             <flux:heading size="lg">Create Tax</flux:heading>
 

@@ -1,7 +1,7 @@
 <flux:modal name="create-company" class="w-full max-w-xl space-y-6">
     <flux:heading size="lg">Create Company</flux:heading>
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="store" class="space-y-6">
         <div class="grid grid-cols-2 gap-4">
             <flux:input wire:model="inputs.code" label="Code" badge="Required" placeholder="Enter code" maxlength="50" />
             <flux:input wire:model="inputs.name" label="Name" badge="Required" placeholder="Enter name" maxlength="100" />

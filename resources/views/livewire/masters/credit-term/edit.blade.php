@@ -1,5 +1,5 @@
 <flux:modal name="edit-credit-term" class="w-full max-w-2xl">
-    <form wire:submit="save">
+    <form wire:submit="update">
         <div class="space-y-6">
             <flux:heading size="lg">Edit Credit Term</flux:heading>
 

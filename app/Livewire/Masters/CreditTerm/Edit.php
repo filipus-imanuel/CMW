@@ -72,7 +72,7 @@ class Edit extends Component
         $this->modal('edit-credit-term')->show();
     }
 
-    public function save()
+    public function update()
     {
         $this->authorize('edit credit term');
 

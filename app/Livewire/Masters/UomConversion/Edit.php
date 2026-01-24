@@ -72,7 +72,7 @@ class Edit extends Component
         $this->modal('edit-uom-conversion')->show();
     }
 
-    public function save()
+    public function update()
     {
         $this->authorize('edit uom conversion');
 

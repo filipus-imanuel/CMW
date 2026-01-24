@@ -69,7 +69,7 @@ class Create extends Component
         $this->modal('create-uom-conversion')->show();
     }
 
-    public function save()
+    public function store()
     {
         $this->authorize('create uom conversion');
 

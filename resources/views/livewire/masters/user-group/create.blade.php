@@ -1,5 +1,5 @@
 <flux:modal name="create-user-group" class="w-full max-w-2xl">
-    <form wire:submit="save">
+    <form wire:submit="store">
         <div class="space-y-6">
             <flux:heading size="lg">Create User Group</flux:heading>
 

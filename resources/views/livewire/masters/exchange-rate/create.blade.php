@@ -5,7 +5,7 @@
         <flux:callout.text>A reciprocal rate will be automatically created. For example, if you set USD → IDR = 15,500, an IDR → USD rate of approximately 0.000065 will be created.</flux:callout.text>
     </flux:callout>
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="store" class="space-y-6">
         <div class="grid grid-cols-2 gap-4">
             <flux:select wire:model="inputs.from_currency_id" label="From Currency" badge="Required">
                 <flux:select.option value="">-- Select Currency --</flux:select.option>

@@ -66,7 +66,7 @@ class Create extends Component
         $this->modal('create-credit-term')->show();
     }
 
-    public function save()
+    public function store()
     {
         $this->authorize('create credit term');
 

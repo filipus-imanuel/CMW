@@ -27,11 +27,6 @@ class Create extends Component
 
     public $dropdown_data = [];
 
-    public function mount(): void
-    {
-        $this->authorize('create item category');
-    }
-
     public function rules(): array
     {
         return [
@@ -52,7 +47,7 @@ class Create extends Component
         ];
     }
 
-    public function save(): void
+    public function store(): void
     {
         $this->authorize('create item category');
 
@@ -90,6 +85,8 @@ class Create extends Component
     #[On('cmw.master.item-category.create.open')]
     public function openModal(): void
     {
+        $this->authorize('create item category');
+
         $this->inputs = [
             'code' => '',
             'name' => '',

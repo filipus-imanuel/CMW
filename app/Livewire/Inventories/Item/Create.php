@@ -74,7 +74,7 @@ class Create extends Component
         $this->modal('create-item')->show();
     }
 
-    public function save()
+    public function store()
     {
         $this->authorize('create item');
 

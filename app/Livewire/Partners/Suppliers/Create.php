@@ -44,7 +44,7 @@ class Create extends Component
         $this->modal('create-supplier')->show();
     }
 
-    public function save()
+    public function store()
     {
         $this->authorize('create supplier');
 

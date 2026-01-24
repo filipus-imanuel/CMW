@@ -23,11 +23,6 @@ class Create extends Component
         'is_active' => true,
     ];
 
-    public function mount(): void
-    {
-        $this->authorize('create department');
-    }
-
     public function rules(): array
     {
         return [
@@ -38,7 +33,7 @@ class Create extends Component
         ];
     }
 
-    public function save(): void
+    public function store(): void
     {
         $this->authorize('create department');
 
@@ -73,6 +68,8 @@ class Create extends Component
     #[On('cmw.master.department.create.open')]
     public function openModal(): void
     {
+        $this->authorize('create department');
+
         $this->inputs = [
             'code' => '',
             'name' => '',

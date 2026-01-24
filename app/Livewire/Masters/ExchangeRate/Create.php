@@ -29,13 +29,6 @@ class Create extends Component
 
     public $dropdown_currency = [];
 
-    public function mount(): void
-    {
-        $this->authorize('create exchange rate');
-        $this->handlePopulateCurrency();
-        $this->inputs['effective_date'] = now()->format('Y-m-d');
-    }
-
     private function handlePopulateCurrency(): void
     {
         $this->dropdown_currency = PopulateDataHelper::getCurrencies();
@@ -65,7 +58,7 @@ class Create extends Component
         ];
     }
 
-    public function save(): void
+    public function store(): void
     {
         $this->authorize('create exchange rate');
 
@@ -101,6 +94,8 @@ class Create extends Component
     #[On('cmw.master.exchange-rate.create.open')]
     public function openModal(): void
     {
+        $this->authorize('create exchange rate');
+
         $this->handlePopulateCurrency();
         $this->inputs = [
             'from_currency_id' => '',

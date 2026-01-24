@@ -31,11 +31,6 @@ class Edit extends Component
 
     public $dropdown_currency = [];
 
-    public function mount(): void
-    {
-        $this->handlePopulateCurrency();
-    }
-
     private function handlePopulateCurrency(): void
     {
         $this->dropdown_currency = PopulateDataHelper::getCurrencies();

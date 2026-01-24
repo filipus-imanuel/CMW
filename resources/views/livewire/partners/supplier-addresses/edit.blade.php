@@ -1,5 +1,5 @@
 <flux:modal name="edit-supplier-address" class="w-full max-w-3xl">
-    <form wire:submit="save">
+    <form wire:submit="update">
         <div class="space-y-6">
             <flux:heading size="lg">Edit Supplier Address</flux:heading>
 

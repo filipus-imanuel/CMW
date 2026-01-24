@@ -333,6 +333,27 @@ class Create extends Component
 
 ### 9. Livewire Component Lifecycle
 
+**Modal Component Authorization (Create/Edit)**:
+- **NEVER** use `$this->authorize()` in `mount()` for modal components included via `<livewire:...>` in Index pages
+- **ALWAYS** place authorization in `openModal()` method (decorated with `#[On('xxx.create.open')]` or `#[On('xxx.edit.open')]`)
+- Reason: `mount()` runs when Index page loads, causing 403 for users with only "view" permission
+- Keep authorization in `store()`/`update()` methods as server-side double-check
+- Wrap action buttons with `@can()` in blade views and check permissions in DataTable columns
+- Reference: `Partners/Supplier`, `Masters/Employee`, `Masters/Position` for correct patterns
+
+**Modal Component Initialization**:
+- **NEVER** use `mount()` for dropdown/data initialization in modal components
+- **ALWAYS** perform all initialization in `openModal()` method only
+- Reason: Prevents redundant queries when Index page loads, only fetches data when modal opens
+- Example: `handlePopulateDropdown()`, `loadDropdownData()` should only be called in `openModal()`
+
+**CRUD Method Naming Convention (Laravel RESTful)**:
+- **Create components**: Use `store()` method (not `save()`)
+- **Edit components**: Use `update()` method (not `save()`)
+- **Index components**: Use `destroy()` method for deletions
+- **Blade forms**: Use `wire:submit="store"` for create, `wire:submit="update"` for edit
+- Transaction components (Sales, Purchase, etc.) remain flexible based on business logic
+
 ```php
 use Livewire\Component;
 use Livewire\Attributes\{Title, On};
@@ -554,6 +575,7 @@ app/
 - [ ] Events dispatched after state changes
 - [ ] **Routes added to `routes/web.php`**
 - [ ] **Navigation added to `sidebar.blade.php` (keep items sorted A-Z within each group)**
+- [ ] **Modal Create/Edit: Authorization in `openModal()` NOT `mount()`. Action buttons wrapped in `@can()`. DataTable columns check permissions**
 - [ ] Module docs updated in `docs/{module}/`
 - [ ] No debug calls (`dd()`, `dump()`, `var_dump()`)
 

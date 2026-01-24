@@ -1,5 +1,5 @@
 <flux:modal name="create-customer-address" class="w-full max-w-3xl">
-    <form wire:submit="save">
+    <form wire:submit="store">
         <div class="space-y-6">
             <flux:heading size="lg">Create Customer Address</flux:heading>
 

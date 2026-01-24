@@ -30,11 +30,6 @@ class Create extends Component
 
     public $dropdown_category_prices = [];
 
-    public function mount(): void
-    {
-        $this->authorize('create item price');
-    }
-
     public function rules(): array
     {
         return [
@@ -52,7 +47,7 @@ class Create extends Component
         $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices(['labelFormat' => 'code_name']);
     }
 
-    public function save(): void
+    public function store(): void
     {
         $this->authorize('create item price');
 
@@ -108,6 +103,8 @@ class Create extends Component
     #[On('cmw.inventories.item-price.create.open')]
     public function openModal(): void
     {
+        $this->authorize('create item price');
+
         $this->inputs = [
             'item_id' => '',
             'category_price_id' => '',

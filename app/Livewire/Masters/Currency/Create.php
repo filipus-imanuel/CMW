@@ -30,12 +30,6 @@ class Create extends Component
 
     public $dropdown_symbol_position = [];
 
-    public function mount(): void
-    {
-        $this->authorize('create currency');
-        $this->dropdown_symbol_position = CurrencyDictionaryHelper::getSymbolPositions();
-    }
-
     public function rules(): array
     {
         return [
@@ -49,7 +43,7 @@ class Create extends Component
         ];
     }
 
-    public function save(): void
+    public function store(): void
     {
         $this->authorize('create currency');
 
@@ -87,6 +81,9 @@ class Create extends Component
     #[On('cmw.master.currency.create.open')]
     public function openModal(): void
     {
+        $this->authorize('create currency');
+
+        $this->dropdown_symbol_position = CurrencyDictionaryHelper::getSymbolPositions();
         $this->inputs = [
             'code' => '',
             'name' => '',

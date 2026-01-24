@@ -73,7 +73,7 @@ class Edit extends Component
         $this->modal('edit-customer-address')->show();
     }
 
-    public function save()
+    public function update()
     {
         $this->authorize('edit partner address');
 

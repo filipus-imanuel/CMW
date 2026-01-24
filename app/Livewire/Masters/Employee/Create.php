@@ -65,7 +65,7 @@ class Create extends Component
         $this->modal('create-employee')->show();
     }
 
-    public function save()
+    public function store()
     {
         $this->authorize('create employee');
 

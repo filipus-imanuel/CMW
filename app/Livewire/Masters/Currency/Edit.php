@@ -32,11 +32,6 @@ class Edit extends Component
 
     public $dropdown_symbol_position = [];
 
-    public function mount(): void
-    {
-        $this->dropdown_symbol_position = CurrencyDictionaryHelper::getSymbolPositions();
-    }
-
     public function rules(): array
     {
         return [
@@ -97,6 +92,7 @@ class Edit extends Component
         $this->authorize('edit currency');
         $this->resetValidation();
 
+        $this->dropdown_symbol_position = CurrencyDictionaryHelper::getSymbolPositions();
         $this->currency = Currency::findOrFail($id);
 
         $this->inputs = [
