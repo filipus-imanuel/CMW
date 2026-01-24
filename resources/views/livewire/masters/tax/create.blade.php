@@ -40,7 +40,7 @@
                     :error="$errors->first('inputs.remarks')"
                 />
 
-                <flux:checkbox
+                <flux:switch
                     wire:model="inputs.is_active"
                     label="Active"
                 />

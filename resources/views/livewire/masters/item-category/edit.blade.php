@@ -58,7 +58,7 @@
                     :disabled="$itemCategory?->is_edit_locked"
                 />
 
-                <flux:checkbox
+                <flux:switch
                     wire:model="inputs.is_active"
                     label="Active"
                     :disabled="$itemCategory?->is_edit_locked"

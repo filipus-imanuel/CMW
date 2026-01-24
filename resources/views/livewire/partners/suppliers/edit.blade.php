@@ -30,7 +30,7 @@
                     maxlength="500"
                 />
 
-                <flux:checkbox wire:model="inputs.is_active" label="Active" />
+                <flux:switch wire:model="inputs.is_active" label="Active" />
             </div>
 
             <div class="flex">

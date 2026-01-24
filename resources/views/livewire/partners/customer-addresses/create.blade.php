@@ -58,7 +58,7 @@
                     />
                 </div>
 
-                <flux:checkbox wire:model="inputs.is_default" label="Set as default address" />
+                <flux:switch wire:model="inputs.is_default" label="Set as default address" />
 
                 <flux:textarea 
                     wire:model="inputs.remarks" 

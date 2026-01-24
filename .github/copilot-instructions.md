@@ -72,6 +72,7 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 - **Callouts**: Use for status messages (amber=warning, red=error, green=success, blue=info)
 - **Form Fields**: Use `label="..."` and `badge="Required"` attributes directly on inputs
 - **Modal Control**: `Flux::modal('name')->show()` to open, `$this->modal('name')->close()` to close
+- **Boolean Fields**: Use `<flux:switch>` for single boolean fields (e.g., `is_active`, `is_default`), Use `<flux:checkbox>` for multiple choice selections only
 
 ### 2. Database Schema Rules
 

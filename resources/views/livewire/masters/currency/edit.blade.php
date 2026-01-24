@@ -77,7 +77,7 @@
                     :disabled="$currency?->is_edit_locked"
                 />
 
-                <flux:checkbox
+                <flux:switch
                     wire:model="inputs.is_active"
                     label="Active"
                     :disabled="$currency?->is_edit_locked"
