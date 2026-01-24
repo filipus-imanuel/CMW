@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CreditTermsSeeder::class);
         $this->call(UomsSeeder::class);
         $this->call(ItemCategorySeeder::class);
+        $this->call(CategoryPriceSeeder::class);
         $this->call(ItemsSeeder::class);
         $this->call(PositionsSeeder::class);
         $this->call(EmployeesSeeder::class);

@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\History\HistoryItemPrice;
 use App\Models\CMW\Inventory\InventoryLedger;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,5 +54,15 @@ class Item extends BaseModel
     public function category(): BelongsTo
     {
         return $this->belongsTo(ItemCategory::class, 'category_id');
+    }
+
+    public function itemPrices(): HasMany
+    {
+        return $this->hasMany(ItemPrice::class);
+    }
+
+    public function historyItemPrices(): HasMany
+    {
+        return $this->hasMany(HistoryItemPrice::class);
     }
 }

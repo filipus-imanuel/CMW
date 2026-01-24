@@ -16,6 +16,7 @@ class PermissionHelper
             // MASTER DATA
             // ══════════════════════════════════════════════════════════════
             'master' => [
+                'category price' => ['view', 'create', 'edit', 'delete'],
                 'country' => ['view', 'create', 'edit', 'delete'],
                 'position' => ['view', 'create', 'edit', 'delete'],
                 'employee' => ['view', 'create', 'edit', 'delete'],
@@ -45,6 +46,8 @@ class PermissionHelper
             // ══════════════════════════════════════════════════════════════
             'inventory' => [
                 'item' => ['view', 'create', 'edit', 'delete'],
+                'item price' => ['view', 'create', 'edit', 'delete'],
+                'item price history' => ['view'],
             ],
 
             // ══════════════════════════════════════════════════════════════

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Helpers\CMW;
 
+use App\Models\CMW\Master\CategoryPrice;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
@@ -186,15 +187,38 @@ class PopulateDataHelper
     public static function clearCache(?string $modelClass = null): void
     {
         if ($modelClass === null) {
-            // Clear all popdata cache - this is a simple implementation
-            // For production, consider using cache tags (requires Redis/Memcached)
+            // Clear all popdata cache
             Cache::flush();
         } else {
-            // Clear cache for specific model (simplified - clears with pattern)
-            $prefix = self::CACHE_PREFIX.'.'.class_basename($modelClass);
-            // Note: This is a simplified implementation
-            // For exact key deletion, you'd need to track all keys or use cache tags
-            Cache::forget($prefix);
+            // Clear all cache keys for this model by iterating possible variations
+            $modelName = class_basename($modelClass);
+            $prefix = self::CACHE_PREFIX.'.'.$modelName.'.';
+            
+            // Since we can't easily iterate cache keys without Redis tags,
+            // we'll use a pragmatic approach: forget with common option variations
+            // This covers most use cases while being efficient
+            $commonVariations = [
+                [], // Default options
+                ['includeInactive' => true],
+                ['labelFormat' => 'name'],
+                ['labelFormat' => 'code_name'],
+                ['labelFormat' => 'name_code'],
+            ];
+            
+            foreach ($commonVariations as $variation) {
+                $options = array_merge([
+                    'valueField' => 'id',
+                    'labelFormat' => 'code_name',
+                    'orderBy' => 'name',
+                    'orderDirection' => 'asc',
+                    'filters' => [],
+                    'with' => [],
+                    'includeInactive' => false,
+                ], $variation);
+                
+                $key = self::generateCacheKey($modelClass, $options);
+                Cache::forget($key);
+            }
         }
     }
 
@@ -425,6 +449,17 @@ class PopulateDataHelper
     public static function getItems(array $options = []): array
     {
         return self::get(Item::class, $options);
+    }
+
+    /**
+     * Get category prices dropdown data.
+     *
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getCategoryPrices(array $options = []): array
+    {
+        return self::get(CategoryPrice::class, $options);
     }
 
     // ══════════════════════════════════════════════════════════════════════════

@@ -59,20 +59,21 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 **ALWAYS use Flux components** - No custom HTML/CSS unless absolutely necessary.
 
-**📚 Complete Documentation**: See `docs/flux/` for full reference
-- `docs/flux/components/` - All 39 components (button, badge, table, form fields, etc.)
-- `docs/flux/guides/` - Patterns, principles, theming, dark mode
-- `docs/flux/layouts/` - Header, sidebar layouts
+**CRITICAL**: When creating or editing Flux components, ALWAYS read `docs/flux/components/{component-name}.md` first for complete documentation, examples, and proper usage patterns.
 
-**Quick Reference**:
-- **Buttons**: Use only valid variants: `primary`, `danger`, `ghost`, `outline`, `filled`, `subtle`
-- **Badges**: Available colors: zinc, red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose
-- **Date Pickers**: Use `<flux:date-picker>` with Carbon properties, NEVER `<flux:input type="date">`
-- **Tables**: NEVER add background colors to `<flux:table.row>` or `<flux:table.cell>`
-- **Callouts**: Use for status messages (amber=warning, red=error, green=success, blue=info)
-- **Form Fields**: Use `label="..."` and `badge="Required"` attributes directly on inputs
-- **Modal Control**: `Flux::modal('name')->show()` to open, `$this->modal('name')->close()` to close
-- **Boolean Fields**: Use `<flux:switch>` for single boolean fields (e.g., `is_active`, `is_default`), Use `<flux:checkbox>` for multiple choice selections only
+**Component Quick Reference**:
+
+| Component | Doc File | Key Rules |
+|-----------|----------|-----------|
+| Button | [button.md](../docs/flux/components/button.md) | Variants: `primary`, `danger`, `ghost`, `outline`, `filled`, `subtle` |
+| Badge | [badge.md](../docs/flux/components/badge.md) | Colors: zinc, red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose |
+| Switch | [switch.md](../docs/flux/components/switch.md) | Use for single boolean fields (`is_active`, `is_default`) |
+| Checkbox | [checkbox.md](../docs/flux/components/checkbox.md) | Use for multiple choices. Wrap 2+ in `<flux:checkbox.group>` |
+| Date Picker | [date-picker.md](../docs/flux/components/date-picker.md) | Use `<flux:date-picker>`, NEVER `<flux:input type="date">` |
+| Table | [table.md](../docs/flux/components/table.md) | NEVER add background colors to rows/cells |
+| Modal | [modal.md](../docs/flux/components/modal.md) | `Flux::modal('name')->show()` / `$this->modal('name')->close()` |
+| Callout | [callout.md](../docs/flux/components/callout.md) | Colors: amber=warning, red=error, green=success, blue=info |
+| Input/Textarea | [input.md](../docs/flux/components/input.md) | Use `label="..."` and `badge="Required"` attributes |
 
 ### 2. Database Schema Rules
 

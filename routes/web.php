@@ -1,6 +1,9 @@
 <?php
 
+use App\Livewire\Inventories\HistoryItemPrice\Index as HistoryItemPriceIndex;
 use App\Livewire\Inventories\Item\Index as ItemIndex;
+use App\Livewire\Inventories\ItemPrice\Index as ItemPriceIndex;
+use App\Livewire\Masters\CategoryPrice\Index as CategoryPriceIndex;
 use App\Livewire\Masters\Company\Index as CompanyIndex;
 use App\Livewire\Masters\Country\Index as CountryIndex;
 use App\Livewire\Masters\CreditTerm\Index as CreditTermIndex;
@@ -50,6 +53,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('cmw')->group(function () {
         Route::prefix('masters')->name('masters.')->group(function () {
+            Route::get('category-prices', CategoryPriceIndex::class)->name('category-prices.index');
             Route::get('companies', CompanyIndex::class)->name('companies.index');
             Route::get('countries', CountryIndex::class)->name('countries.index');
             Route::get('credit-terms', CreditTermIndex::class)->name('credit-terms.index');
@@ -73,6 +77,8 @@ Route::middleware(['auth'])->group(function () {
         });
 
         Route::prefix('inventories')->name('inventories.')->group(function () {
+            Route::get('item-price-history', HistoryItemPriceIndex::class)->name('item-price-history.index');
+            Route::get('item-prices', ItemPriceIndex::class)->name('item-prices.index');
             Route::get('items', ItemIndex::class)->name('items.index');
         });
     });

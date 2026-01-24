@@ -17,6 +17,7 @@
                 </flux:navlist.group>
 
                 <flux:navlist.group :heading="__('Master')" expandable :expanded="true" class="grid">
+                    <flux:navlist.item icon="tag" :href="route('masters.category-prices.index')" :current="request()->routeIs('masters.category-prices.*')" wire:navigate>{{ __('Category Prices') }}</flux:navlist.item>
                     <flux:navlist.item icon="building-library" :href="route('masters.companies.index')" :current="request()->routeIs('masters.companies.*')" wire:navigate>{{ __('Companies') }}</flux:navlist.item>
                     <flux:navlist.item icon="globe-alt" :href="route('masters.countries.index')" :current="request()->routeIs('masters.countries.*')" wire:navigate>{{ __('Countries') }}</flux:navlist.item>
                     <flux:navlist.item icon="credit-card" :href="route('masters.credit-terms.index')" :current="request()->routeIs('masters.credit-terms.*')" wire:navigate>{{ __('Credit Terms') }}</flux:navlist.item>
@@ -40,6 +41,8 @@
                 </flux:navlist.group>
 
                 <flux:navlist.group :heading="__('Inventory')" expandable :expanded="true" class="grid">
+                    <flux:navlist.item icon="clock" :href="route('inventories.item-price-history.index')" :current="request()->routeIs('inventories.item-price-history.*')" wire:navigate>{{ __('Item Price History') }}</flux:navlist.item>
+                    <flux:navlist.item icon="banknotes" :href="route('inventories.item-prices.index')" :current="request()->routeIs('inventories.item-prices.*')" wire:navigate>{{ __('Item Prices') }}</flux:navlist.item>
                     <flux:navlist.item icon="cube-transparent" :href="route('inventories.items.index')" :current="request()->routeIs('inventories.items.*')" wire:navigate>{{ __('Items') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
