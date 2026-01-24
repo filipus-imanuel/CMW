@@ -9,15 +9,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Employee extends BaseModel
 {
     protected $fillable = [
-        'position_id',
+        'department_id',
         'email',
         'phone',
         'address',
     ];
 
-    public function position(): BelongsTo
+    public function department(): BelongsTo
     {
-        return $this->belongsTo(Position::class);
+        return $this->belongsTo(Department::class);
     }
 
     public function companySetting(): HasMany

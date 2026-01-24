@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ItemCategorySeeder::class);
         $this->call(CategoryPriceSeeder::class);
         $this->call(ItemsSeeder::class);
-        $this->call(PositionsSeeder::class);
+        $this->call(DepartmentsSeeder::class);
         $this->call(EmployeesSeeder::class);
         $this->call(CompanySeeder::class);
         $this->call(CompanySettingSeeder::class);

@@ -9,11 +9,11 @@ use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
 use App\Models\CMW\Master\Currency;
+use App\Models\CMW\Master\Department;
 use App\Models\CMW\Master\Employee;
 use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Partner;
 use App\Models\CMW\Master\PartnerAddress;
-use App\Models\CMW\Master\Position;
 use App\Models\CMW\Master\Tax;
 use App\Models\CMW\Master\Uom;
 use App\Models\CMW\Master\UserGroup;
@@ -57,7 +57,7 @@ use Illuminate\Support\Facades\Cache;
  * @example Convenience methods
  * ```php
  * // Use shorthand methods for common entities
- * $positions = PopulateDataHelper::getPositions();
+ * $departments = PopulateDataHelper::getDepartments();
  * $suppliers = PopulateDataHelper::getSuppliers();
  * $customers = PopulateDataHelper::getCustomers();
  * ```
@@ -193,7 +193,7 @@ class PopulateDataHelper
             // Clear all cache keys for this model by iterating possible variations
             $modelName = class_basename($modelClass);
             $prefix = self::CACHE_PREFIX.'.'.$modelName.'.';
-            
+
             // Since we can't easily iterate cache keys without Redis tags,
             // we'll use a pragmatic approach: forget with common option variations
             // This covers most use cases while being efficient
@@ -204,7 +204,7 @@ class PopulateDataHelper
                 ['labelFormat' => 'code_name'],
                 ['labelFormat' => 'name_code'],
             ];
-            
+
             foreach ($commonVariations as $variation) {
                 $options = array_merge([
                     'valueField' => 'id',
@@ -215,7 +215,7 @@ class PopulateDataHelper
                     'with' => [],
                     'includeInactive' => false,
                 ], $variation);
-                
+
                 $key = self::generateCacheKey($modelClass, $options);
                 Cache::forget($key);
             }
@@ -227,15 +227,15 @@ class PopulateDataHelper
     // ══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Get positions dropdown data.
+     * Get departments dropdown data.
      *
      * @param  array<string, mixed>  $options  Additional options
      * @return array<int, array{value: int, label: string}>
      */
-    public static function getPositions(array $options = []): array
+    public static function getDepartments(array $options = []): array
     {
-        return self::get(Position::class, array_merge([
-            'labelFormat' => 'name', // Positions typically don't show code
+        return self::get(Department::class, array_merge([
+            'labelFormat' => 'name', // Departments typically don't show code
         ], $options));
     }
 

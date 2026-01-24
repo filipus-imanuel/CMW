@@ -16,15 +16,15 @@ class ItemCategorySeeder extends Seeder
         $now = Carbon::now();
 
         DB::table('item_categories')->insert([[
-                'code' => 'OTHER',
-                'name' => 'Other',
-                'remarks' => 'Kategori lain-lain',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            'code' => 'OTHER',
+            'name' => 'Other',
+            'remarks' => 'Kategori lain-lain',
+            'is_active' => true,
+            'version_number' => 1,
+            'created_by' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
             [
                 'code' => 'RM',
                 'name' => 'Raw Material',

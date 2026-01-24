@@ -1,7 +1,7 @@
-<flux:modal name="edit-position" class="w-full max-w-2xl">
+<flux:modal name="edit-department" class="w-full max-w-2xl">
     <form wire:submit="update">
         <div class="space-y-6">
-            <flux:heading size="lg">Edit Position</flux:heading>
+            <flux:heading size="lg">Edit Department</flux:heading>
 
             <div class="space-y-6">
                 <flux:input
@@ -39,7 +39,7 @@
                 <flux:button
                     type="button"
                     variant="ghost"
-                    x-on:click="$flux.modal('edit-position').close()"
+                    x-on:click="$flux.modal('edit-department').close()"
                 >
                     Cancel
                 </flux:button>

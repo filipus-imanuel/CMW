@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Livewire\Masters\Position;
+namespace App\Livewire\Masters\Department;
 
-use App\Models\CMW\Master\Position;
+use App\Models\CMW\Master\Department;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
@@ -11,10 +11,10 @@ use Rappasoft\LaravelLivewireTables\Views\Columns\BooleanColumn;
 
 class IndexDataTable extends DataTableComponent
 {
-    protected $model = Position::class;
+    protected $model = Department::class;
 
     protected $listeners = [
-        'cmw.master.position.refresh' => '$refresh',
+        'cmw.master.department.refresh' => '$refresh',
     ];
 
     public function configure(): void
@@ -23,14 +23,14 @@ class IndexDataTable extends DataTableComponent
             ->setDefaultSort('code', 'asc')
             ->setPerPageAccepted([10, 25, 50, 100])
             ->setSearchEnabled()
-            ->setSearchPlaceholder('Search positions...')
+            ->setSearchPlaceholder('Search departments...')
             ->setColumnSelectEnabled()
             ->setEmptyMessage('No data found');
     }
 
     public function builder(): Builder
     {
-        return Position::query()
+        return Department::query()
             ->with(['createdBy', 'updatedBy']);
     }
 
@@ -40,9 +40,9 @@ class IndexDataTable extends DataTableComponent
             Column::make('Actions', 'id')
                 ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
                     'rowId' => $row->id,
-                    'showEdit' => Auth::user()?->can('edit position'),
-                    'editDispatchEvent' => 'cmw.master.position.edit.open',
-                    'showDelete' => Auth::user()?->can('delete position'),
+                    'showEdit' => Auth::user()?->can('edit department'),
+                    'editDispatchEvent' => 'cmw.master.department.edit.open',
+                    'showDelete' => Auth::user()?->can('delete department'),
                     'deleteDispatchEvent' => 'delete',
                 ])),
 

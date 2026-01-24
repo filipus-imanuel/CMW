@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('code', 45)->unique();
             $table->string('name', 100);
-            $table->foreignId('position_id')->constrained('positions');
+            $table->foreignId('department_id')->constrained('departments');
             $table->string('email', 100)->nullable();
             $table->string('phone', 50)->nullable();
             $table->text('address')->nullable();

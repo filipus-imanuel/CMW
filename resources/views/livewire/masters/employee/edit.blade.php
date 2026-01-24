@@ -14,14 +14,14 @@
                     />
 
                     <flux:select 
-                        wire:model="inputs.position_id" 
-                        label="Position"
+                        wire:model="inputs.department_id" 
+                        label="Department"
                         badge="Required"
-                        placeholder="Select position"
+                        placeholder="Select department"
                         searchable
                     >
-                        @foreach($dropdown_position as $position)
-                            <flux:select.option value="{{ $position['value'] }}">{{ $position['label'] }}</flux:select.option>
+                        @foreach($dropdown_department as $department)
+                            <flux:select.option value="{{ $department['value'] }}">{{ $department['label'] }}</flux:select.option>
                         @endforeach
                     </flux:select>
                 </div>

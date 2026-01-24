@@ -7,10 +7,10 @@ use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
 use App\Models\CMW\Master\Currency;
+use App\Models\CMW\Master\Department;
 use App\Models\CMW\Master\Employee;
 use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Partner;
-use App\Models\CMW\Master\Position;
 use App\Models\CMW\Master\Tax;
 use App\Models\CMW\Master\Uom;
 use App\Models\CMW\Master\UserGroup;
@@ -43,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
             Employee::class,
             Item::class,
             Partner::class,
-            Position::class,
+            Department::class,
             Tax::class,
             Uom::class,
             UserGroup::class,

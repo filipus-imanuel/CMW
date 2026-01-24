@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Livewire\Masters\Position;
+namespace App\Livewire\Masters\Department;
 
-use App\Models\CMW\Master\Position;
+use App\Models\CMW\Master\Department;
 use Exception;
 use Flux\Flux;
 use Illuminate\Database\QueryException;
@@ -13,7 +13,7 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Create Position')]
+#[Title('Create Department')]
 class Create extends Component
 {
     public $inputs = [
@@ -25,28 +25,28 @@ class Create extends Component
 
     public function mount(): void
     {
-        $this->authorize('create position');
+        $this->authorize('create department');
     }
 
     public function rules(): array
     {
         return [
-            'inputs.code' => 'required|string|max:50|unique:positions,code',
-            'inputs.name' => 'required|string|max:255|unique:positions,name',
-            'inputs.remarks' => 'nullable|string|max:500',
+            'inputs.code' => 'required|string|max:50|unique:departments,code',
+            'inputs.name' => 'required|string|max:100|unique:departments,name',
+            'inputs.remarks' => 'nullable|string|max:1024',
             'inputs.is_active' => 'boolean',
         ];
     }
 
     public function save(): void
     {
-        $this->authorize('create position');
+        $this->authorize('create department');
 
         try {
             $validated = $this->validate();
 
             DB::transaction(function () use ($validated) {
-                Position::create([
+                Department::create([
                     'code' => $validated['inputs']['code'],
                     'name' => $validated['inputs']['name'],
                     'remarks' => $validated['inputs']['remarks'],
@@ -54,23 +54,23 @@ class Create extends Component
                     'created_by' => Auth::id(),
                 ]);
 
-                Flux::toast('Position created successfully', variant: 'success', position: 'top right');
-                $this->dispatch('cmw.master.position.refresh');
-                $this->modal('create-position')->close();
+                Flux::toast('Department created successfully', variant: 'success', position: 'top right');
+                $this->dispatch('cmw.master.department.refresh');
+                $this->modal('create-department')->close();
             });
         } catch (ValidationException $e) {
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
         } catch (QueryException $e) {
-            Flux::toast('Position with this name or code already exists', variant: 'danger', position: 'top right');
+            Flux::toast('Department with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
         } catch (Exception $e) {
-            Flux::toast('An error occurred while creating position', variant: 'danger', position: 'top right');
+            Flux::toast('An error occurred while creating department', variant: 'danger', position: 'top right');
             throw $e;
         }
     }
 
-    #[On('cmw.master.position.create.open')]
+    #[On('cmw.master.department.create.open')]
     public function openModal(): void
     {
         $this->inputs = [
@@ -80,11 +80,11 @@ class Create extends Component
             'is_active' => true,
         ];
         $this->resetValidation();
-        $this->modal('create-position')->show();
+        $this->modal('create-department')->show();
     }
 
     public function render()
     {
-        return view('livewire.masters.position.create');
+        return view('livewire.masters.department.create');
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -16,22 +17,22 @@ class EmployeesSeeder extends Seeder
         $now = Carbon::now();
 
         /**
-         * Ambil position_id berdasarkan code
+         * Ambil department_id berdasarkan code
          * (AMAN untuk ERP, tidak hardcode ID)
          */
-        $positions = DB::table('positions')
+        $departments = DB::table('departments')
             ->whereIn('code', ['DIR', 'FIN', 'PUR', 'WH', 'SAL'])
             ->pluck('id', 'code');
 
-        if ($positions->count() < 5) {
-            throw new \Exception('Seeder employees gagal: data positions belum lengkap.');
+        if ($departments->count() < 5) {
+            throw new Exception('Seeder employees gagal: data departments belum lengkap.');
         }
 
         DB::table('employees')->insert([
             [
                 'code' => 'EMP-001',
                 'name' => 'Andi Pratama',
-                'position_id' => $positions['DIR'],
+                'department_id' => $departments['DIR'],
                 'email' => 'andi.pratama@company.co.id',
                 'phone' => '0812-1111-2222',
                 'address' => 'Jakarta Selatan',
@@ -45,7 +46,7 @@ class EmployeesSeeder extends Seeder
             [
                 'code' => 'EMP-002',
                 'name' => 'Siti Rahmawati',
-                'position_id' => $positions['FIN'],
+                'department_id' => $departments['FIN'],
                 'email' => 'siti.rahmawati@company.co.id',
                 'phone' => '0813-2222-3333',
                 'address' => 'Bekasi',
@@ -59,7 +60,7 @@ class EmployeesSeeder extends Seeder
             [
                 'code' => 'EMP-003',
                 'name' => 'Budi Santoso',
-                'position_id' => $positions['PUR'],
+                'department_id' => $departments['PUR'],
                 'email' => 'budi.santoso@company.co.id',
                 'phone' => '0813-3333-4444',
                 'address' => 'Tangerang',
@@ -73,7 +74,7 @@ class EmployeesSeeder extends Seeder
             [
                 'code' => 'EMP-004',
                 'name' => 'Rudi Hartono',
-                'position_id' => $positions['WH'],
+                'department_id' => $departments['WH'],
                 'email' => 'rudi.hartono@company.co.id',
                 'phone' => '0813-4444-5555',
                 'address' => 'Jakarta Timur',
@@ -87,7 +88,7 @@ class EmployeesSeeder extends Seeder
             [
                 'code' => 'EMP-005',
                 'name' => 'Dewi Lestari',
-                'position_id' => $positions['SAL'],
+                'department_id' => $departments['SAL'],
                 'email' => 'dewi.lestari@company.co.id',
                 'phone' => '0813-5555-6666',
                 'address' => 'Surabaya',

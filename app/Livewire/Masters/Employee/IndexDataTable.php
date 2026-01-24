@@ -30,7 +30,7 @@ class IndexDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return Employee::query()
-            ->with(['position']);
+            ->with(['department']);
     }
 
     public function columns(): array
@@ -53,7 +53,7 @@ class IndexDataTable extends DataTableComponent
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Position', 'position.name')
+            Column::make('Department', 'department.name')
                 ->sortable()
                 ->searchable(),
 

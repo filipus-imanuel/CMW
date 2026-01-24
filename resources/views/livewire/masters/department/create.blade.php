@@ -1,7 +1,7 @@
-<flux:modal name="create-position" class="w-full max-w-2xl">
+<flux:modal name="create-department" class="w-full max-w-2xl">
     <form wire:submit="save">
         <div class="space-y-6">
-            <flux:heading size="lg">Create Position</flux:heading>
+            <flux:heading size="lg">Create Department</flux:heading>
 
             <div class="space-y-6">
                 <flux:input
@@ -36,16 +36,16 @@
 
             <div class="flex">
                 <flux:spacer />
-            <flux:button
-                type="button"
-                variant="ghost"
-                x-on:click="$flux.modal('create-position').close()"
-            >
-                Cancel
-            </flux:button>
-            <flux:button type="submit" variant="primary">
-                Save
-            </flux:button>
+                <flux:button
+                    type="button"
+                    variant="ghost"
+                    x-on:click="$flux.modal('create-department').close()"
+                >
+                    Cancel
+                </flux:button>
+                <flux:button type="submit" variant="primary">
+                    Save
+                </flux:button>
             </div>
         </div>
     </form>

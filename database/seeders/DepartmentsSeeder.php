@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class PositionsSeeder extends Seeder
+class DepartmentsSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,7 +15,7 @@ class PositionsSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        DB::table('positions')->insert([
+        DB::table('departments')->insert([
             [
                 'code' => 'DIR',
                 'name' => 'Director',

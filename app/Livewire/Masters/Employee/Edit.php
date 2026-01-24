@@ -18,14 +18,14 @@ class Edit extends Component
 
     public $inputs = [];
 
-    public $dropdown_position = [];
+    public $dropdown_department = [];
 
     public function rules()
     {
         return [
             'inputs.code' => 'required|string|max:50|unique:employees,code,'.$this->employee?->id,
             'inputs.name' => 'required|string|max:100',
-            'inputs.position_id' => 'required|exists:positions,id',
+            'inputs.department_id' => 'required|exists:departments,id',
             'inputs.email' => 'nullable|email|max:100',
             'inputs.phone' => 'nullable|string|max:20',
             'inputs.address' => 'nullable|string|max:500',
@@ -40,14 +40,14 @@ class Edit extends Component
             'inputs.code.required' => 'Code is required',
             'inputs.code.unique' => 'This code already exists',
             'inputs.name.required' => 'Name is required',
-            'inputs.position_id.required' => 'Position is required',
+            'inputs.department_id.required' => 'Department is required',
             'inputs.email.email' => 'Please enter a valid email address',
         ];
     }
 
-    private function handlePopulatePosition(): void
+    private function handlePopulateDepartment(): void
     {
-        $this->dropdown_position = PopulateDataHelper::getPositions();
+        $this->dropdown_department = PopulateDataHelper::getDepartments();
     }
 
     #[On('cmw.master.employee.edit.open')]
@@ -59,7 +59,7 @@ class Edit extends Component
 
         $this->inputs['code'] = $this->employee->code;
         $this->inputs['name'] = $this->employee->name;
-        $this->inputs['position_id'] = $this->employee->position_id;
+        $this->inputs['department_id'] = $this->employee->department_id;
         $this->inputs['email'] = $this->employee->email;
         $this->inputs['phone'] = $this->employee->phone;
         $this->inputs['address'] = $this->employee->address;
@@ -67,7 +67,7 @@ class Edit extends Component
         $this->inputs['is_active'] = (bool) $this->employee->is_active;
 
         $this->resetValidation();
-        $this->handlePopulatePosition();
+        $this->handlePopulateDepartment();
 
         $this->modal('edit-employee')->show();
     }

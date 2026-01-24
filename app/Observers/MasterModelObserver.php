@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Generic observer for master models to auto-clear PopulateDataHelper cache.
- * 
+ *
  * Usage in AppServiceProvider:
  * Model::observe(MasterModelObserver::class);
  */

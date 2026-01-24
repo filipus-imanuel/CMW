@@ -2,6 +2,8 @@
 
 namespace App\Helpers\CMW;
 
+use InvalidArgumentException;
+
 class PermissionHelper
 {
     /**
@@ -18,7 +20,7 @@ class PermissionHelper
             'master' => [
                 'category price' => ['view', 'create', 'edit', 'delete'],
                 'country' => ['view', 'create', 'edit', 'delete'],
-                'position' => ['view', 'create', 'edit', 'delete'],
+                'department' => ['view', 'create', 'edit', 'delete'],
                 'employee' => ['view', 'create', 'edit', 'delete'],
                 'user group' => ['view', 'create', 'edit', 'delete'],
                 'uom' => ['view', 'create', 'edit', 'delete'],
@@ -113,7 +115,7 @@ class PermissionHelper
      * @param  string  $role
      * @return array<string>
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public static function getRolePermissions(string $role): array
     {
@@ -125,7 +127,7 @@ class PermissionHelper
             'Admin' => array_values(array_filter($allPermissions, function ($permission) {
                 // Admin gets full CRUD on all master, partners, and inventory resources
                 return str_contains($permission, 'country')
-                    || str_contains($permission, 'position')
+                    || str_contains($permission, 'department')
                     || str_contains($permission, 'employee')
                     || str_contains($permission, 'user group')
                     || str_contains($permission, 'uom')
@@ -176,7 +178,7 @@ class PermissionHelper
                 // Warehouse gets full CRUD on warehouse and items
                 return str_contains($permission, 'warehouse') || str_contains($permission, 'item');
             })),
-            default => throw new \InvalidArgumentException("Unknown role: {$role}"),
+            default => throw new InvalidArgumentException("Unknown role: {$role}"),
         };
     }
 
