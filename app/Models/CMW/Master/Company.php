@@ -4,6 +4,7 @@ namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends BaseModel
@@ -36,5 +37,10 @@ class Company extends BaseModel
     public function companySettings(): HasMany
     {
         return $this->hasMany(CompanySetting::class);
+    }
+
+    public function itemCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(ItemCategory::class, 'company_item_category')->withTimestamps();
     }
 }

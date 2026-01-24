@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('code', 50)->unique();
             $table->string('name', 100);
             $table->string('type', 50)->nullable(); // raw_material, finished_goods, etc.
-            $table->foreignId('category_id')->nullable()->constrained('categories');
+            $table->foreignId('category_id')->nullable()->constrained('item_categories');
             $table->foreignId('uom_id')->constrained('uoms');
             $table->foreignId('currency_id')->nullable()->constrained('currencies');
             $table->decimal('cost_price', 18, 5)->default(0);

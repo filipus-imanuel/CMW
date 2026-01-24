@@ -17,7 +17,7 @@ class CompanySettingSeeder extends Seeder
 
         DB::table('company_settings')->insert([
             [
-                'category_id' => 1,
+                'item_category_id' => 1,
                 'employee_id' => 5,
                 'company_id' => 1,
                 'version_number' => 1,
@@ -26,7 +26,7 @@ class CompanySettingSeeder extends Seeder
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 2,
+                'item_category_id' => 2,
                 'employee_id' => 5,
                 'company_id' => 1,
                 'version_number' => 1,
@@ -35,7 +35,7 @@ class CompanySettingSeeder extends Seeder
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 3,
+                'item_category_id' => 3,
                 'employee_id' => 5,
                 'company_id' => 2,
                 'version_number' => 1,
@@ -44,7 +44,7 @@ class CompanySettingSeeder extends Seeder
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 4,
+                'item_category_id' => 4,
                 'employee_id' => 5,
                 'company_id' => 3,
                 'version_number' => 1,
@@ -53,7 +53,7 @@ class CompanySettingSeeder extends Seeder
                 'updated_at' => $now,
             ],
             [
-                'category_id' => 5,
+                'item_category_id' => 5,
                 'employee_id' => 5,
                 'company_id' => 4,
                 'version_number' => 1,

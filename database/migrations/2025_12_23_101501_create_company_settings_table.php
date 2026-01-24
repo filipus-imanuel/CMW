@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('company_settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->nullable()->constrained('categories');
+            $table->foreignId('item_category_id')->nullable()->constrained('item_categories');
             $table->foreignId('employee_id')->nullable()->constrained('employees');
             $table->foreignId('company_id')->nullable()->constrained('companies');
 

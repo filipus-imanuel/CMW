@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class CategorySeeder extends Seeder
+class ItemCategorySeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,7 +15,7 @@ class CategorySeeder extends Seeder
     {
         $now = Carbon::now();
 
-        DB::table('categories')->insert([
+        DB::table('item_categories')->insert([
             [
                 'code' => 'CAT-RM',
                 'name' => 'Raw Material',

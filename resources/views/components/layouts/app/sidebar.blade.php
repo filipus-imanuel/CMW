@@ -23,6 +23,7 @@
                     <flux:navlist.item icon="currency-dollar" :href="route('masters.currencies.index')" :current="request()->routeIs('masters.currencies.*')" wire:navigate>{{ __('Currencies') }}</flux:navlist.item>
                     <flux:navlist.item icon="users" :href="route('masters.employees.index')" :current="request()->routeIs('masters.employees.*')" wire:navigate>{{ __('Employees') }}</flux:navlist.item>
                     <flux:navlist.item icon="arrow-path" :href="route('masters.exchange-rates.index')" :current="request()->routeIs('masters.exchange-rates.*')" wire:navigate>{{ __('Exchange Rates') }}</flux:navlist.item>
+                    <flux:navlist.item icon="tag" :href="route('masters.item-categories.index')" :current="request()->routeIs('masters.item-categories.*')" wire:navigate>{{ __('Item Categories') }}</flux:navlist.item>
                     <flux:navlist.item icon="briefcase" :href="route('masters.positions.index')" :current="request()->routeIs('masters.positions.*')" wire:navigate>{{ __('Positions') }}</flux:navlist.item>
                     <flux:navlist.item icon="calculator" :href="route('masters.taxes.index')" :current="request()->routeIs('masters.taxes.*')" wire:navigate>{{ __('Taxes') }}</flux:navlist.item>
                     <flux:navlist.item icon="arrows-right-left" :href="route('masters.uom-conversions.index')" :current="request()->routeIs('masters.uom-conversions.*')" wire:navigate>{{ __('UOM Conversions') }}</flux:navlist.item>

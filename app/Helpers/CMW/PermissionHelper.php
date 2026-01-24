@@ -28,6 +28,7 @@ class PermissionHelper
                 'currency' => ['view', 'create', 'edit', 'delete'],
                 'exchange rate' => ['view', 'create', 'edit', 'delete'],
                 'company' => ['view', 'create', 'edit', 'delete'],
+                'item category' => ['view', 'create', 'edit', 'delete'],
             ],
 
             // ══════════════════════════════════════════════════════════════

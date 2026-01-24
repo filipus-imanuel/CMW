@@ -12,7 +12,7 @@ class CompanySetting extends BaseModel
     protected $table = 'company_settings';
 
     protected $fillable = [
-        'category_id',
+        'item_category_id',
         'partner_id',
         'company_id',
     ];
@@ -27,9 +27,9 @@ class CompanySetting extends BaseModel
         return $this->belongsTo(Employee::class);
     }
 
-    public function category(): BelongsTo
+    public function itemCategory(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(ItemCategory::class, 'item_category_id');
     }
 
     public function company(): BelongsTo
