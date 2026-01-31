@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Inventories\ItemPrice;
 
-use App\Models\CMW\Master\CategoryPrice;
-use App\Models\CMW\Master\ItemPrice;
+use App\Models\CMW\Inventory\CategoryPrice;
+use App\Models\CMW\Inventory\ItemPrice;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;

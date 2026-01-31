@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Livewire\Masters\CategoryPrice;
+namespace App\Livewire\Inventories\CategoryPrice;
 
-use App\Models\CMW\Master\CategoryPrice;
+use App\Models\CMW\Inventory\CategoryPrice;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
@@ -14,7 +14,7 @@ class IndexDataTable extends DataTableComponent
     protected $model = CategoryPrice::class;
 
     protected $listeners = [
-        'cmw.master.category-price.refresh' => '$refresh',
+        'cmw.inventory.category-price.refresh' => '$refresh',
     ];
 
     public function configure(): void
@@ -41,7 +41,7 @@ class IndexDataTable extends DataTableComponent
                 ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
                     'rowId' => $row->id,
                     'showEdit' => Auth::user()?->can('edit category price'),
-                    'editDispatchEvent' => 'cmw.master.category-price.edit.open',
+                    'editDispatchEvent' => 'cmw.inventory.category-price.edit.open',
                     'showDelete' => Auth::user()?->can('delete category price'),
                     'deleteDispatchEvent' => 'delete',
                 ])),

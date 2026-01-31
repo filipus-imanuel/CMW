@@ -2,8 +2,8 @@
 
 namespace App\Models\CMW\History;
 
-use App\Models\CMW\Master\CategoryPrice;
-use App\Models\CMW\Master\Item;
+use App\Models\CMW\Inventory\CategoryPrice;
+use App\Models\CMW\Inventory\Item;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -18,36 +18,36 @@ class PermissionHelper
             // MASTER DATA
             // ══════════════════════════════════════════════════════════════
             'master' => [
-                'category price' => ['view', 'create', 'edit', 'delete'],
+                'company' => ['view', 'create', 'edit', 'delete'],
                 'country' => ['view', 'create', 'edit', 'delete'],
+                'credit term' => ['view', 'create', 'edit', 'delete'],
+                'currency' => ['view', 'create', 'edit', 'delete'],
                 'department' => ['view', 'create', 'edit', 'delete'],
                 'employee' => ['view', 'create', 'edit', 'delete'],
-                'user group' => ['view', 'create', 'edit', 'delete'],
+                'exchange rate' => ['view', 'create', 'edit', 'delete'],
+                'tax' => ['view', 'create', 'edit', 'delete'],
                 'uom' => ['view', 'create', 'edit', 'delete'],
                 'uom conversion' => ['view', 'create', 'edit', 'delete'],
-                'tax' => ['view', 'create', 'edit', 'delete'],
-                'credit term' => ['view', 'create', 'edit', 'delete'],
+                'user group' => ['view', 'create', 'edit', 'delete'],
                 'warehouse' => ['view', 'create', 'edit', 'delete'],
-                'currency' => ['view', 'create', 'edit', 'delete'],
-                'exchange rate' => ['view', 'create', 'edit', 'delete'],
-                'company' => ['view', 'create', 'edit', 'delete'],
-                'item category' => ['view', 'create', 'edit', 'delete'],
             ],
 
             // ══════════════════════════════════════════════════════════════
             // PARTNERS
             // ══════════════════════════════════════════════════════════════
             'partners' => [
-                'supplier' => ['view', 'create', 'edit', 'delete'],
                 'customer' => ['view', 'create', 'edit', 'delete'],
                 'partner address' => ['view', 'create', 'edit', 'delete'],
+                'supplier' => ['view', 'create', 'edit', 'delete'],
             ],
 
             // ══════════════════════════════════════════════════════════════
             // INVENTORY
             // ══════════════════════════════════════════════════════════════
             'inventory' => [
+                'category price' => ['view', 'create', 'edit', 'delete'],
                 'item' => ['view', 'create', 'edit', 'delete'],
+                'item category' => ['view', 'create', 'edit', 'delete'],
                 'item price' => ['view', 'create', 'edit', 'delete'],
                 'item price history' => ['view'],
             ],
@@ -112,7 +112,6 @@ class PermissionHelper
     /**
      * Get permissions for a specific role.
      *
-     * @param  string  $role
      * @return array<string>
      *
      * @throws InvalidArgumentException
@@ -140,7 +139,8 @@ class PermissionHelper
                     || str_contains($permission, 'supplier')
                     || str_contains($permission, 'customer')
                     || str_contains($permission, 'partner address')
-                    || str_contains($permission, 'item');
+                    || str_contains($permission, 'item')
+                    || str_contains($permission, 'category price');
             })),
             'Finance' => array_values(array_filter($allPermissions, function ($permission) {
                 // Finance gets full CRUD on financial master data
@@ -175,8 +175,10 @@ class PermissionHelper
                 return $isPurchasingResource || $isViewOnly;
             })),
             'Warehouse' => array_values(array_filter($allPermissions, function ($permission) {
-                // Warehouse gets full CRUD on warehouse and items
-                return str_contains($permission, 'warehouse') || str_contains($permission, 'item');
+                // Warehouse gets full CRUD on warehouse, items, and category price
+                return str_contains($permission, 'warehouse')
+                    || str_contains($permission, 'item')
+                    || str_contains($permission, 'category price');
             })),
             default => throw new InvalidArgumentException("Unknown role: {$role}"),
         };

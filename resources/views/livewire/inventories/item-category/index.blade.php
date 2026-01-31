@@ -5,7 +5,7 @@
 
         @can('create item category')
         <flux:button
-            wire:click="$dispatch('cmw.master.item-category.create.open')"
+            wire:click="$dispatch('cmw.inventory.item-category.create.open')"
             variant="primary"
             icon="plus"
         >
@@ -16,12 +16,12 @@
 
     {{-- DataTable --}}
     <flux:card>
-        <livewire:masters.item-category.index-data-table />
+        <livewire:inventories.item-category.index-data-table />
     </flux:card>
 
     {{-- Modals --}}
-    <livewire:masters.item-category.create />
-    <livewire:masters.item-category.edit />
+    <livewire:inventories.item-category.create />
+    <livewire:inventories.item-category.edit />
 
     {{-- Delete Confirmation Modal --}}
     <flux:modal name="delete-item-category-confirmation">

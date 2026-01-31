@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Livewire\Masters\CategoryPrice;
+namespace App\Livewire\Inventories\CategoryPrice;
 
-use App\Models\CMW\Master\CategoryPrice;
+use App\Models\CMW\Inventory\CategoryPrice;
 use Exception;
 use Flux\Flux;
 use Illuminate\Database\QueryException;
@@ -17,7 +17,7 @@ class Index extends Component
 {
     public $deleteId = null;
 
-    #[On('cmw.master.category-price.refresh')]
+    #[On('cmw.inventory.category-price.refresh')]
     public function refresh(): void
     {
         // This method exists to trigger component refresh
@@ -45,7 +45,7 @@ class Index extends Component
                 $categoryPrice->delete();
 
                 Flux::toast('Category Price deleted successfully', variant: 'success', position: 'top right');
-                $this->dispatch('cmw.master.category-price.refresh');
+                $this->dispatch('cmw.inventory.category-price.refresh');
             });
 
             $this->deleteId = null;
@@ -63,6 +63,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.masters.category-price.index');
+        return view('livewire.inventories.category-price.index');
     }
 }

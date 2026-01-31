@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Inventories\ItemPrice;
 
-use App\Models\CMW\Master\ItemPrice;
+use App\Models\CMW\Inventory\ItemPrice;
 use Exception;
 use Flux\Flux;
 use Illuminate\Database\QueryException;

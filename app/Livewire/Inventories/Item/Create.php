@@ -3,7 +3,7 @@
 namespace App\Livewire\Inventories\Item;
 
 use App\Helpers\CMW\PopulateDataHelper;
-use App\Models\CMW\Master\Item;
+use App\Models\CMW\Inventory\Item;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Inventory\Item;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BomDetail extends BaseModel

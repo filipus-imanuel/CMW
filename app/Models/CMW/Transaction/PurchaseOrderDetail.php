@@ -3,7 +3,7 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
-use App\Models\CMW\Master\Item;
+use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Master\Uom;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

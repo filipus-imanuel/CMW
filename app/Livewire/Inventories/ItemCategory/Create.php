@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Livewire\Masters\ItemCategory;
+namespace App\Livewire\Inventories\ItemCategory;
 
 use App\Helpers\CMW\PopulateDataHelper;
-use App\Models\CMW\Master\ItemCategory;
+use App\Models\CMW\Inventory\ItemCategory;
 use Exception;
 use Flux\Flux;
 use Illuminate\Database\QueryException;
@@ -14,11 +14,9 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Edit Item Category')]
-class Edit extends Component
+#[Title('Create Item Category')]
+class Create extends Component
 {
-    public ?ItemCategory $itemCategory = null;
-
     public $inputs = [
         'code' => '',
         'name' => '',
@@ -32,8 +30,8 @@ class Edit extends Component
     public function rules(): array
     {
         return [
-            'inputs.code' => 'required|string|max:50|unique:item_categories,code,'.$this->itemCategory?->id,
-            'inputs.name' => 'required|string|max:100|unique:item_categories,name,'.$this->itemCategory?->id,
+            'inputs.code' => 'required|string|max:50|unique:item_categories,code',
+            'inputs.name' => 'required|string|max:100|unique:item_categories,name',
             'inputs.companies' => 'required|array|min:1',
             'inputs.companies.*' => 'exists:companies,id',
             'inputs.remarks' => 'nullable|string|max:1024',
@@ -49,34 +47,28 @@ class Edit extends Component
         ];
     }
 
-    public function update(): void
+    public function store(): void
     {
-        $this->authorize('edit item category');
+        $this->authorize('create item category');
 
         try {
-            if ($this->itemCategory->is_edit_locked) {
-                Flux::toast('This item category cannot be edited.', variant: 'danger', position: 'top right');
-
-                return;
-            }
-
             $validated = $this->validate();
 
             DB::transaction(function () use ($validated) {
-                $this->itemCategory->update([
+                $itemCategory = ItemCategory::create([
                     'code' => $validated['inputs']['code'],
                     'name' => $validated['inputs']['name'],
                     'remarks' => $validated['inputs']['remarks'],
                     'is_active' => $validated['inputs']['is_active'],
-                    'updated_by' => Auth::id(),
+                    'created_by' => Auth::id(),
                 ]);
 
-                // Sync companies - this will add/remove as needed
-                $this->itemCategory->companies()->sync($validated['inputs']['companies']);
+                // Attach companies to the item category
+                $itemCategory->companies()->attach($validated['inputs']['companies']);
 
-                Flux::toast('Item category updated successfully', variant: 'success', position: 'top right');
-                $this->dispatch('cmw.master.item-category.refresh');
-                $this->modal('edit-item-category')->close();
+                Flux::toast('Item category created successfully', variant: 'success', position: 'top right');
+                $this->dispatch('cmw.inventory.item-category.refresh');
+                $this->modal('create-item-category')->close();
             });
         } catch (ValidationException $e) {
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
@@ -85,29 +77,26 @@ class Edit extends Component
             Flux::toast('Item category with this name or code already exists', variant: 'danger', position: 'top right');
             throw $e;
         } catch (Exception $e) {
-            Flux::toast('An error occurred while updating item category', variant: 'danger', position: 'top right');
+            Flux::toast('An error occurred while creating item category', variant: 'danger', position: 'top right');
             throw $e;
         }
     }
 
-    #[On('cmw.master.item-category.edit.open')]
-    public function openModal($id): void
+    #[On('cmw.inventory.item-category.create.open')]
+    public function openModal(): void
     {
-        $this->authorize('edit item category');
-        $this->resetValidation();
-
-        $this->itemCategory = ItemCategory::with('companies')->findOrFail($id);
+        $this->authorize('create item category');
 
         $this->inputs = [
-            'code' => $this->itemCategory->code,
-            'name' => $this->itemCategory->name,
-            'companies' => $this->itemCategory->companies->pluck('id')->toArray(),
-            'remarks' => $this->itemCategory->remarks,
-            'is_active' => $this->itemCategory->is_active,
+            'code' => '',
+            'name' => '',
+            'companies' => [],
+            'remarks' => '',
+            'is_active' => true,
         ];
-
+        $this->resetValidation();
         $this->loadDropdownData();
-        $this->modal('edit-item-category')->show();
+        $this->modal('create-item-category')->show();
     }
 
     protected function loadDropdownData(): void
@@ -117,6 +106,6 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.masters.item-category.edit');
+        return view('livewire.inventories.item-category.create');
     }
 }

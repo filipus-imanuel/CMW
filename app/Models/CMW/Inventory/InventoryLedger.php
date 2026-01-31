@@ -3,7 +3,6 @@
 namespace App\Models\CMW\Inventory;
 
 use App\Models\CMW\BaseModel;
-use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;

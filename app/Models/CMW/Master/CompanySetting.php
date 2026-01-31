@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Inventory\ItemCategory;
 use App\Models\CMW\Transaction\SalesOrderDetail;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;

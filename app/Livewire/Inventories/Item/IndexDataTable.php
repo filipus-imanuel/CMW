@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Inventories\Item;
 
-use App\Models\CMW\Master\Item;
+use App\Models\CMW\Inventory\Item;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;

@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models\CMW\Master;
+namespace App\Models\CMW\Inventory;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Master\Company;
+use App\Models\CMW\Master\CompanySetting;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 

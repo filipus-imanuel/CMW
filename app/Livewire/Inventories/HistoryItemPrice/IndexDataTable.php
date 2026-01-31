@@ -3,7 +3,7 @@
 namespace App\Livewire\Inventories\HistoryItemPrice;
 
 use App\Models\CMW\History\HistoryItemPrice;
-use App\Models\CMW\Master\CategoryPrice;
+use App\Models\CMW\Inventory\CategoryPrice;
 use Illuminate\Database\Eloquent\Builder;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;

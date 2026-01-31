@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
-use Carbon\Carbon;
+use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Master\Uom;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ItemsSeeder extends Seeder
 {
@@ -13,14 +15,11 @@ class ItemsSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = Carbon::now();
-
-        // Ambil UOM ID berdasarkan kode
-        $uoms = DB::table('uoms')
-            ->whereIn('code', ['LEMBAR', 'ROLL', 'KG'])
+        // Get UOM IDs by code
+        $uoms = Uom::whereIn('code', ['LEMBAR', 'ROLL', 'KG'])
             ->pluck('id', 'code');
 
-        DB::table('items')->insert([
+        $data = [
             [
                 'code' => 'ITM-FLM-PP-001',
                 'name' => 'PP Film 12 x 12 cm',
@@ -32,11 +31,6 @@ class ItemsSeeder extends Seeder
                 'min_stock' => 100,
                 'max_stock' => 5000,
                 'remarks' => 'Produk potong PP film ukuran 12 x 12 cm',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'ITM-FLM-PP-002',
@@ -49,11 +43,6 @@ class ItemsSeeder extends Seeder
                 'min_stock' => 10,
                 'max_stock' => 200,
                 'remarks' => 'PP film dalam bentuk roll',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'ITM-STRETCH-001',
@@ -66,11 +55,6 @@ class ItemsSeeder extends Seeder
                 'min_stock' => 200,
                 'max_stock' => 10000,
                 'remarks' => 'Stretch film untuk kebutuhan industri',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'ITM-WRAP-001',
@@ -84,10 +68,6 @@ class ItemsSeeder extends Seeder
                 'max_stock' => 0,
                 'remarks' => 'Produk wrap lama (tidak aktif)',
                 'is_active' => false,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'ITM-KLIP-STD-001',
@@ -100,12 +80,33 @@ class ItemsSeeder extends Seeder
                 'min_stock' => 20,
                 'max_stock' => 1000,
                 'remarks' => 'Klip plastik untuk kemasan',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
-        ]);
+        ];
+
+        foreach ($data as $item) {
+            try {
+                Item::updateOrCreate(
+                    ['code' => $item['code']],
+                    [
+                        'name' => $item['name'],
+                        'type' => $item['type'],
+                        'uom_id' => $item['uom_id'],
+                        'category_id' => $item['category_id'],
+                        'cost_price' => $item['cost_price'],
+                        'sell_price' => $item['sell_price'],
+                        'min_stock' => $item['min_stock'],
+                        'max_stock' => $item['max_stock'],
+                        'remarks' => $item['remarks'],
+                        'is_active' => $item['is_active'] ?? true,
+                        'created_by' => 1,
+                        'updated_by' => 1,
+                    ]
+                );
+            } catch (QueryException $e) {
+                $this->command->error("Failed to seed item: {$item['code']} - {$e->getMessage()}");
+            } catch (Exception $e) {
+                $this->command->error("Unexpected error seeding item: {$item['code']} - {$e->getMessage()}");
+            }
+        }
     }
 }

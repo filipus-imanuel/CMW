@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Models\CMW\Master;
+namespace App\Models\CMW\Inventory;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\History\HistoryItemPrice;
-use App\Models\CMW\Inventory\InventoryLedger;
+use App\Models\CMW\Master\BomHeader;
+use App\Models\CMW\Master\Currency;
+use App\Models\CMW\Master\Uom;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 

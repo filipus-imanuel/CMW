@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Carbon\Carbon;
+use App\Models\CMW\Inventory\ItemCategory;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ItemCategorySeeder extends Seeder
 {
@@ -13,68 +14,56 @@ class ItemCategorySeeder extends Seeder
      */
     public function run(): void
     {
-        $now = Carbon::now();
-
-        DB::table('item_categories')->insert([[
-            'code' => 'OTHER',
-            'name' => 'Other',
-            'remarks' => 'Kategori lain-lain',
-            'is_active' => true,
-            'version_number' => 1,
-            'created_by' => 1,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ],
+        $data = [
+            [
+                'code' => 'OTHER',
+                'name' => 'Other',
+                'remarks' => 'Kategori lain-lain',
+            ],
             [
                 'code' => 'RM',
                 'name' => 'Raw Material',
                 'remarks' => 'Bahan baku utama seperti PP, PE, dan resin lainnya',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'FG',
                 'name' => 'Finished Goods',
                 'remarks' => 'Barang jadi siap dijual ke customer',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'SF',
                 'name' => 'Semi Finished Goods',
                 'remarks' => 'Barang setengah jadi hasil proses produksi',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'PACK',
                 'name' => 'Packing Material',
                 'remarks' => 'Material pendukung kemasan seperti plastik wrap, karton, dll',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'SCRAP',
                 'name' => 'Scrap & Waste',
                 'remarks' => 'Sisa produksi, barang rusak, atau waste',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
-        ]);
+        ];
+
+        foreach ($data as $item) {
+            try {
+                ItemCategory::updateOrCreate(
+                    ['code' => $item['code']],
+                    [
+                        'name' => $item['name'],
+                        'remarks' => $item['remarks'],
+                        'is_active' => true,
+                        'created_by' => 1,
+                        'updated_by' => 1,
+                    ]
+                );
+            } catch (QueryException $e) {
+                $this->command->error("Failed to seed item category: {$item['code']} - {$e->getMessage()}");
+            } catch (Exception $e) {
+                $this->command->error("Unexpected error seeding item category: {$item['code']} - {$e->getMessage()}");
+            }
+        }
     }
 }

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Helpers\CMW;
 
-use App\Models\CMW\Master\CategoryPrice;
+use App\Models\CMW\Inventory\CategoryPrice;
+use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
 use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Department;
 use App\Models\CMW\Master\Employee;
-use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Partner;
 use App\Models\CMW\Master\PartnerAddress;
 use App\Models\CMW\Master\Tax;

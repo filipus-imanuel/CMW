@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Carbon\Carbon;
+use App\Models\CMW\Inventory\CategoryPrice;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class CategoryPriceSeeder extends Seeder
 {
@@ -13,29 +14,36 @@ class CategoryPriceSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = Carbon::now();
-
-        DB::table('category_prices')->insert([
+        $data = [
             [
                 'code' => 'GEN',
                 'name' => 'General',
                 'remarks' => 'Default pricing category for all customers',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
             [
                 'code' => 'VIP',
                 'name' => 'VIP',
                 'remarks' => 'VIP customer pricing category with special rates',
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
             ],
-        ]);
+        ];
+
+        foreach ($data as $item) {
+            try {
+                CategoryPrice::updateOrCreate(
+                    ['code' => $item['code']],
+                    [
+                        'name' => $item['name'],
+                        'remarks' => $item['remarks'],
+                        'is_active' => true,
+                        'created_by' => 1,
+                        'updated_by' => 1,
+                    ]
+                );
+            } catch (QueryException $e) {
+                $this->command->error("Failed to seed category price: {$item['code']} - {$e->getMessage()}");
+            } catch (Exception $e) {
+                $this->command->error("Unexpected error seeding category price: {$item['code']} - {$e->getMessage()}");
+            }
+        }
     }
 }

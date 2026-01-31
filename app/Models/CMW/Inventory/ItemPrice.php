@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\CMW\Master;
+namespace App\Models\CMW\Inventory;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\History\HistoryItemPrice;

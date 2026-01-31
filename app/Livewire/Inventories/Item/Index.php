@@ -2,7 +2,10 @@
 
 namespace App\Livewire\Inventories\Item;
 
+use App\Models\CMW\Inventory\Item;
+use Exception;
 use Flux\Flux;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
@@ -37,7 +40,7 @@ class Index extends Component
 
         try {
             DB::transaction(function () {
-                $item = \App\Models\CMW\Master\Item::findOrFail($this->deleteId);
+                $item = Item::findOrFail($this->deleteId);
                 $item->update(['deleted_by' => Auth::id()]);
                 $item->delete();
 
@@ -47,9 +50,9 @@ class Index extends Component
 
             $this->deleteId = null;
             $this->modal('delete-item-confirmation')->close();
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Flux::toast('Cannot delete item. It may be in use.', variant: 'danger', position: 'top right');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Flux::toast('An error occurred while deleting the item.', variant: 'danger', position: 'top right');
         }
     }

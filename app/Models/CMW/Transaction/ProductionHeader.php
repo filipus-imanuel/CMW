@@ -3,9 +3,9 @@
 namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Master\BomHeader;
 use App\Models\CMW\Master\Currency;
-use App\Models\CMW\Master\Item;
 use App\Models\CMW\Master\Uom;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

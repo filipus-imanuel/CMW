@@ -1,9 +1,10 @@
 <?php
 
+use App\Livewire\Inventories\CategoryPrice\Index as CategoryPriceIndex;
 use App\Livewire\Inventories\HistoryItemPrice\Index as HistoryItemPriceIndex;
 use App\Livewire\Inventories\Item\Index as ItemIndex;
+use App\Livewire\Inventories\ItemCategory\Index as ItemCategoryIndex;
 use App\Livewire\Inventories\ItemPrice\Index as ItemPriceIndex;
-use App\Livewire\Masters\CategoryPrice\Index as CategoryPriceIndex;
 use App\Livewire\Masters\Company\Index as CompanyIndex;
 use App\Livewire\Masters\Country\Index as CountryIndex;
 use App\Livewire\Masters\CreditTerm\Index as CreditTermIndex;
@@ -11,7 +12,6 @@ use App\Livewire\Masters\Currency\Index as CurrencyIndex;
 use App\Livewire\Masters\Department\Index as DepartmentIndex;
 use App\Livewire\Masters\Employee\Index as EmployeeIndex;
 use App\Livewire\Masters\ExchangeRate\Index as ExchangeRateIndex;
-use App\Livewire\Masters\ItemCategory\Index as ItemCategoryIndex;
 use App\Livewire\Masters\Tax\Index as TaxIndex;
 use App\Livewire\Masters\Uom\Index as UomIndex;
 use App\Livewire\Masters\UomConversion\Index as UomConversionIndex;
@@ -53,14 +53,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('cmw')->group(function () {
         Route::prefix('masters')->name('masters.')->group(function () {
-            Route::get('category-prices', CategoryPriceIndex::class)->name('category-prices.index');
             Route::get('companies', CompanyIndex::class)->name('companies.index');
             Route::get('countries', CountryIndex::class)->name('countries.index');
             Route::get('credit-terms', CreditTermIndex::class)->name('credit-terms.index');
             Route::get('currencies', CurrencyIndex::class)->name('currencies.index');
             Route::get('employees', EmployeeIndex::class)->name('employees.index');
             Route::get('exchange-rates', ExchangeRateIndex::class)->name('exchange-rates.index');
-            Route::get('item-categories', ItemCategoryIndex::class)->name('item-categories.index');
             Route::get('departments', DepartmentIndex::class)->name('departments.index');
             Route::get('taxes', TaxIndex::class)->name('taxes.index');
             Route::get('uom-conversions', UomConversionIndex::class)->name('uom-conversions.index');
@@ -77,6 +75,8 @@ Route::middleware(['auth'])->group(function () {
         });
 
         Route::prefix('inventories')->name('inventories.')->group(function () {
+            Route::get('category-prices', CategoryPriceIndex::class)->name('category-prices.index');
+            Route::get('item-categories', ItemCategoryIndex::class)->name('item-categories.index');
             Route::get('item-price-history', HistoryItemPriceIndex::class)->name('item-price-history.index');
             Route::get('item-prices', ItemPriceIndex::class)->name('item-prices.index');
             Route::get('items', ItemIndex::class)->name('items.index');
