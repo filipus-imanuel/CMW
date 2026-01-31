@@ -4,6 +4,7 @@ namespace App\Livewire\Inventories\ItemPrice;
 
 use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\CMW\Inventory\ItemPrice;
+use App\Models\CMW\Inventory\PendingItemPrice;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
@@ -88,6 +89,21 @@ class IndexDataTable extends DataTableComponent
 
             BooleanColumn::make('Status', 'is_active')
                 ->sortable(),
+
+            Column::make('Last Approval', 'id')
+                ->format(function ($value, $row) {
+                    $pending = PendingItemPrice::where('item_price_id', $row->id)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+
+                    if (! $pending) {
+                        return '-';
+                    }
+
+                    return view('components.datatables.approval-status-badge', [
+                        'status' => $pending->status,
+                    ]);
+                }),
 
             Column::make('Created At', 'created_at')
                 ->sortable()

@@ -4,6 +4,8 @@ use App\Livewire\Inventories\CategoryPrice\Index as CategoryPriceIndex;
 use App\Livewire\Inventories\HistoryItemPrice\Index as HistoryItemPriceIndex;
 use App\Livewire\Inventories\Item\Index as ItemIndex;
 use App\Livewire\Inventories\ItemCategory\Index as ItemCategoryIndex;
+use App\Livewire\Inventories\ItemPrice\Approval as ItemPriceApproval;
+use App\Livewire\Inventories\ItemPrice\ApprovalHistory as ItemPriceApprovalHistory;
 use App\Livewire\Inventories\ItemPrice\Index as ItemPriceIndex;
 use App\Livewire\Masters\Company\Index as CompanyIndex;
 use App\Livewire\Masters\Country\Index as CountryIndex;
@@ -21,6 +23,7 @@ use App\Livewire\Partners\CustomerAddresses\Index as CustomerAddressIndex;
 use App\Livewire\Partners\Customers\Index as CustomerIndex;
 use App\Livewire\Partners\SupplierAddresses\Index as SupplierAddressIndex;
 use App\Livewire\Partners\Suppliers\Index as SupplierIndex;
+use App\Livewire\System\Setting\Edit as SystemSettingEdit;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
@@ -77,9 +80,15 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('inventories')->name('inventories.')->group(function () {
             Route::get('category-prices', CategoryPriceIndex::class)->name('category-prices.index');
             Route::get('item-categories', ItemCategoryIndex::class)->name('item-categories.index');
+            Route::get('item-price-approval-history', ItemPriceApprovalHistory::class)->name('item-price-approval-history.index');
+            Route::get('item-price-approvals', ItemPriceApproval::class)->name('item-price-approvals.index');
             Route::get('item-price-history', HistoryItemPriceIndex::class)->name('item-price-history.index');
             Route::get('item-prices', ItemPriceIndex::class)->name('item-prices.index');
             Route::get('items', ItemIndex::class)->name('items.index');
+        });
+
+        Route::prefix('system')->name('system.')->group(function () {
+            Route::get('settings', SystemSettingEdit::class)->name('settings.edit');
         });
     });
 });

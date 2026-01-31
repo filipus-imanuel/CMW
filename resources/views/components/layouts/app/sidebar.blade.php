@@ -41,10 +41,25 @@
                 <flux:navlist.group :heading="__('Inventory')" expandable :expanded="request()->routeIs('inventories.*')" class="grid">
                     <flux:navlist.item icon="tag" :href="route('inventories.category-prices.index')" :current="request()->routeIs('inventories.category-prices.*')" wire:navigate>{{ __('Category Prices') }}</flux:navlist.item>
                     <flux:navlist.item icon="folder" :href="route('inventories.item-categories.index')" :current="request()->routeIs('inventories.item-categories.*')" wire:navigate>{{ __('Item Categories') }}</flux:navlist.item>
+                    @can('view item price approval')
+                    <flux:navlist.item icon="clipboard-document-check" :href="route('inventories.item-price-approval-history.index')" :current="request()->routeIs('inventories.item-price-approval-history.*')" wire:navigate>{{ __('Item Price Approval History') }}</flux:navlist.item>
+                    <flux:navlist.item icon="check-circle" :href="route('inventories.item-price-approvals.index')" :current="request()->routeIs('inventories.item-price-approvals.*')" wire:navigate>
+                        <span class="flex items-center gap-2">
+                            {{ __('Item Price Approvals') }}
+                            <livewire:components.badges.item-price-pending-approval />
+                        </span>
+                    </flux:navlist.item>
+                    @endcan
                     <flux:navlist.item icon="clock" :href="route('inventories.item-price-history.index')" :current="request()->routeIs('inventories.item-price-history.*')" wire:navigate>{{ __('Item Price History') }}</flux:navlist.item>
                     <flux:navlist.item icon="banknotes" :href="route('inventories.item-prices.index')" :current="request()->routeIs('inventories.item-prices.*')" wire:navigate>{{ __('Item Prices') }}</flux:navlist.item>
                     <flux:navlist.item icon="cube-transparent" :href="route('inventories.items.index')" :current="request()->routeIs('inventories.items.*')" wire:navigate>{{ __('Items') }}</flux:navlist.item>
                 </flux:navlist.group>
+
+                @can('edit system setting')
+                <flux:navlist.group :heading="__('System')" expandable :expanded="request()->routeIs('system.*')" class="grid">
+                    <flux:navlist.item icon="cog-6-tooth" :href="route('system.settings.edit')" :current="request()->routeIs('system.settings.*')" wire:navigate>{{ __('Settings') }}</flux:navlist.item>
+                </flux:navlist.group>
+                @endcan
             </flux:navlist>
 
             <flux:spacer />
@@ -157,6 +172,10 @@
         </flux:header>
 
         {{ $slot }}
+
+        @persist('toast')
+            <flux:toast position="top end" />
+        @endpersist
 
         @fluxScripts
     </body>

@@ -3,32 +3,29 @@
         <div class="space-y-6">
             <flux:heading size="lg">Edit Item Price</flux:heading>
 
-            <div class="space-y-6">
-                <flux:select
-                    wire:model="inputs.item_id"
-                    label="Item"
-                    badge="Required"
-                    placeholder="Select item"
-                    searchable
-                    :error="$errors->first('inputs.item_id')"
-                >
-                    @foreach($dropdown_items as $item)
-                        <flux:select.option value="{{ $item['value'] }}">{{ $item['label'] }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+            @if($this->threshold > 0)
+                <flux:callout icon="exclamation-triangle" variant="warning">
+                    <flux:callout.heading>Approval Required</flux:callout.heading>
+                    <flux:callout.text>
+                        Price changes exceeding {{ number_format($this->threshold, 2) }}% will be submitted for manager approval.
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
 
-                <flux:select
-                    wire:model="inputs.category_price_id"
+            <div class="space-y-6">
+                <flux:input
+                    label="Item"
+                    :value="$itemPrice?->item?->code . ' - ' . $itemPrice?->item?->name"
+                    readonly
+                    disabled
+                />
+
+                <flux:input
                     label="Category Price"
-                    badge="Required"
-                    placeholder="Select category"
-                    searchable
-                    :error="$errors->first('inputs.category_price_id')"
-                >
-                    @foreach($dropdown_category_prices as $category)
-                        <flux:select.option value="{{ $category['value'] }}">{{ $category['label'] }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+                    :value="$itemPrice?->categoryPrice?->code . ' - ' . $itemPrice?->categoryPrice?->name"
+                    readonly
+                    disabled
+                />
 
                 <flux:input
                     wire:model="inputs.price"

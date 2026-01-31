@@ -49,7 +49,15 @@ class PermissionHelper
                 'item' => ['view', 'create', 'edit', 'delete'],
                 'item category' => ['view', 'create', 'edit', 'delete'],
                 'item price' => ['view', 'create', 'edit', 'delete'],
+                'item price approval' => ['view', 'approve', 'reject'],
                 'item price history' => ['view'],
+            ],
+
+            // ══════════════════════════════════════════════════════════════
+            // SYSTEM
+            // ══════════════════════════════════════════════════════════════
+            'system' => [
+                'system setting' => ['edit'],
             ],
 
             // ══════════════════════════════════════════════════════════════
@@ -125,6 +133,7 @@ class PermissionHelper
             'Management' => array_values(array_filter($allPermissions, fn ($p) => str_contains($p, 'view'))),
             'Admin' => array_values(array_filter($allPermissions, function ($permission) {
                 // Admin gets full CRUD on all master, partners, and inventory resources
+                // Plus system settings and view item price approval
                 return str_contains($permission, 'country')
                     || str_contains($permission, 'department')
                     || str_contains($permission, 'employee')
@@ -140,15 +149,18 @@ class PermissionHelper
                     || str_contains($permission, 'customer')
                     || str_contains($permission, 'partner address')
                     || str_contains($permission, 'item')
-                    || str_contains($permission, 'category price');
+                    || str_contains($permission, 'category price')
+                    || str_contains($permission, 'system setting')
+                    || ($permission === 'view item price approval');
             })),
             'Finance' => array_values(array_filter($allPermissions, function ($permission) {
-                // Finance gets full CRUD on financial master data
+                // Finance gets full CRUD on financial master data + full approval permissions
                 return str_contains($permission, 'tax')
                     || str_contains($permission, 'currency')
                     || str_contains($permission, 'exchange rate')
                     || str_contains($permission, 'credit term')
-                    || str_contains($permission, 'company');
+                    || str_contains($permission, 'company')
+                    || str_contains($permission, 'item price approval');
             })),
             'Sales' => array_values(array_filter($allPermissions, function ($permission) {
                 // Sales gets full CRUD on customers/addresses, view on financial master data and items
