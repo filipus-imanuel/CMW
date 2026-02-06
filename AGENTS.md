@@ -579,4 +579,366 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 | overflow-ellipsis | text-ellipsis |
 | decoration-slice | box-decoration-slice |
 | decoration-clone | box-decoration-clone |
+
+=== shp-erp/project rules ===
+
+## SHP ERP Project-Specific Rules
+
+This section contains critical coding patterns and rules specific to the SHP ERP system. These must be followed for all development work.
+
+### DataTable Components (Rappasoft LaravelLivewireTables)
+
+**Action Column Pattern (CRITICAL)**:
+- **Actions column ALWAYS first** in columns() array
+- **Column name**: Use `'Actions'` (plural), never `'Action'`
+- **Use standardized component**: `view('components.datatables.datatable-action', [...])`
+- **NEVER use**: Inline HTML strings, `->html()`, or custom action view files
+- **Permission checks**: Always use `Auth::user()?->can()` with null-safe operator
+
+<code-snippet name="DataTable Action Column Pattern" lang="php">
+use Illuminate\Support\Facades\Auth;
+
+public function columns(): array
+{
+    return [
+        Column::make('Actions', 'id')
+            ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
+                'rowId' => $row->id,
+                'enable_this_row' => !$row->trashed(),  // Disable if soft-deleted
+                'showDetail' => Auth::user()?->can('view entity'),
+                'detailHref' => route('entity.show', ['id' => $row->id]),
+                'showEdit' => Auth::user()?->can('update entity'),
+                'editHref' => route('entity.edit', ['id' => $row->id]),
+                'showDelete' => Auth::user()?->can('delete entity'),
+                'deleteDispatchEvent' => 'entity.delete',
+            ])),
+        // ... other columns
+    ];
+}
+</code-snippet>
+
+**Custom Action Buttons** (e.g., delivery creation):
+- Add proper parameters to component, don't pass HTML strings
+- Example: `'showDeliveryButton' => true`, `'deliveryButtonHref' => route(...)`
+
+**CRITICAL RESTRICTION**:
+- **NO Flux components** in `Column::format()` except icons
+- **Flux icons ONLY** work: `<flux:icon.eye>`, `<flux:icon.pencil>`, `<flux:icon.trash>`
+- **Use pure Tailwind HTML** for badges/buttons in datatable columns
+- **Always check permissions** before rendering action buttons
+- **ALWAYS wrap IndexDataTable** in `<flux:card>` component in index views
+
+**Relationship Columns with Filters**:
+When displaying relationship data that's filtered in whereHas:
+- **NEVER add constraints to eager load** - use simple `->with(['relation'])`
+- **Use base column field** (e.g., `partner_id`) not nested path (e.g., `partner.name`)
+- **Format in format()** with null safety check
+- **Custom searchable** for relationship fields
+
+<code-snippet name="DataTable Relationship Column" lang="php">
+// ❌ WRONG - constraint on eager load causes null
+->with(['partner' => fn($q) => $q->where('is_customer', true)])
+
+// ✅ CORRECT - filter only in whereHas
+public function builder(): Builder {
+    return Model::query()
+        ->with(['partner'])  // Simple eager load
+        ->whereHas('partner', fn($q) => $q->where('is_customer', true));
+}
+
+// Column definition
+Column::make('Customer', 'partner_id')  // Use FK, not partner.name
+    ->sortable()
+    ->searchable(fn($query, $term) => 
+        $query->orWhereHas('partner', fn($q) => 
+            $q->where('name', 'like', "%{$term}%")))
+    ->format(fn($value, $row) => 
+        $row->partner ? "{$row->partner->name} ({$row->partner->code})" : 'N/A');
+</code-snippet>
+
+### Transactions & Data Integrity
+
+<code-snippet name="Database Transaction Pattern" lang="php">
+use Illuminate\Support\Facades\{Auth, DB};
+use App\Helpers\TransactionHelper;
+
+// ALWAYS wrap DB mutations in transactions
+DB::transaction(function() {
+    // Lock rows for financial aggregates
+    $order->lockForUpdate()->update([...]);
+    
+    // Never trust client totals - recalculate server-side
+    TransactionHelper::updatePurchaseOrderHeaderTotals($order);
+    
+    // Track changes
+    'updated_by' => Auth::id(),
+});
+</code-snippet>
+
+### Totals Calculation
+
+- **Use TransactionHelper** - never recalculate manually in components
+- **Formula**: `grand_total = total_amount - total_discount + tax_amount + total_cost`
+- **Tax IN** (inclusive): Price normalized via `price / (1 + tax%)`
+- **Tax EX** (exclusive): Tax added on subtotal after discount
+- **Always use** `sanitize_numeric()` on user input before arithmetic
+
+### File Uploads
+
+<code-snippet name="File Upload Pattern" lang="php">
+use Livewire\WithFileUploads;  // ⚠️ CRITICAL: Always add this trait!
+use App\Helpers\FileUploadHelper;
+
+class Create extends Component {
+    use WithFileUploads;
+    
+    public $photo_file;
+    
+    public function save() {
+        $path = FileUploadHelper::uploadFile($this->photo_file, 'Sales/Costs');
+    }
+}
+</code-snippet>
+
+### User Feedback & Events
+
+<code-snippet name="Toast and Event Pattern" lang="php">
+use Flux\Flux;
+
+// Toast notifications
+Flux::toast('Saved successfully', variant: 'success', position: 'top-end');
+
+// Dispatch events after state changes
+$this->dispatch('shp.{module}.{entity}.{action}');
+
+// Refresh components
+$model = $model->fresh(['relations']);
+</code-snippet>
+
+### Livewire Component Input Properties
+
+**CRITICAL PATTERN**: Use `$inputs[]` array for all form input values instead of individual public properties.
+
+<code-snippet name="Livewire Input Array Pattern" lang="php">
+use Livewire\Component;
+use Livewire\Attributes\{Title, On};
+use Illuminate\Support\Facades\{Auth, DB};
+use Flux\Flux;
+
+#[Title('Component Title')]
+class Create extends Component
+{
+    public $inputs = [];  // ✅ All form inputs in one array
+    public $dropdown_data = [];  // For select options
+    
+    // ❌ AVOID: Individual properties
+    // public $code;
+    // public $name;
+    // public $description;
+    
+    public function rules()
+    {
+        return [
+            'inputs.code' => 'required|string|max:50',
+            'inputs.name' => 'required|string|max:100',
+            'inputs.description' => 'nullable|string|max:500',
+        ];
+    }
+    
+    #[On('module.entity.create.open')]
+    public function openModal()
+    {
+        $this->authorize('create entity');
+        $this->reset(['inputs']);
+        $this->resetValidation();
+        $this->loadDropdownData();
+        $this->modal('create-entity')->show();
+    }
+    
+    public function store()
+    {
+        $this->authorize('create entity');
+        $validated = $this->validate();
+        
+        DB::transaction(function () use ($validated) {
+            Entity::create([
+                ...$validated['inputs'],
+                'is_active' => true,
+                'created_by' => Auth::id(),
+            ]);
+        });
+        
+        Flux::toast('Created successfully', variant: 'success', position: 'top-end');
+        $this->dispatch('module.entity.refresh');
+        $this->modal('create-entity')->close();
+    }
+}
+</code-snippet>
+
+**Blade Binding**:
+<code-snippet name="Blade Wire Model Binding" lang="blade">
+<flux:input wire:model="inputs.code" label="Code" />
+<flux:input wire:model="inputs.name" label="Name" />
+<flux:textarea wire:model="inputs.description" label="Description" />
+</code-snippet>
+
+### Livewire Component Lifecycle
+
+**Modal Component Authorization (Create/Edit)**:
+- **NEVER** use `$this->authorize()` in `mount()` for modal components included via `<livewire:...>` in Index pages
+- **ALWAYS** place authorization in `openModal()` method (decorated with `#[On('xxx.create.open')]` or `#[On('xxx.edit.open')]`)
+- Reason: `mount()` runs when Index page loads, causing 403 for users with only "view" permission
+- Keep authorization in `store()`/`update()` methods as server-side double-check
+- Wrap action buttons with `@can()` in blade views and check permissions in DataTable columns
+- Reference: `Partners/Supplier`, `Masters/Employee`, `Masters/Position` for correct patterns
+
+**Modal Component Initialization**:
+- **NEVER** use `mount()` for dropdown/data initialization in modal components
+- **ALWAYS** perform all initialization in `openModal()` method only
+- Reason: Prevents redundant queries when Index page loads, only fetches data when modal opens
+- Example: `handlePopulateDropdown()`, `loadDropdownData()` should only be called in `openModal()`
+
+**CRUD Method Naming Convention (Laravel RESTful)**:
+- **Create components**: Use `store()` method (not `save()`)
+- **Edit components**: Use `update()` method (not `save()`)
+- **Index components**: Use `destroy()` method for deletions
+- **Blade forms**: Use `wire:submit="store"` for create, `wire:submit="update"` for edit
+- Transaction components (Sales, Purchase, etc.) remain flexible based on business logic
+
+<code-snippet name="Livewire Component Lifecycle Pattern" lang="php">
+use Livewire\Component;
+use Livewire\Attributes\{Title, On};
+use Illuminate\Support\Facades\{Auth, DB};
+use Flux\Flux;
+use App\Helpers\TransactionHelper;
+
+#[Title('Component Title')]  // No Layout attribute - handled at app level
+class ComponentName extends Component
+{
+    public function mount($id) {
+        $this->authorize('action resource');  // Permission gate
+        $this->model = Model::findOrFail($id);
+    
+        // Status guard - redirect if not editable
+        if ($this->model->status != 'DRAFT') {
+            $this->redirectRoute('route.show', ['id' => $id], navigate: true);
+        }
+        
+        $this->handlePopulateInputs();
+    }
+
+    public function save() {
+        $this->validate();
+        
+        DB::transaction(function() {
+            $this->model->update([
+                'field' => $value,
+                'updated_by' => Auth::id(),
+            ]);
+            
+            TransactionHelper::updatePurchaseOrderHeaderTotals($this->model);
+        });
+        
+        Flux::toast('Saved successfully', variant: 'success', position: 'top-end');
+        $this->dispatch('shp.module.entity.refresh');
+    }
+}
+</code-snippet>
+
+### Delete Confirmation Pattern
+
+**ALWAYS implement standardized delete flow on Index components:**
+
+<code-snippet name="Delete Confirmation Pattern" lang="php">
+use Flux\Flux;
+use Illuminate\Support\Facades\{Auth, DB};
+use Exception;
+use Illuminate\Database\QueryException;
+
+// Index.php Component
+public $deleteId = null;
+
+#[On('module.entity.delete')]  // Or #[On('delete')] for generic pattern
+public function confirmDelete($id): void
+{
+    $this->deleteId = $id;
+    $this->modal('delete-entity-confirmation')->show();
+}
+
+public function destroy(): void
+{
+    if (!$this->deleteId) {
+        return;
+    }
+
+    $this->authorize('delete entity');
+
+    try {
+        DB::transaction(function () {
+            $entity = Model::findOrFail($this->deleteId);
+            $entity->update(['deleted_by' => Auth::id()]);
+            $entity->delete();
+
+            Flux::toast('Entity deleted successfully', variant: 'success', position: 'top right');
+            $this->dispatch('module.entity.refresh');
+        });
+
+        $this->deleteId = null;
+        $this->modal('delete-entity-confirmation')->close();
+    } catch (QueryException $e) {
+        Flux::toast('Cannot delete entity. It may be in use.', variant: 'danger', position: 'top right');
+    } catch (Exception $e) {
+        Flux::toast('An error occurred while deleting the entity.', variant: 'danger', position: 'top right');
+    }
+}
+</code-snippet>
+
+**index.blade.php view:**
+<code-snippet name="Delete Modal View" lang="blade">
+{{-- Delete Confirmation Modal --}}
+<flux:modal name="delete-entity-confirmation">
+    <flux:heading>Delete Entity</flux:heading>
+    <flux:subheading>Are you sure you want to delete this entity? This action cannot be undone.</flux:subheading>
+
+    <div class="flex gap-2 mt-6">
+        <flux:spacer/>
+        <flux:button variant="danger" wire:click="destroy">Delete</flux:button>
+        <flux:button variant="ghost" x-on:click="$flux.modal('delete-entity-confirmation').close()">Cancel</flux:button>
+    </div>
+</flux:modal>
+</code-snippet>
+
+**Key Points:**
+- Use `x-on:click="$flux.modal('modal-name').close()"` for Cancel button
+- Store `deleteId` to track what's being deleted
+- Always wrap deletion in DB transaction
+- Update `deleted_by` for audit trail before deleting
+- Provide user-friendly error messages for constraint violations
+
+### Permissions (Spatie)
+
+<code-snippet name="Permission Pattern" lang="php">
+use App\Helpers\SHP\PermissionHelper;
+
+// 1. Add to PermissionHelper::master()
+'extra' => [
+    'resource' => ['custom action'],
+],
+
+// 2. Sync permissions
+php artisan permission:sync
+
+// 3. Double gate in UI & server
+@can('action resource')
+    <flux:button wire:click="action">Action</flux:button>
+@endcan
+
+public function action() {
+    $this->authorize('action resource');
+    // ...logic
+}
+</code-snippet>
+
+**Naming**: Singular resource + action (e.g., `create sales request`, not `create sales requests`)
+
 </laravel-boost-guidelines>

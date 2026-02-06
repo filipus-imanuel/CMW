@@ -70,7 +70,7 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 | Switch | [switch.md](../docs/flux/components/switch.md) | Use for single boolean fields (`is_active`, `is_default`) |
 | Checkbox | [checkbox.md](../docs/flux/components/checkbox.md) | Use for multiple choices. Wrap 2+ in `<flux:checkbox.group>` |
 | Date Picker | [date-picker.md](../docs/flux/components/date-picker.md) | Use `<flux:date-picker>`, NEVER `<flux:input type="date">` |
-| Table | [table.md](../docs/flux/components/table.md) | NEVER add background colors to rows/cells |
+| Table | [table.md](../docs/flux/components/table.md) | NEVER add background colors to rows/cells. **Notes column**: Use `class="max-w-md whitespace-pre-line break-words"` to preserve line breaks and wrap text. **Action column**: Use `class="align-middle"` on cell, wrap buttons in `<div class="flex items-center gap-3">` |
 | Modal | [modal.md](../docs/flux/components/modal.md) | `Flux::modal('name')->show()` / `$this->modal('name')->close()` |
 | Callout | [callout.md](../docs/flux/components/callout.md) | Colors: amber=warning, red=error, green=success, blue=info |
 | Input/Textarea | [input.md](../docs/flux/components/input.md) | Use `label="..."` and `badge="Required"` attributes |
@@ -174,6 +174,39 @@ class Currency extends BaseModel
 
 ### 3. DataTable Components (Rappasoft LaravelLivewireTables)
 
+**Action Column Pattern (CRITICAL)**:
+- **Actions column ALWAYS first** in columns() array
+- **Column name**: Use `'Actions'` (plural), never `'Action'`
+- **Use standardized component**: `view('components.datatables.datatable-action', [...])`
+- **NEVER use**: Inline HTML strings, `->html()`, or custom action view files
+- **Permission checks**: Always use `Auth::user()?->can()` with null-safe operator
+
+```php
+use Illuminate\Support\Facades\Auth;
+
+public function columns(): array
+{
+    return [
+        Column::make('Actions', 'id')
+            ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
+                'rowId' => $row->id,
+                'enable_this_row' => !$row->trashed(),  // Disable if soft-deleted
+                'showDetail' => Auth::user()?->can('view entity'),
+                'detailHref' => route('entity.show', ['id' => $row->id]),
+                'showEdit' => Auth::user()?->can('update entity'),
+                'editHref' => route('entity.edit', ['id' => $row->id]),
+                'showDelete' => Auth::user()?->can('delete entity'),
+                'deleteDispatchEvent' => 'entity.delete',
+            ])),
+        // ... other columns
+    ];
+}
+```
+
+**Custom Action Buttons** (e.g., delivery creation):
+- Add proper parameters to component, don't pass HTML strings
+- Example: `'showDeliveryButton' => true`, `'deliveryButtonHref' => route(...)`
+
 **CRITICAL RESTRICTION**:
 - **NO Flux components** in `Column::format()` except icons
 - **Flux icons ONLY** work: `<flux:icon.eye>`, `<flux:icon.pencil>`, `<flux:icon.trash>`
@@ -212,6 +245,9 @@ Column::make('Customer', 'partner_id')  // Use FK, not partner.name
 ### 4. Transactions & Data Integrity
 
 ```php
+use Illuminate\Support\Facades\{Auth, DB};
+use App\Helpers\TransactionHelper;
+
 // ALWAYS wrap DB mutations in transactions
 DB::transaction(function() {
     // Lock rows for financial aggregates
@@ -237,6 +273,7 @@ DB::transaction(function() {
 
 ```php
 use Livewire\WithFileUploads;  // ⚠️ CRITICAL: Always add this trait!
+use App\Helpers\FileUploadHelper;
 
 class Create extends Component {
     use WithFileUploads;
@@ -252,9 +289,9 @@ class Create extends Component {
 ### 7. User Feedback & Events
 
 ```php
-// Toast notifications (import Flux\Flux)
 use Flux\Flux;
 
+// Toast notifications
 Flux::toast('Saved successfully', variant: 'success', position: 'top-end');
 
 // Dispatch events after state changes
@@ -304,7 +341,7 @@ class Create extends Component
         $this->modal('create-entity')->show();
     }
     
-    public function save()
+    public function store()
     {
         $this->authorize('create entity');
         $validated = $this->validate();
@@ -359,6 +396,7 @@ use Livewire\Component;
 use Livewire\Attributes\{Title, On};
 use Illuminate\Support\Facades\{Auth, DB};
 use Flux\Flux;
+use App\Helpers\TransactionHelper;
 
 #[Title('Component Title')]  // No Layout attribute - handled at app level
 class ComponentName extends Component
@@ -367,28 +405,29 @@ class ComponentName extends Component
         $this->authorize('action resource');  // Permission gate
         $this->model = Model::findOrFail($id);
     
-    // Status guard - redirect if not editable
-    if ($this->model->status != 'DRAFT') {
-        $this->redirectRoute('route.show', ['id' => $id], navigate: true);
-    }
-    
-    $this->handlePopulateInputs();
-}
-
-public function save() {
-    $this->validate();
-    
-    DB::transaction(function() {
-        $this->model->update([
-            'field' => $value,
-            'updated_by' => Auth::id(),
-        ]);
+        // Status guard - redirect if not editable
+        if ($this->model->status != 'DRAFT') {
+            $this->redirectRoute('route.show', ['id' => $id], navigate: true);
+        }
         
-        TransactionHelper::updatePurchaseOrderHeaderTotals($this->model);
-    });
-    
-    Flux::toast('Saved successfully', variant: 'success', position: 'top-end');
-    $this->dispatch('shp.module.entity.refresh');
+        $this->handlePopulateInputs();
+    }
+
+    public function save() {
+        $this->validate();
+        
+        DB::transaction(function() {
+            $this->model->update([
+                'field' => $value,
+                'updated_by' => Auth::id(),
+            ]);
+            
+            TransactionHelper::updatePurchaseOrderHeaderTotals($this->model);
+        });
+        
+        Flux::toast('Saved successfully', variant: 'success', position: 'top-end');
+        $this->dispatch('shp.module.entity.refresh');
+    }
 }
 ```
 
@@ -397,10 +436,12 @@ public function save() {
 **ALWAYS implement standardized delete flow on Index components:**
 
 ```php
-// Index.php Component
 use Flux\Flux;
 use Illuminate\Support\Facades\{Auth, DB};
+use Exception;
+use Illuminate\Database\QueryException;
 
+// Index.php Component
 public $deleteId = null;
 
 #[On('module.entity.delete')]  // Or #[On('delete')] for generic pattern
@@ -430,9 +471,9 @@ public function destroy(): void
 
         $this->deleteId = null;
         $this->modal('delete-entity-confirmation')->close();
-    } catch (\Illuminate\Database\QueryException $e) {
+    } catch (QueryException $e) {
         Flux::toast('Cannot delete entity. It may be in use.', variant: 'danger', position: 'top right');
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         Flux::toast('An error occurred while deleting the entity.', variant: 'danger', position: 'top right');
     }
 }
@@ -454,7 +495,7 @@ public function destroy(): void
 ```
 
 **Key Points:**
-- Use `x-on:click="$flux.modal('modal-name').close()"` for Cancel button (Alpine.js)
+- Use `x-on:click="$flux.modal('modal-name').close()"` for Cancel button
 - Store `deleteId` to track what's being deleted
 - Always wrap deletion in DB transaction
 - Update `deleted_by` for audit trail before deleting
@@ -463,6 +504,8 @@ public function destroy(): void
 ### 11. Permissions (Spatie)
 
 ```php
+use App\Helpers\SHP\PermissionHelper;
+
 // 1. Add to PermissionHelper::master()
 'extra' => [
     'resource' => ['custom action'],
@@ -489,6 +532,8 @@ public function action() {
 **ALWAYS place Actions column first and use standardized component:**
 
 ```php
+use Illuminate\Support\Facades\Auth;
+
 // IndexDataTable.php
 public function columns(): array
 {
@@ -496,10 +541,13 @@ public function columns(): array
         Column::make('Actions', 'id')
             ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
                 'rowId' => $row->id,
-                'showEdit' => Auth::user()?->can('edit entity'),
-                'editDispatchEvent' => 'module.entity.edit.open',
+                'enable_this_row' => !$row->trashed(),  // Disable if soft-deleted
+                'showDetail' => Auth::user()?->can('view entity'),
+                'detailHref' => route('entity.show', ['id' => $row->id]),
+                'showEdit' => Auth::user()?->can('update entity'),
+                'editHref' => route('entity.edit', ['id' => $row->id]),
                 'showDelete' => Auth::user()?->can('delete entity'),
-                'deleteDispatchEvent' => 'module.entity.delete',  // Or 'delete' for generic
+                'deleteDispatchEvent' => 'entity.delete',
             ])),
 
         // ... other columns
@@ -509,10 +557,17 @@ public function columns(): array
 
 **Key Points:**
 - Actions column ALWAYS first
+- Column name: `'Actions'` (plural), never `'Action'`
 - Use `datatable-action` component for consistency
 - Check permissions before showing buttons
 - Use `BooleanColumn` for boolean fields (is_active, is_default)
-- Never use custom HTML for action buttons
+- Never use inline HTML, `->html()`, or custom view files
+
+**Custom Actions** (e.g., delivery creation):
+```php
+'showDeliveryButton' => Auth::user()?->can('create sales delivery'),
+'deliveryButtonHref' => route('shp.sales.delivery.create', ['order' => $row->id]),
+```
 
 ### 13. Code Generation
 
