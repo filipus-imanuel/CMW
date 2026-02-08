@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('sales_order_details', function (Blueprint $table) {
+        Schema::create('order_details', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sales_order_header_id')->constrained('sales_order_headers');
+            $table->foreignId('order_header_id')->constrained('order_headers');
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('uom_id')->constrained('uoms');
             $table->foreignId('company_setting_id')->nullable()->constrained('company_settings');
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('discount', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);
-            $table->text('remarks')->nullable();
+            $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);
@@ -34,6 +34,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('sales_order_details');
+        Schema::dropIfExists('order_details');
     }
 };

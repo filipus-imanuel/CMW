@@ -12,8 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('code', 45)->unique();
             $table->string('name', 100);
+            $table->foreignId('user_id')->nullable()->constrained('users');
             $table->boolean('is_supplier')->default(false);
             $table->boolean('is_customer')->default(false);
+            $table->decimal('credit_limit', 13, 2)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->date('due_date')->nullable();
             $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
-            $table->foreignId('sales_order_header_id')->nullable()->constrained('sales_order_headers');
+            $table->foreignId('order_header_id')->nullable()->constrained('order_headers');
             $table->decimal('subtotal', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);

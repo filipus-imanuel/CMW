@@ -8,13 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('sales_order_headers', function (Blueprint $table) {
+        Schema::create('order_headers', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
             $table->date('date');
             $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
-            $table->string('status', 20)->default('draft'); // draft, approved, completed, cancelled
+            $table->foreignId('company_id')->nullable()->constrained('companies');
+            $table->foreignId('item_category_id')->nullable()->constrained('item_categories');
+            $table->string('status', 20)->default('INIT'); // INIT, APPROVAL, REQUEST, ORDER, DELIVERY, FINISH, FINAL
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+            $table->timestamp('approved_at')->nullable();
+            $table->string('rejection_reason', 1024)->nullable();
             $table->decimal('subtotal', 13, 2)->default(0);
             $table->decimal('discount', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
@@ -34,6 +39,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('sales_order_headers');
+        Schema::dropIfExists('order_headers');
     }
 };

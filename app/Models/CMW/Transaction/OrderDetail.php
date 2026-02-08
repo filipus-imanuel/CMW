@@ -8,12 +8,12 @@ use App\Models\CMW\Master\CompanySetting;
 use App\Models\CMW\Master\Uom;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SalesOrderDetail extends BaseModel
+class OrderDetail extends BaseModel
 {
-    protected $table = 'sales_order_details';
+    protected $table = 'order_details';
 
     protected $fillable = [
-        'sales_order_header_id',
+        'order_header_id',
         'item_id',
         'uom_id',
         'company_setting_id',
@@ -37,7 +37,7 @@ class SalesOrderDetail extends BaseModel
 
     public function header(): BelongsTo
     {
-        return $this->belongsTo(SalesOrderHeader::class, 'sales_order_header_id');
+        return $this->belongsTo(OrderHeader::class, 'order_header_id');
     }
 
     public function item(): BelongsTo

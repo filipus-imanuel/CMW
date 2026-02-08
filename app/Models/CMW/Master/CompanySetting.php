@@ -4,7 +4,7 @@ namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\ItemCategory;
-use App\Models\CMW\Transaction\SalesOrderDetail;
+use App\Models\CMW\Transaction\OrderDetail;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -18,9 +18,9 @@ class CompanySetting extends BaseModel
         'company_id',
     ];
 
-    public function salesOrderDetails(): HasMany
+    public function orderDetails(): HasMany
     {
-        return $this->hasMany(SalesOrderDetail::class);
+        return $this->hasMany(OrderDetail::class);
     }
 
     public function employee(): BelongsTo
