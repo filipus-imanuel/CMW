@@ -48,7 +48,7 @@ class IndexDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return Item::query()
-            ->with(['uom']);
+            ->with(['uom', 'category']);
     }
 
     public function columns(): array
@@ -75,6 +75,14 @@ class IndexDataTable extends DataTableComponent
                 ->sortable()
                 ->format(fn ($value) => $this->formatType($value))
                 ->html(),
+
+            Column::make('Category', 'item_category_id')
+                ->sortable()
+                ->searchable(fn($query, $term) => 
+                    $query->orWhereHas('category', fn($q) => 
+                        $q->where('name', 'like', "%{$term}%")))
+                ->format(fn($value, $row) => 
+                    $row->category ? $row->category->name : '-'),
 
             Column::make('UOM', 'uom.code')
                 ->sortable()

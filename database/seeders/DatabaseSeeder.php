@@ -45,5 +45,6 @@ class DatabaseSeeder extends Seeder
         $this->call(CoaSettingsSeeder::class);
         $this->call(UserGroupsSeeder::class);
         $this->call(MenusSeeder::class);
+        $this->call(SystemSettingSeeder::class);
     }
 }

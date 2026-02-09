@@ -25,6 +25,17 @@
                     </flux:select>
                 </div>
 
+                <flux:select 
+                    wire:model="inputs.item_category_id" 
+                    label="Category"
+                    placeholder="Select Category"
+                    searchable
+                >
+                    @foreach($dropdown_item_category as $category)
+                        <flux:select.option value="{{ $category['value'] }}">{{ $category['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
                 <flux:input 
                     wire:model="inputs.name" 
                     label="Name" 

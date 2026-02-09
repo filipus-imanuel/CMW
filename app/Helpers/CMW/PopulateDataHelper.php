@@ -6,6 +6,7 @@ namespace App\Helpers\CMW;
 
 use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Inventory\ItemCategory;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
@@ -449,6 +450,17 @@ class PopulateDataHelper
     public static function getItems(array $options = []): array
     {
         return self::get(Item::class, $options);
+    }
+
+    /**
+     * Get item categories dropdown data.
+     *
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getItemCategories(array $options = []): array
+    {
+        return self::get(ItemCategory::class, $options);
     }
 
     /**

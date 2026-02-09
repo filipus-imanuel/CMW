@@ -20,12 +20,15 @@ class Edit extends Component
 
     public $dropdown_uom = [];
 
+    public $dropdown_item_category = [];
+
     public function rules()
     {
         return [
             'inputs.code' => 'required|string|max:50|unique:items,code,'.$this->item?->id,
             'inputs.name' => 'required|string|max:100',
             'inputs.type' => 'required|in:RAW_MATERIAL,WORK_IN_PROCESS,FINISHED_GOOD,SPARE_PART',
+            'inputs.item_category_id' => 'nullable|exists:item_categories,id',
             'inputs.uom_id' => 'required|exists:uoms,id',
             'inputs.cost_price' => 'required|numeric|min:0',
             'inputs.sell_price' => 'required|numeric|min:0',
@@ -54,6 +57,15 @@ class Edit extends Component
         $this->dropdown_uom = PopulateDataHelper::getUoms(['labelFormat' => 'name_code']);
     }
 
+    private function handlePopulateItemCategory(): void
+    {
+        $this->dropdown_item_category = PopulateDataHelper::getItemCategories([
+            'labelFormat' => 'name',
+            'prependDefault' => true,
+            'defaultLabel' => 'Select Category (Optional)',
+        ]);
+    }
+
     #[On('cmw.inventories.item.edit.open')]
     public function openModal($id)
     {
@@ -64,6 +76,7 @@ class Edit extends Component
         $this->inputs['code'] = $this->item->code;
         $this->inputs['name'] = $this->item->name;
         $this->inputs['type'] = $this->item->type;
+        $this->inputs['item_category_id'] = $this->item->item_category_id;
         $this->inputs['uom_id'] = $this->item->uom_id;
         $this->inputs['cost_price'] = $this->item->cost_price;
         $this->inputs['sell_price'] = $this->item->sell_price;
@@ -74,6 +87,7 @@ class Edit extends Component
 
         $this->resetValidation();
         $this->handlePopulateUom();
+        $this->handlePopulateItemCategory();
 
         $this->modal('edit-item')->show();
     }

@@ -21,7 +21,7 @@ class ItemCategory extends BaseModel
 
     public function items(): HasMany
     {
-        return $this->hasMany(Item::class, 'category_id');
+        return $this->hasMany(Item::class, 'item_category_id');
     }
 
     public function companySettings(): HasMany

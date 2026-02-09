@@ -18,12 +18,15 @@ class Create extends Component
 
     public $dropdown_uom = [];
 
+    public $dropdown_item_category = [];
+
     public function rules()
     {
         return [
             'inputs.code' => 'required|string|max:50|unique:items,code',
             'inputs.name' => 'required|string|max:100',
             'inputs.type' => 'required|in:RAW_MATERIAL,WORK_IN_PROCESS,FINISHED_GOOD,SPARE_PART',
+            'inputs.item_category_id' => 'nullable|exists:item_categories,id',
             'inputs.uom_id' => 'required|exists:uoms,id',
             'inputs.cost_price' => 'required|numeric|min:0',
             'inputs.sell_price' => 'required|numeric|min:0',
@@ -55,6 +58,15 @@ class Create extends Component
         $this->inputs['uom_id'] = $this->dropdown_uom[0]['value'] ?? null;
     }
 
+    private function handlePopulateItemCategory(): void
+    {
+        $this->dropdown_item_category = PopulateDataHelper::getItemCategories([
+            'labelFormat' => 'name',
+            'prependDefault' => true,
+            'defaultLabel' => 'Select Category (Optional)',
+        ]);
+    }
+
     #[On('cmw.inventories.item.create.open')]
     public function openModal()
     {
@@ -62,6 +74,7 @@ class Create extends Component
 
         $this->reset(['inputs']);
         $this->inputs['type'] = 'FINISHED_GOOD';
+        $this->inputs['item_category_id'] = '';
         $this->inputs['cost_price'] = 0;
         $this->inputs['sell_price'] = 0;
         $this->inputs['min_stock'] = 0;
@@ -70,6 +83,7 @@ class Create extends Component
 
         $this->resetValidation();
         $this->handlePopulateUom();
+        $this->handlePopulateItemCategory();
 
         $this->modal('create-item')->show();
     }

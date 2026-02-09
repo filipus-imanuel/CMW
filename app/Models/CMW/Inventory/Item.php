@@ -14,7 +14,7 @@ class Item extends BaseModel
 {
     protected $fillable = [
         'type',
-        'category_id',
+        'item_category_id',
         'uom_id',
         'currency_id',
         'cost_price',
@@ -55,7 +55,7 @@ class Item extends BaseModel
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(ItemCategory::class, 'category_id');
+        return $this->belongsTo(ItemCategory::class, 'item_category_id');
     }
 
     public function itemPrices(): HasMany
