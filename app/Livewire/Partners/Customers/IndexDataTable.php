@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Partners\Customers;
 
+use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\CMW\Master\Partner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 use Rappasoft\LaravelLivewireTables\Views\Columns\BooleanColumn;
+use Rappasoft\LaravelLivewireTables\Views\Filters\SelectFilter;
 
 class IndexDataTable extends DataTableComponent
 {
@@ -27,9 +29,31 @@ class IndexDataTable extends DataTableComponent
         $this->setPerPage(25);
     }
 
+    public function filters(): array
+    {
+        $categoryOptions = CategoryPrice::query()
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->pluck('name', 'id')
+            ->prepend('All Categories', '')
+            ->toArray();
+
+        return [
+            SelectFilter::make('Category Price')
+                ->options($categoryOptions)
+                ->filter(function (Builder $builder, string $value) {
+                    if ($value) {
+                        $builder->where('category_price_id', $value);
+                    }
+                }),
+        ];
+    }
+
     public function builder(): Builder
     {
-        return Partner::query()->where('is_customer', true);
+        return Partner::query()
+            ->with(['categoryPrice'])
+            ->where('is_customer', true);
     }
 
     public function columns(): array
@@ -51,6 +75,10 @@ class IndexDataTable extends DataTableComponent
             Column::make('Name', 'name')
                 ->sortable()
                 ->searchable(),
+
+            Column::make('Category Price', 'category_price_id')
+                ->sortable()
+                ->format(fn ($value, $row) => $row->categoryPrice?->code ?? '-'),
 
             BooleanColumn::make('Status', 'is_active')
                 ->sortable(),

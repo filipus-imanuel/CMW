@@ -89,6 +89,31 @@
                     :error="$errors->first('inputs.date')"
                 />
 
+                <div>
+                    <flux:radio.group wire:model.live="inputs.tax_mode" label="Tax Mode" badge="Required" variant="segmented">
+                        <flux:radio value="INCLUDE" label="Include" />
+                        <flux:radio value="EXCLUDE" label="Exclude" />
+                        <flux:radio value="NONE" label="No Tax" />
+                    </flux:radio.group>
+                    @error('inputs.tax_mode')
+                        <flux:text class="text-sm text-red-500 mt-1">{{ $message }}</flux:text>
+                    @enderror
+                </div>
+
+                @if($inputs['tax_mode'] !== 'NONE')
+                    <flux:select
+                        wire:model="inputs.tax_id"
+                        label="Tax"
+                        badge="Required"
+                        placeholder="Select tax..."
+                        :error="$errors->first('inputs.tax_id')"
+                    >
+                        @foreach($dropdown_data['taxes'] ?? [] as $tax)
+                            <flux:select.option value="{{ $tax['value'] }}">{{ $tax['label'] }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
+
                 <div class="md:col-span-2">
                     <flux:textarea
                         wire:model="inputs.remarks"

@@ -11,40 +11,150 @@ use Illuminate\Support\Facades\Auth;
 class TransactionHelper
 {
     /**
+     * Calculate tax amount for a single item based on tax mode.
+     *
+     * @param  float  $quantity  Item quantity
+     * @param  float  $price  Item price (inclusive if INCLUDE mode)
+     * @param  float  $discount  Item discount amount
+     * @param  string  $taxMode  INCLUDE, EXCLUDE, or NONE
+     * @param  float  $taxRate  Tax rate percentage (e.g. 11.00 for 11%)
+     * @return array{tax: float, subtotal: float, total: float}
+     */
+    public static function calculateItemTax(
+        float $quantity,
+        float $price,
+        float $discount,
+        string $taxMode,
+        float $taxRate
+    ): array {
+        $lineSubtotal = ($quantity * $price) - $discount;
+
+        if ($taxMode === 'INCLUDE' && $taxRate > 0) {
+            // Tax inclusive: price already includes tax
+            // Base amount = lineSubtotal / (1 + rate/100)
+            $rateMultiplier = 1 + ($taxRate / 100);
+            $baseAmount = $lineSubtotal / $rateMultiplier;
+            $taxAmount = $lineSubtotal - $baseAmount;
+
+            return [
+                'tax' => round($taxAmount, 2),
+                'subtotal' => round($baseAmount, 2),
+                'total' => round($lineSubtotal, 2), // Price already includes tax
+            ];
+        }
+
+        if ($taxMode === 'EXCLUDE' && $taxRate > 0) {
+            // Tax exclusive: tax added on top
+            $taxAmount = $lineSubtotal * ($taxRate / 100);
+            $total = $lineSubtotal + $taxAmount;
+
+            return [
+                'tax' => round($taxAmount, 2),
+                'subtotal' => round($lineSubtotal, 2),
+                'total' => round($total, 2),
+            ];
+        }
+
+        // NONE or zero rate
+        return [
+            'tax' => 0.00,
+            'subtotal' => round($lineSubtotal, 2),
+            'total' => round($lineSubtotal, 2),
+        ];
+    }
+
+    /**
      * Recalculate and update order header totals from its details.
      * Uses lockForUpdate() to prevent concurrent modification.
+     *
+     * Subtotal = sum of (qty * price - discount) for all items
+     * Tax = sum of calculated tax for all items
+     * Total = subtotal + tax (for EXCLUDE/NONE) or subtotal (for INCLUDE, since price includes tax)
      */
     public static function updateOrderTotals(OrderHeader $order): void
     {
-        $order = $order->lockForUpdate()->fresh();
+        // Lock and refresh the order
+        $order = OrderHeader::lockForUpdate()->find($order->id);
 
         $details = $order->details()->get();
 
-        $subtotal = $details->sum('total');
-        $totalDiscount = $details->sum('discount');
-        $totalTax = $details->sum('tax');
+        $taxMode = $order->tax_mode ?? 'NONE';
+        $taxRate = (float) ($order->tax_rate ?? 0);
+
+        $totalSubtotal = 0;
+        $totalDiscount = $details->sum(fn ($d) => (float) $d->discount);
+        $totalTax = 0;
+        $grandTotal = 0;
+
+        foreach ($details as $detail) {
+            $calc = self::calculateItemTax(
+                (float) $detail->quantity,
+                (float) $detail->price,
+                (float) $detail->discount,
+                $taxMode,
+                $taxRate
+            );
+
+            $totalSubtotal += $calc['subtotal'];
+            $totalTax += $calc['tax'];
+            $grandTotal += $calc['total'];
+        }
 
         $order->update([
-            'subtotal' => $subtotal,
+            'subtotal' => $totalSubtotal,
             'discount' => $totalDiscount,
             'tax' => $totalTax,
-            'total' => $subtotal,
+            'total' => $grandTotal,
             'updated_by' => Auth::id(),
         ]);
     }
 
     /**
-     * Recalculate a single order detail total.
-     * Formula: total = (quantity * price) - discount + tax
+     * Recalculate a single order detail's tax and total based on header tax settings.
      */
     public static function recalculateDetail(OrderDetail $detail): void
     {
-        $subtotal = (float) $detail->quantity * (float) $detail->price;
-        $total = $subtotal - (float) $detail->discount + (float) $detail->tax;
+        $header = $detail->header;
+        $taxMode = $header->tax_mode ?? 'NONE';
+        $taxRate = (float) ($header->tax_rate ?? 0);
+
+        $calc = self::calculateItemTax(
+            (float) $detail->quantity,
+            (float) $detail->price,
+            (float) $detail->discount,
+            $taxMode,
+            $taxRate
+        );
 
         $detail->update([
-            'total' => $total,
+            'tax' => $calc['tax'],
+            'total' => $calc['total'],
             'updated_by' => Auth::id(),
         ]);
+    }
+
+    /**
+     * Recalculate all details for an order based on its tax mode/rate.
+     */
+    public static function recalculateAllDetails(OrderHeader $order): void
+    {
+        $taxMode = $order->tax_mode ?? 'NONE';
+        $taxRate = (float) ($order->tax_rate ?? 0);
+
+        foreach ($order->details as $detail) {
+            $calc = self::calculateItemTax(
+                (float) $detail->quantity,
+                (float) $detail->price,
+                (float) $detail->discount,
+                $taxMode,
+                $taxRate
+            );
+
+            $detail->update([
+                'tax' => $calc['tax'],
+                'total' => $calc['total'],
+                'updated_by' => Auth::id(),
+            ]);
+        }
     }
 }

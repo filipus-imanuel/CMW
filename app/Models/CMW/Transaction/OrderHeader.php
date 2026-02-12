@@ -7,6 +7,7 @@ use App\Models\CMW\Inventory\ItemCategory;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Partner;
+use App\Models\CMW\Master\Tax;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,9 @@ class OrderHeader extends BaseModel
         'partner_id',
         'company_id',
         'item_category_id',
+        'tax_mode',
+        'tax_id',
+        'tax_rate',
         'status',
         'approved_by',
         'approved_at',
@@ -37,6 +41,7 @@ class OrderHeader extends BaseModel
         return [
             'date' => 'date',
             'approved_at' => 'datetime',
+            'tax_rate' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
             'tax' => 'decimal:2',
@@ -47,6 +52,11 @@ class OrderHeader extends BaseModel
     // ══════════════════════════════════════════════════════════════════════════
     // RELATIONSHIPS
     // ══════════════════════════════════════════════════════════════════════════
+
+    public function tax(): BelongsTo
+    {
+        return $this->belongsTo(Tax::class, 'tax_id');
+    }
 
     public function currency(): BelongsTo
     {

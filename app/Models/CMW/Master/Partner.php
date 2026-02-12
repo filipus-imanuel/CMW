@@ -3,6 +3,7 @@
 namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
+use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,7 @@ class Partner extends BaseModel
         'is_supplier',
         'is_customer',
         'credit_limit',
+        'category_price_id',
     ];
 
     protected function casts(): array
@@ -33,6 +35,11 @@ class Partner extends BaseModel
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function categoryPrice(): BelongsTo
+    {
+        return $this->belongsTo(CategoryPrice::class);
     }
 
     public function addresses(): HasMany

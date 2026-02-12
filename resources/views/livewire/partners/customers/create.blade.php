@@ -22,6 +22,18 @@
                     />
                 </div>
 
+                <flux:select
+                    wire:model="inputs.category_price_id"
+                    label="Category Price"
+                    placeholder="Select category price (optional)"
+                    searchable
+                    :error="$errors->first('inputs.category_price_id')"
+                >
+                    @foreach($dropdown_category_prices as $category)
+                        <flux:select.option value="{{ $category['value'] }}">{{ $category['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
                 <flux:textarea 
                     wire:model="inputs.remarks" 
                     label="Remarks"

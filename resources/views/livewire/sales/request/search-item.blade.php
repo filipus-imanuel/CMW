@@ -18,6 +18,7 @@
                             <th class="text-left py-2 px-2 font-medium text-zinc-500">Code</th>
                             <th class="text-left py-2 px-2 font-medium text-zinc-500">Name</th>
                             <th class="text-left py-2 px-2 font-medium text-zinc-500">UOM</th>
+                            <th class="text-center py-2 px-2 font-medium text-zinc-500">Category</th>
                             <th class="text-right py-2 px-2 font-medium text-zinc-500">Price</th>
                             <th class="text-center py-2 px-2 font-medium text-zinc-500"></th>
                         </tr>
@@ -28,6 +29,15 @@
                                 <td class="py-2 px-2">{{ $item['code'] }}</td>
                                 <td class="py-2 px-2">{{ $item['name'] }}</td>
                                 <td class="py-2 px-2">{{ $item['uom_name'] }}</td>
+                                <td class="py-2 px-2 text-center">
+                                    @if($item['category_price_code'])
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                            {{ $item['category_price_code'] }}
+                                        </span>
+                                    @else
+                                        <span class="text-zinc-400">-</span>
+                                    @endif
+                                </td>
                                 <td class="py-2 px-2 text-right">{{ number_format($item['sell_price'], 2) }}</td>
                                 <td class="py-2 px-2 text-center">
                                     <flux:button

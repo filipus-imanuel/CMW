@@ -54,37 +54,71 @@ class Create extends Component
         try {
             $validated = $this->validate();
 
-            // Check for duplicate item+category combination
-            $exists = ItemPrice::where('item_id', $validated['inputs']['item_id'])
+            // Check for active duplicate item+category combination
+            $existsActive = ItemPrice::where('item_id', $validated['inputs']['item_id'])
                 ->where('category_price_id', $validated['inputs']['category_price_id'])
                 ->exists();
 
-            if ($exists) {
+            if ($existsActive) {
                 Flux::toast('This item already has a price for this category', variant: 'danger', position: 'top right');
 
                 return;
             }
 
-            DB::transaction(function () use ($validated) {
-                $itemPrice = ItemPrice::create([
-                    'item_id' => $validated['inputs']['item_id'],
-                    'category_price_id' => $validated['inputs']['category_price_id'],
-                    'price' => $validated['inputs']['price'],
-                    'remarks' => $validated['inputs']['remarks'],
-                    'is_active' => $validated['inputs']['is_active'],
-                    'created_by' => Auth::id(),
-                ]);
+            // Check for soft-deleted duplicate — restore instead of creating new
+            $trashedRecord = ItemPrice::onlyTrashed()
+                ->where('item_id', $validated['inputs']['item_id'])
+                ->where('category_price_id', $validated['inputs']['category_price_id'])
+                ->first();
 
-                // Log history with old_price = 0 for new records
-                HistoryItemPrice::create([
-                    'item_id' => $itemPrice->item_id,
-                    'category_price_id' => $itemPrice->category_price_id,
-                    'old_price' => 0,
-                    'new_price' => $itemPrice->price,
-                    'created_by' => Auth::id(),
-                ]);
+            DB::transaction(function () use ($validated, $trashedRecord) {
+                if ($trashedRecord) {
+                    // Restore and update the existing soft-deleted record
+                    $trashedRecord->restore();
+                    $oldPrice = (float) $trashedRecord->price;
 
-                Flux::toast('Item Price created successfully', variant: 'success', position: 'top right');
+                    $trashedRecord->update([
+                        'price' => $validated['inputs']['price'],
+                        'remarks' => $validated['inputs']['remarks'],
+                        'is_active' => $validated['inputs']['is_active'],
+                        'updated_by' => Auth::id(),
+                        'deleted_by' => null,
+                    ]);
+
+                    $itemPrice = $trashedRecord;
+
+                    // Log history with old price from restored record
+                    HistoryItemPrice::create([
+                        'item_id' => $itemPrice->item_id,
+                        'category_price_id' => $itemPrice->category_price_id,
+                        'old_price' => $oldPrice,
+                        'new_price' => $itemPrice->price,
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    Flux::toast('Item Price restored and updated successfully', variant: 'success', position: 'top right');
+                } else {
+                    $itemPrice = ItemPrice::create([
+                        'item_id' => $validated['inputs']['item_id'],
+                        'category_price_id' => $validated['inputs']['category_price_id'],
+                        'price' => $validated['inputs']['price'],
+                        'remarks' => $validated['inputs']['remarks'],
+                        'is_active' => $validated['inputs']['is_active'],
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    // Log history with old_price = 0 for new records
+                    HistoryItemPrice::create([
+                        'item_id' => $itemPrice->item_id,
+                        'category_price_id' => $itemPrice->category_price_id,
+                        'old_price' => 0,
+                        'new_price' => $itemPrice->price,
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    Flux::toast('Item Price created successfully', variant: 'success', position: 'top right');
+                }
+
                 $this->dispatch('cmw.inventories.item-price.refresh');
                 $this->modal('create-item-price')->close();
             });

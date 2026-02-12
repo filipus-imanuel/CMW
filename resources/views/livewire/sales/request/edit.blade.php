@@ -96,6 +96,33 @@
                 rows="2"
             />
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div>
+                <flux:radio.group wire:model.live="inputs.tax_mode" label="Tax Mode" badge="Required" variant="segmented">
+                    <flux:radio value="INCLUDE" label="Include" />
+                    <flux:radio value="EXCLUDE" label="Exclude" />
+                    <flux:radio value="NONE" label="No Tax" />
+                </flux:radio.group>
+                @error('inputs.tax_mode')
+                    <flux:text class="text-sm text-red-500 mt-1">{{ $message }}</flux:text>
+                @enderror
+            </div>
+
+            @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
+                <flux:select
+                    wire:model.live="inputs.tax_id"
+                    label="Tax"
+                    badge="Required"
+                    placeholder="Select tax..."
+                    :error="$errors->first('inputs.tax_id')"
+                >
+                    @foreach($dropdown_data['taxes'] ?? [] as $tax)
+                        <flux:select.option value="{{ $tax['value'] }}">{{ $tax['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            @endif
+        </div>
     </flux:card>
 
     {{-- Items Section --}}
@@ -103,7 +130,7 @@
         <div class="flex items-center justify-between mb-4">
             <flux:heading size="lg">Items</flux:heading>
             <flux:button
-                wire:click="$dispatch('sales.request.search-item.open', { categoryId: {{ $order->item_category_id }} })"
+                wire:click="$dispatch('sales.request.search-item.open', { itemCategoryId: {{ $order->item_category_id }}, partnerId: {{ $order->partner_id }} })"
                 variant="primary"
                 icon="plus"
                 size="sm"
@@ -117,15 +144,15 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-zinc-200 dark:border-zinc-700">
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">#</th>
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">Code</th>
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">Item Name</th>
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">UOM</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Quantity</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Price</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Discount</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Tax</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Total</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">#</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Code</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Item Name</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">UOM</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Quantity</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Price</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Discount</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Tax</th>
+                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Total</th>
                             <th class="text-center py-3 px-2 font-medium text-zinc-500">Actions</th>
                         </tr>
                     </thead>
@@ -166,15 +193,8 @@
                                         size="sm"
                                     />
                                 </td>
-                                <td class="py-2 px-2">
-                                    <flux:input
-                                        wire:model.live.debounce.500ms="items.{{ $index }}.tax"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        class="text-right"
-                                        size="sm"
-                                    />
+                                <td class="py-2 px-2 text-right">
+                                    {{ number_format((float)$item['tax'], 2) }}
                                 </td>
                                 <td class="py-2 px-2 text-right font-medium">
                                     {{ number_format((float)$item['total'], 2) }}
@@ -191,11 +211,30 @@
                         @endforeach
                     </tbody>
                     <tfoot>
+                        @php
+                            $sumSubtotal = collect($items)->sum(fn($i) => ((float)$i['quantity'] * (float)$i['price']) - (float)$i['discount']);
+                            $sumTax = collect($items)->sum(fn($i) => (float)$i['tax']);
+                            $sumTotal = collect($items)->sum(fn($i) => (float)$i['total']);
+                        @endphp
+                        <tr class="border-t border-zinc-200 dark:border-zinc-700">
+                            <td colspan="8" class="py-2 px-2 text-right text-zinc-500">Subtotal:</td>
+                            <td class="py-2 px-2 text-right">{{ number_format($sumSubtotal, 2) }}</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="8" class="py-2 px-2 text-right text-zinc-500">
+                                Tax
+                                @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
+                                    ({{ $inputs['tax_mode'] }} {{ number_format((float)($order->tax_rate ?? 0), 2) }}%)
+                                @endif
+                                :
+                            </td>
+                            <td class="py-2 px-2 text-right">{{ number_format($sumTax, 2) }}</td>
+                            <td></td>
+                        </tr>
                         <tr class="border-t-2 border-zinc-300 dark:border-zinc-600">
                             <td colspan="8" class="py-3 px-2 text-right font-semibold">Grand Total:</td>
-                            <td class="py-3 px-2 text-right font-semibold">
-                                {{ number_format(collect($items)->sum(fn($i) => (float)$i['total']), 2) }}
-                            </td>
+                            <td class="py-3 px-2 text-right font-semibold">{{ number_format($sumTotal, 2) }}</td>
                             <td></td>
                         </tr>
                     </tfoot>

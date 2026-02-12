@@ -16,6 +16,9 @@ return new class extends Migration
             $table->foreignId('partner_id')->constrained('partners');
             $table->foreignId('company_id')->nullable()->constrained('companies');
             $table->foreignId('item_category_id')->nullable()->constrained('item_categories');
+            $table->string('tax_mode', 20)->default('NONE'); // INCLUDE, EXCLUDE, NONE
+            $table->foreignId('tax_id')->nullable()->constrained('taxes');
+            $table->decimal('tax_rate', 5, 2)->default(0);
             $table->string('status', 20)->default('INIT'); // INIT, APPROVAL, REQUEST, ORDER, DELIVERY, FINISH, FINAL
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();

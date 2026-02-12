@@ -38,7 +38,7 @@ class CleanupItemPriceHistory extends Command
 
         $this->info("Deleting item price history records older than {$cutoffDate->format('Y-m-d')}...");
 
-        $deletedCount = HistoryItemPrice::where('changed_at', '<', $cutoffDate)->delete();
+        $deletedCount = HistoryItemPrice::where('created_at', '<', $cutoffDate)->delete();
 
         $this->info("Successfully deleted {$deletedCount} records.");
 

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Partners\Customers;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Partner;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -17,11 +18,14 @@ class Edit extends Component
 
     public $inputs = [];
 
+    public $dropdown_category_prices = [];
+
     public function rules()
     {
         return [
             'inputs.code' => 'required|string|max:50|unique:partners,code,'.$this->customer?->id,
             'inputs.name' => 'required|string|max:100',
+            'inputs.category_price_id' => 'nullable|exists:category_prices,id',
             'inputs.remarks' => 'nullable|string|max:500',
             'inputs.is_active' => 'boolean',
         ];
@@ -36,6 +40,11 @@ class Edit extends Component
         ];
     }
 
+    private function loadDropdowns(): void
+    {
+        $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices(['labelFormat' => 'code_name']);
+    }
+
     #[On('cmw.partners.customers.edit.open')]
     public function openModal($id)
     {
@@ -45,10 +54,12 @@ class Edit extends Component
 
         $this->inputs['code'] = $this->customer->code;
         $this->inputs['name'] = $this->customer->name;
+        $this->inputs['category_price_id'] = $this->customer->category_price_id;
         $this->inputs['remarks'] = $this->customer->remarks;
         $this->inputs['is_active'] = (bool) $this->customer->is_active;
 
         $this->resetValidation();
+        $this->loadDropdowns();
 
         $this->modal('edit-customer')->show();
     }

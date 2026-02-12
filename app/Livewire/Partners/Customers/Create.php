@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Partners\Customers;
 
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Partner;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +16,14 @@ class Create extends Component
 {
     public $inputs = [];
 
+    public $dropdown_category_prices = [];
+
     public function rules()
     {
         return [
             'inputs.code' => 'required|string|max:50|unique:partners,code',
             'inputs.name' => 'required|string|max:100',
+            'inputs.category_price_id' => 'nullable|exists:category_prices,id',
             'inputs.remarks' => 'nullable|string|max:500',
         ];
     }
@@ -33,6 +37,11 @@ class Create extends Component
         ];
     }
 
+    private function loadDropdowns(): void
+    {
+        $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices(['labelFormat' => 'code_name']);
+    }
+
     #[On('cmw.partners.customers.create.open')]
     public function openModal()
     {
@@ -40,6 +49,7 @@ class Create extends Component
 
         $this->reset(['inputs']);
         $this->resetValidation();
+        $this->loadDropdowns();
 
         $this->modal('create-customer')->show();
     }

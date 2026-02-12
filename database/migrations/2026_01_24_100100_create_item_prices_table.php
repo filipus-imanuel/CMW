@@ -27,10 +27,22 @@ return new class extends Migration
             // Composite unique constraint to prevent duplicate item+category combinations
             $table->unique(['item_id', 'category_price_id'], 'item_prices_item_category_unique');
         });
+
+        // Add foreign key constraint to partners.category_price_id
+        Schema::table('partners', function (Blueprint $table) {
+            $table->foreign('category_price_id')
+                ->references('id')
+                ->on('category_prices')
+                ->nullOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('partners', function (Blueprint $table) {
+            $table->dropForeign(['category_price_id']);
+        });
+
         Schema::dropIfExists('item_prices');
     }
 };

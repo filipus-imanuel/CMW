@@ -7,6 +7,7 @@ use App\Helpers\CMW\CustomerCheckHelper;
 use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Partner;
+use App\Models\CMW\Master\Tax;
 use App\Models\CMW\Transaction\OrderHeader;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,8 @@ class Create extends Component
             'inputs.partner_id' => 'required|exists:partners,id',
             'inputs.company_id' => 'required|exists:companies,id',
             'inputs.item_category_id' => 'required|exists:item_categories,id',
+            'inputs.tax_mode' => 'required|in:INCLUDE,EXCLUDE,NONE',
+            'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
             'inputs.date' => 'required|date',
             'inputs.remarks' => 'nullable|string|max:1024',
         ];
@@ -42,6 +45,8 @@ class Create extends Component
             'partner_id' => '',
             'company_id' => '',
             'item_category_id' => '',
+            'tax_mode' => 'NONE',
+            'tax_id' => '',
             'date' => now()->format('Y-m-d'),
             'remarks' => '',
         ];
@@ -66,6 +71,17 @@ class Create extends Component
         }
 
         $this->dropdown_data['companies'] = PopulateDataHelper::getCompanies();
+        $this->dropdown_data['taxes'] = PopulateDataHelper::getTaxes();
+    }
+
+    /**
+     * Reset tax selection when tax mode changes.
+     */
+    public function updatedInputsTaxMode($value): void
+    {
+        if ($value === 'NONE') {
+            $this->inputs['tax_id'] = '';
+        }
     }
 
     /**
@@ -152,6 +168,14 @@ class Create extends Component
             // Get company currency
             $company = Company::with('currency')->findOrFail($validated['inputs']['company_id']);
 
+            // Resolve tax rate from selected tax
+            $taxRate = 0;
+            $taxMode = $validated['inputs']['tax_mode'];
+            if ($taxMode !== 'NONE' && ! empty($validated['inputs']['tax_id'])) {
+                $tax = Tax::find($validated['inputs']['tax_id']);
+                $taxRate = $tax ? (float) $tax->rate : 0;
+            }
+
             $order = OrderHeader::create([
                 'code' => CodeGeneratorHelper::generateOrderCode('SR'),
                 'date' => $validated['inputs']['date'],
@@ -159,6 +183,9 @@ class Create extends Component
                 'partner_id' => $validated['inputs']['partner_id'],
                 'company_id' => $validated['inputs']['company_id'],
                 'item_category_id' => $validated['inputs']['item_category_id'],
+                'tax_mode' => $taxMode,
+                'tax_id' => $taxMode !== 'NONE' ? $validated['inputs']['tax_id'] : null,
+                'tax_rate' => $taxRate,
                 'status' => 'INIT',
                 'remarks' => $validated['inputs']['remarks'] ?? null,
                 'subtotal' => 0,

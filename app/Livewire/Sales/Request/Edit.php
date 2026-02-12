@@ -3,7 +3,9 @@
 namespace App\Livewire\Sales\Request;
 
 use App\Helpers\CMW\CustomerCheckHelper;
+use App\Helpers\CMW\PopulateDataHelper;
 use App\Helpers\CMW\TransactionHelper;
+use App\Models\CMW\Master\Tax;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
 use Flux\Flux;
@@ -24,6 +26,8 @@ class Edit extends Component
 
     public $checks = [];
 
+    public $dropdown_data = [];
+
     public $deleteItemId = null;
 
     public function mount($id): void
@@ -40,8 +44,14 @@ class Edit extends Component
             return;
         }
 
+        $this->loadDropdownData();
         $this->handlePopulateInputs();
         $this->runChecks();
+    }
+
+    public function loadDropdownData(): void
+    {
+        $this->dropdown_data['taxes'] = PopulateDataHelper::getTaxes();
     }
 
     public function handlePopulateInputs(): void
@@ -49,21 +59,36 @@ class Edit extends Component
         $this->inputs = [
             'date' => $this->order->date?->format('Y-m-d'),
             'remarks' => $this->order->remarks ?? '',
+            'tax_mode' => $this->order->tax_mode ?? 'NONE',
+            'tax_id' => $this->order->tax_id ?? '',
         ];
 
-        $this->items = $this->order->details->map(fn ($detail) => [
-            'id' => $detail->id,
-            'item_id' => $detail->item_id,
-            'item_code' => $detail->item?->code ?? '',
-            'item_name' => $detail->item?->name ?? '',
-            'uom_id' => $detail->uom_id,
-            'uom_name' => $detail->uom?->name ?? '',
-            'quantity' => number_format((float) $detail->quantity, 2, '.', ''),
-            'price' => number_format((float) $detail->price, 2, '.', ''),
-            'discount' => number_format((float) $detail->discount, 2, '.', ''),
-            'tax' => number_format((float) $detail->tax, 2, '.', ''),
-            'total' => number_format((float) $detail->total, 2, '.', ''),
-        ])->toArray();
+        $taxMode = $this->inputs['tax_mode'];
+        $taxRate = (float) ($this->order->tax_rate ?? 0);
+
+        $this->items = $this->order->details->map(function ($detail) use ($taxMode, $taxRate) {
+            $calc = TransactionHelper::calculateItemTax(
+                (float) $detail->quantity,
+                (float) $detail->price,
+                (float) $detail->discount,
+                $taxMode,
+                $taxRate
+            );
+
+            return [
+                'id' => $detail->id,
+                'item_id' => $detail->item_id,
+                'item_code' => $detail->item?->code ?? '',
+                'item_name' => $detail->item?->name ?? '',
+                'uom_id' => $detail->uom_id,
+                'uom_name' => $detail->uom?->name ?? '',
+                'quantity' => number_format((float) $detail->quantity, 2, '.', ''),
+                'price' => number_format((float) $detail->price, 2, '.', ''),
+                'discount' => number_format((float) $detail->discount, 2, '.', ''),
+                'tax' => number_format($calc['tax'], 2, '.', ''),
+                'total' => number_format($calc['total'], 2, '.', ''),
+            ];
+        })->toArray();
     }
 
     public function runChecks(): void
@@ -113,7 +138,20 @@ class Edit extends Component
     }
 
     /**
-     * Recalculate a single item row total.
+     * Get the current tax rate from the selected tax.
+     */
+    private function getCurrentTaxRate(): float
+    {
+        $taxMode = $this->inputs['tax_mode'] ?? 'NONE';
+        if ($taxMode === 'NONE' || empty($this->inputs['tax_id'])) {
+            return 0;
+        }
+
+        return (float) ($this->order->tax_rate ?? 0);
+    }
+
+    /**
+     * Recalculate a single item row total using TransactionHelper.
      */
     public function recalculateItemTotal(int $index): void
     {
@@ -124,9 +162,55 @@ class Edit extends Component
         $qty = (float) ($this->items[$index]['quantity'] ?? 0);
         $price = (float) ($this->items[$index]['price'] ?? 0);
         $discount = (float) ($this->items[$index]['discount'] ?? 0);
-        $tax = (float) ($this->items[$index]['tax'] ?? 0);
+        $taxMode = $this->inputs['tax_mode'] ?? 'NONE';
+        $taxRate = $this->getCurrentTaxRate();
 
-        $this->items[$index]['total'] = number_format(($qty * $price) - $discount + $tax, 2, '.', '');
+        $calc = TransactionHelper::calculateItemTax($qty, $price, $discount, $taxMode, $taxRate);
+
+        $this->items[$index]['tax'] = number_format($calc['tax'], 2, '.', '');
+        $this->items[$index]['total'] = number_format($calc['total'], 2, '.', '');
+    }
+
+    /**
+     * Recalculate all items (e.g. when tax mode/rate changes).
+     */
+    public function recalculateAllItems(): void
+    {
+        foreach ($this->items as $index => $item) {
+            $this->recalculateItemTotal($index);
+        }
+    }
+
+    /**
+     * Handle tax mode change - reset tax_id if NONE, recalculate all.
+     */
+    public function updatedInputsTaxMode($value): void
+    {
+        if ($value === 'NONE') {
+            $this->inputs['tax_id'] = '';
+            if ($this->order) {
+                $this->order->tax_rate = 0;
+            }
+        }
+
+        $this->recalculateAllItems();
+    }
+
+    /**
+     * Handle tax selection change - resolve rate and recalculate.
+     */
+    public function updatedInputsTaxId($value): void
+    {
+        if ($value && $this->order) {
+            $tax = Tax::find($value);
+            $this->order->tax_rate = $tax ? (float) $tax->rate : 0;
+        } else {
+            if ($this->order) {
+                $this->order->tax_rate = 0;
+            }
+        }
+
+        $this->recalculateAllItems();
     }
 
     /**
@@ -194,20 +278,33 @@ class Edit extends Component
         $this->validate([
             'inputs.date' => 'required|date',
             'inputs.remarks' => 'nullable|string|max:1024',
+            'inputs.tax_mode' => 'required|in:INCLUDE,EXCLUDE,NONE',
+            'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.uom_id' => 'required|exists:uoms,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.tax' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () {
-            // Update header
+            // Resolve tax rate
+            $taxMode = $this->inputs['tax_mode'];
+            $taxId = $taxMode !== 'NONE' ? ($this->inputs['tax_id'] ?: null) : null;
+            $taxRate = 0;
+            if ($taxId) {
+                $tax = Tax::find($taxId);
+                $taxRate = $tax ? (float) $tax->rate : 0;
+            }
+
+            // Update header with tax settings
             $this->order->update([
                 'date' => $this->inputs['date'],
                 'remarks' => $this->inputs['remarks'] ?? null,
+                'tax_mode' => $taxMode,
+                'tax_id' => $taxId,
+                'tax_rate' => $taxRate,
                 'updated_by' => Auth::id(),
             ]);
 
@@ -215,15 +312,21 @@ class Edit extends Component
             $existingDetailIds = [];
 
             foreach ($this->items as $item) {
+                $qty = (float) $item['quantity'];
+                $price = (float) $item['price'];
+                $discount = (float) ($item['discount'] ?? 0);
+
+                $calc = TransactionHelper::calculateItemTax($qty, $price, $discount, $taxMode, $taxRate);
+
                 $detailData = [
                     'order_header_id' => $this->order->id,
                     'item_id' => $item['item_id'],
                     'uom_id' => $item['uom_id'],
-                    'quantity' => (float) $item['quantity'],
-                    'price' => (float) $item['price'],
-                    'discount' => (float) ($item['discount'] ?? 0),
-                    'tax' => (float) ($item['tax'] ?? 0),
-                    'total' => ((float) $item['quantity'] * (float) $item['price']) - (float) ($item['discount'] ?? 0) + (float) ($item['tax'] ?? 0),
+                    'quantity' => $qty,
+                    'price' => $price,
+                    'discount' => $discount,
+                    'tax' => $calc['tax'],
+                    'total' => $calc['total'],
                     'updated_by' => Auth::id(),
                 ];
 

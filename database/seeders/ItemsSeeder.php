@@ -23,7 +23,7 @@ class ItemsSeeder extends Seeder
             [
                 'code' => 'ITM-FLM-PP-001',
                 'name' => 'PP Film 12 x 12 cm',
-                'type' => 'finished_goods',
+                'type' => 'FINISHED_GOOD',
                 'uom_id' => $uoms['LEMBAR'],
                 'item_category_id' => 2,
                 'cost_price' => 8500,
@@ -35,7 +35,7 @@ class ItemsSeeder extends Seeder
             [
                 'code' => 'ITM-FLM-PP-002',
                 'name' => 'PP Film 12 x 13 cm',
-                'type' => 'finished_goods',
+                'type' => 'FINISHED_GOOD',
                 'item_category_id' => 2,
                 'uom_id' => $uoms['ROLL'],
                 'cost_price' => 420000,
@@ -47,7 +47,7 @@ class ItemsSeeder extends Seeder
             [
                 'code' => 'ITM-STRETCH-001',
                 'name' => 'Stretch Film Industri',
-                'type' => 'finished_goods',
+                'type' => 'FINISHED_GOOD',
                 'item_category_id' => 2,
                 'uom_id' => $uoms['KG'],
                 'cost_price' => 18500,
@@ -59,7 +59,7 @@ class ItemsSeeder extends Seeder
             [
                 'code' => 'ITM-WRAP-001',
                 'name' => 'Plastic Wrap Lembaran',
-                'type' => 'finished_goods',
+                'type' => 'FINISHED_GOOD',
                 'item_category_id' => 2,
                 'uom_id' => $uoms['LEMBAR'],
                 'cost_price' => 3000,
@@ -72,7 +72,7 @@ class ItemsSeeder extends Seeder
             [
                 'code' => 'ITM-KLIP-STD-001',
                 'name' => 'Klip Plastik Standar',
-                'type' => 'finished_goods',
+                'type' => 'FINISHED_GOOD',
                 'item_category_id' => 2,
                 'uom_id' => $uoms['ROLL'],
                 'cost_price' => 150000,

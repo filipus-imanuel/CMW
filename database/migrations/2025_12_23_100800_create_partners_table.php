@@ -16,6 +16,7 @@ return new class extends Migration
             $table->boolean('is_supplier')->default(false);
             $table->boolean('is_customer')->default(false);
             $table->decimal('credit_limit', 13, 2)->default(0);
+            $table->unsignedBigInteger('category_price_id')->nullable();
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

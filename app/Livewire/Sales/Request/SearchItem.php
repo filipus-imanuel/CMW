@@ -2,7 +2,10 @@
 
 namespace App\Livewire\Sales\Request;
 
+use App\Helpers\CMW\PriceResolutionHelper;
+use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Master\Partner;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -10,14 +13,17 @@ class SearchItem extends Component
 {
     public $search = '';
 
-    public $categoryId = null;
+    public $itemCategoryId = null;
+
+    public $partnerId = null;
 
     public $results = [];
 
     #[On('sales.request.search-item.open')]
-    public function openModal(int $categoryId): void
+    public function openModal(int $itemCategoryId, ?int $partnerId = null): void
     {
-        $this->categoryId = $categoryId;
+        $this->itemCategoryId = $itemCategoryId;
+        $this->partnerId = $partnerId;
         $this->search = '';
         $this->results = [];
         $this->modal('search-item')->show();
@@ -36,24 +42,48 @@ class SearchItem extends Component
             return;
         }
 
-        $this->results = Item::query()
+        $items = Item::query()
             ->where('is_active', true)
-            ->when($this->categoryId, fn ($q) => $q->where('category_id', $this->categoryId))
+            ->when($this->itemCategoryId, fn ($q) => $q->where('item_category_id', $this->itemCategoryId))
             ->where(function ($q) {
                 $q->where('name', 'like', "%{$this->search}%")
                     ->orWhere('code', 'like', "%{$this->search}%");
             })
             ->with(['uom'])
             ->limit(20)
-            ->get()
-            ->map(fn ($item) => [
-                'id' => $item->id,
-                'code' => $item->code,
-                'name' => $item->name,
-                'uom_id' => $item->uom_id,
-                'uom_name' => $item->uom?->name ?? '',
-                'sell_price' => (float) $item->sell_price,
-            ])
+            ->get();
+
+        $partner = $this->partnerId ? Partner::find($this->partnerId) : null;
+        $resolvedPrices = PriceResolutionHelper::resolveMany($items, $partner);
+
+        // Get unique category price IDs and load them
+        $categoryPriceIds = collect($resolvedPrices)
+            ->pluck('category_price_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $categoryPrices = CategoryPrice::whereIn('id', $categoryPriceIds)
+            ->pluck('code', 'id')
+            ->toArray();
+
+        $this->results = $items
+            ->map(function ($item) use ($resolvedPrices, $categoryPrices) {
+                $resolved = $resolvedPrices[$item->id] ?? [];
+                $categoryPriceId = $resolved['category_price_id'] ?? null;
+
+                return [
+                    'id' => $item->id,
+                    'code' => $item->code,
+                    'name' => $item->name,
+                    'uom_id' => $item->uom_id,
+                    'uom_name' => $item->uom?->name ?? '',
+                    'sell_price' => $resolved['price'] ?? (float) $item->sell_price,
+                    'price_source' => $resolved['source'] ?? 'item_sell_price',
+                    'category_price_code' => $categoryPriceId ? ($categoryPrices[$categoryPriceId] ?? null) : null,
+                ];
+            })
             ->toArray();
     }
 
