@@ -58,12 +58,11 @@
                 <flux:navlist.group :heading="__('Sales')" expandable :expanded="request()->routeIs('sales.*')" class="grid">
                     @can('view sales request')
                     <flux:navlist.item icon="document-text" :href="route('sales.request.index.init')" :current="request()->routeIs('sales.request.index.init') || request()->routeIs('sales.request.create') || request()->routeIs('sales.request.edit')" wire:navigate>{{ __('Sales Requests') }}</flux:navlist.item>
-                    <flux:navlist.item icon="clock" :href="route('sales.request.index.approval')" :current="request()->routeIs('sales.request.index.approval')" wire:navigate>{{ __('Pending Approval') }}</flux:navlist.item>
                     <flux:navlist.item icon="check-circle" :href="route('sales.request.index.request')" :current="request()->routeIs('sales.request.index.request')" wire:navigate>{{ __('Approved Requests') }}</flux:navlist.item>
                     @endcan
-                    @can('approve sales request')
-                    <flux:navlist.item icon="clipboard-document-check" :href="route('sales.request.approval.index')" :current="request()->routeIs('sales.request.approval.*')" wire:navigate>{{ __('Request Approvals') }}</flux:navlist.item>
-                    @endcan
+                    @canany(['view sales request', 'approve sales request'])
+                    <flux:navlist.item icon="clipboard-document-check" :href="route('sales.request.approval.index')" :current="request()->routeIs('sales.request.approval.*')" wire:navigate>{{ __('Pending Approvals') }}</flux:navlist.item>
+                    @endcanany
                 </flux:navlist.group>
 
                 @can('edit system setting')

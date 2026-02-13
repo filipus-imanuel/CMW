@@ -79,6 +79,7 @@ class SearchItem extends Component
                     'name' => $item->name,
                     'uom_id' => $item->uom_id,
                     'uom_name' => $item->uom?->name ?? '',
+                    'het_price' => (float) $item->sell_price,
                     'sell_price' => $resolved['price'] ?? (float) $item->sell_price,
                     'price_source' => $resolved['source'] ?? 'item_sell_price',
                     'category_price_code' => $categoryPriceId ? ($categoryPrices[$categoryPriceId] ?? null) : null,
@@ -98,7 +99,8 @@ class SearchItem extends Component
                 itemName: $item['name'],
                 uomId: $item['uom_id'],
                 uomName: $item['uom_name'],
-                sellPrice: $item['sell_price']
+                sellPrice: $item['sell_price'],
+                hetPrice: $item['het_price']
             );
 
             $this->modal('search-item')->close();

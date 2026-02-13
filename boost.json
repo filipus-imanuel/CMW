@@ -1,7 +1,9 @@
 {
     "agents": [
-        "codex",
-        "gemini"
+        "copilot"
+    ],
+    "editors": [
+        "vscode"
     ],
     "guidelines": []
 }

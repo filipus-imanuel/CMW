@@ -19,6 +19,7 @@
                             <th class="text-left py-2 px-2 font-medium text-zinc-500">Name</th>
                             <th class="text-left py-2 px-2 font-medium text-zinc-500">UOM</th>
                             <th class="text-center py-2 px-2 font-medium text-zinc-500">Category</th>
+                            <th class="text-right py-2 px-2 font-medium text-zinc-500">HET</th>
                             <th class="text-right py-2 px-2 font-medium text-zinc-500">Price</th>
                             <th class="text-center py-2 px-2 font-medium text-zinc-500"></th>
                         </tr>
@@ -38,6 +39,7 @@
                                         <span class="text-zinc-400">-</span>
                                     @endif
                                 </td>
+                                <td class="py-2 px-2 text-right text-zinc-400">{{ number_format($item['het_price'], 2) }}</td>
                                 <td class="py-2 px-2 text-right">{{ number_format($item['sell_price'], 2) }}</td>
                                 <td class="py-2 px-2 text-center">
                                     <flux:button

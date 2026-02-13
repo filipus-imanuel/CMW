@@ -14,8 +14,27 @@
             <flux:callout color="red" icon="exclamation-triangle" class="mb-4">
                 <flux:callout.heading>Credit Limit Exceeded</flux:callout.heading>
                 <flux:callout.text>
-                    Outstanding balance: {{ number_format($checks['debt']['outstanding'], 2) }} exceeds credit limit: {{ number_format($checks['debt']['limit'], 2) }}.
+                    <div class="space-y-1">
+                        <div>Total projected exposure: <strong>{{ number_format($checks['debt']['projected'], 2) }}</strong> exceeds credit limit: <strong>{{ number_format($checks['debt']['limit'], 2) }}</strong></div>
+                        <div class="text-sm opacity-75">
+                            AR Outstanding: {{ number_format($checks['debt']['outstanding'], 2) }}
+                            · Pending Orders: {{ number_format($checks['debt']['pending_orders'], 2) }}
+                            · This Order: {{ number_format($checks['debt']['current_order'], 2) }}
+                        </div>
+                    </div>
                     This request will require approval.
+                </flux:callout.text>
+            </flux:callout>
+        @elseif(!empty($checks['debt']) && $checks['debt']['limit'] > 0)
+            <flux:callout color="blue" icon="information-circle" class="mb-4">
+                <flux:callout.heading>Credit Info</flux:callout.heading>
+                <flux:callout.text>
+                    Credit remaining: <strong>{{ number_format($checks['debt']['remaining'], 2) }}</strong> / {{ number_format($checks['debt']['limit'], 2) }}
+                    <span class="text-sm opacity-75">
+                        (AR: {{ number_format($checks['debt']['outstanding'], 2) }}
+                        · Pending: {{ number_format($checks['debt']['pending_orders'], 2) }}
+                        · This Order: {{ number_format($checks['debt']['current_order'], 2) }})
+                    </span>
                 </flux:callout.text>
             </flux:callout>
         @endif
@@ -158,6 +177,11 @@
                     </thead>
                     <tbody>
                         @foreach($items as $index => $item)
+                            @php
+                                $guardrail = $priceGuardrails[$index] ?? null;
+                                $warnings = $guardrail['warnings'] ?? [];
+                                $hasWarning = !empty($warnings);
+                            @endphp
                             <tr wire:key="item-{{ $index }}" class="border-b border-zinc-100 dark:border-zinc-800">
                                 <td class="py-2 px-2 text-zinc-500">{{ $index + 1 }}</td>
                                 <td class="py-2 px-2">{{ $item['item_code'] }}</td>
@@ -182,6 +206,24 @@
                                         class="text-right"
                                         size="sm"
                                     />
+                                    @if($guardrail)
+                                        <div class="mt-1 text-xs text-zinc-400">
+                                            HET: {{ number_format($guardrail['het_price'], 2) }}
+                                            · Floor: {{ number_format($guardrail['floor_price'], 2) }}
+                                        </div>
+                                        @if(in_array('above_het', $warnings))
+                                            <div class="mt-0.5 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                <flux:icon.exclamation-triangle class="size-3" />
+                                                Price exceeds HET
+                                            </div>
+                                        @endif
+                                        @if(in_array('below_floor', $warnings))
+                                            <div class="mt-0.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                <flux:icon.exclamation-triangle class="size-3" />
+                                                Price below floor
+                                            </div>
+                                        @endif
+                                    @endif
                                 </td>
                                 <td class="py-2 px-2">
                                     <flux:input

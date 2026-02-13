@@ -13,8 +13,25 @@
             <flux:callout color="red" icon="exclamation-triangle" class="mb-4">
                 <flux:callout.heading>Credit Limit Exceeded</flux:callout.heading>
                 <flux:callout.text>
-                    Outstanding balance: {{ number_format($checks['debt']['outstanding'], 2) }} exceeds credit limit: {{ number_format($checks['debt']['limit'], 2) }}.
+                    <div class="space-y-1">
+                        <div>Total projected exposure: <strong>{{ number_format($checks['debt']['projected'], 2) }}</strong> exceeds credit limit: <strong>{{ number_format($checks['debt']['limit'], 2) }}</strong></div>
+                        <div class="text-sm opacity-75">
+                            AR Outstanding: {{ number_format($checks['debt']['outstanding'], 2) }}
+                            · Pending Orders: {{ number_format($checks['debt']['pending_orders'], 2) }}
+                        </div>
+                    </div>
                     This request will require approval.
+                </flux:callout.text>
+            </flux:callout>
+        @elseif(!empty($checks['debt']) && $checks['debt']['limit'] > 0)
+            <flux:callout color="blue" icon="information-circle" class="mb-4">
+                <flux:callout.heading>Credit Info</flux:callout.heading>
+                <flux:callout.text>
+                    Credit remaining: <strong>{{ number_format($checks['debt']['remaining'], 2) }}</strong> / {{ number_format($checks['debt']['limit'], 2) }}
+                    <span class="text-sm opacity-75">
+                        (AR: {{ number_format($checks['debt']['outstanding'], 2) }}
+                        · Pending: {{ number_format($checks['debt']['pending_orders'], 2) }})
+                    </span>
                 </flux:callout.text>
             </flux:callout>
         @endif

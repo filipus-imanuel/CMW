@@ -71,7 +71,7 @@ class PermissionHelper
             // EXTRA PERMISSIONS (non-standard actions)
             // ══════════════════════════════════════════════════════════════
             'extra' => [
-                // 'resource' => ['custom action'],
+                'sales request' => ['override price'],
             ],
         ];
     }

@@ -24,19 +24,39 @@ class CustomerCheckHelper
     }
 
     /**
-     * Check if customer debt exceeds their credit limit.
-     *
-     * @return array{exceeded: bool, outstanding: float, limit: float}
+     * Get total of pending orders (not yet invoiced) for a customer.
+     * Statuses: APPROVAL, REQUEST, ORDER, DELIVERY.
      */
-    public static function hasExcessiveDebt(int $partnerId): array
+    public static function getPendingOrdersTotal(int $partnerId, ?int $excludeOrderId = null): float
+    {
+        return (float) OrderHeader::where('partner_id', $partnerId)
+            ->whereIn('status', ['APPROVAL', 'REQUEST', 'ORDER', 'DELIVERY'])
+            ->when($excludeOrderId, fn ($q) => $q->where('id', '!=', $excludeOrderId))
+            ->sum('total');
+    }
+
+    /**
+     * Check if customer debt exceeds their credit limit.
+     * Projected = AR outstanding + pending orders total + current order total.
+     *
+     * @return array{exceeded: bool, outstanding: float, pending_orders: float, current_order: float, projected: float, limit: float, remaining: float|null}
+     */
+    public static function hasExcessiveDebt(int $partnerId, float $currentOrderTotal = 0, ?int $excludeOrderId = null): array
     {
         $partner = Partner::findOrFail($partnerId);
         $outstanding = self::getOutstandingBalance($partnerId);
+        $pendingOrders = self::getPendingOrdersTotal($partnerId, $excludeOrderId);
+        $projected = $outstanding + $pendingOrders + $currentOrderTotal;
+        $limit = (float) $partner->credit_limit;
 
         return [
-            'exceeded' => $partner->credit_limit > 0 && $outstanding > (float) $partner->credit_limit,
+            'exceeded' => $limit > 0 && $projected > $limit,
             'outstanding' => $outstanding,
-            'limit' => (float) $partner->credit_limit,
+            'pending_orders' => $pendingOrders,
+            'current_order' => $currentOrderTotal,
+            'projected' => $projected,
+            'limit' => $limit,
+            'remaining' => $limit > 0 ? round($limit - $projected, 2) : null,
         ];
     }
 
@@ -94,9 +114,9 @@ class CustomerCheckHelper
      *
      * @return array{debt: array, deliveries: int, limit: array, has_issues: bool}
      */
-    public static function runAllChecks(int $partnerId, int $companyId, int $categoryId, float $amount = 0): array
+    public static function runAllChecks(int $partnerId, int $companyId, int $categoryId, float $amount = 0, ?int $excludeOrderId = null): array
     {
-        $debt = self::hasExcessiveDebt($partnerId);
+        $debt = self::hasExcessiveDebt($partnerId, $amount, $excludeOrderId);
         $deliveries = self::getPendingDeliveries($partnerId);
         $limit = self::checkCompanyCategoryLimit($companyId, $categoryId, $amount);
 

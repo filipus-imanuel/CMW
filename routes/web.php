@@ -27,7 +27,6 @@ use App\Livewire\Sales\Request\Approval\Index as SalesRequestApprovalIndex;
 use App\Livewire\Sales\Request\Approval\Show as SalesRequestApprovalShow;
 use App\Livewire\Sales\Request\Create as SalesRequestCreate;
 use App\Livewire\Sales\Request\Edit as SalesRequestEdit;
-use App\Livewire\Sales\Request\Index\Approval as SalesRequestPendingIndex;
 use App\Livewire\Sales\Request\Index\Init as SalesRequestInitIndex;
 use App\Livewire\Sales\Request\Index\Request as SalesRequestApprovedIndex;
 use App\Livewire\System\Setting\Edit as SystemSettingEdit;
@@ -101,7 +100,6 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('sales')->name('sales.')->group(function () {
             Route::prefix('requests')->name('request.')->group(function () {
                 Route::get('/', SalesRequestInitIndex::class)->name('index.init');
-                Route::get('/pending-approval', SalesRequestPendingIndex::class)->name('index.approval');
                 Route::get('/approved', SalesRequestApprovedIndex::class)->name('index.request');
                 Route::get('/create', SalesRequestCreate::class)->name('create');
                 Route::get('/{id}/edit', SalesRequestEdit::class)->name('edit');

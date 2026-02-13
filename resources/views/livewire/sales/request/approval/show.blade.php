@@ -14,7 +14,26 @@
             <flux:callout color="red" icon="exclamation-triangle" class="mb-4">
                 <flux:callout.heading>Credit Limit Exceeded</flux:callout.heading>
                 <flux:callout.text>
-                    Outstanding balance: {{ number_format($checks['debt']['outstanding'], 2) }} exceeds credit limit: {{ number_format($checks['debt']['limit'], 2) }}.
+                    <div class="space-y-1">
+                        <div>Total projected exposure: <strong>{{ number_format($checks['debt']['projected'], 2) }}</strong> exceeds credit limit: <strong>{{ number_format($checks['debt']['limit'], 2) }}</strong></div>
+                        <div class="text-sm opacity-75">
+                            AR Outstanding: {{ number_format($checks['debt']['outstanding'], 2) }}
+                            · Pending Orders: {{ number_format($checks['debt']['pending_orders'], 2) }}
+                            · This Order: {{ number_format($checks['debt']['current_order'], 2) }}
+                        </div>
+                    </div>
+                </flux:callout.text>
+            </flux:callout>
+        @elseif(!empty($checks['debt']) && $checks['debt']['limit'] > 0)
+            <flux:callout color="blue" icon="information-circle" class="mb-4">
+                <flux:callout.heading>Credit Info</flux:callout.heading>
+                <flux:callout.text>
+                    Credit remaining: <strong>{{ number_format($checks['debt']['remaining'], 2) }}</strong> / {{ number_format($checks['debt']['limit'], 2) }}
+                    <span class="text-sm opacity-75">
+                        (AR: {{ number_format($checks['debt']['outstanding'], 2) }}
+                        · Pending: {{ number_format($checks['debt']['pending_orders'], 2) }}
+                        · This Order: {{ number_format($checks['debt']['current_order'], 2) }})
+                    </span>
                 </flux:callout.text>
             </flux:callout>
         @endif
@@ -138,24 +157,87 @@
     </flux:card>
 
     {{-- Approval Actions --}}
+    @can('approve sales request')
     <flux:card>
         <flux:heading size="lg" class="mb-4">Approval Decision</flux:heading>
 
-        <div class="mb-4">
-            <flux:textarea
-                wire:model="rejection_reason"
-                label="Rejection Reason"
-                placeholder="Required only if rejecting..."
-                rows="3"
-                :error="$errors->first('rejection_reason')"
-            />
-        </div>
+        <flux:text class="mb-4 text-zinc-600 dark:text-zinc-400">
+            Review the request details above, then approve or reject this sales request.
+        </flux:text>
 
         <div class="flex gap-2">
             <flux:spacer/>
             <flux:button :href="route('sales.request.approval.index')" variant="ghost" wire:navigate>Cancel</flux:button>
-            <flux:button wire:click="reject" variant="danger" wire:confirm="Are you sure you want to reject this request?">Reject</flux:button>
-            <flux:button wire:click="approve" variant="primary" wire:confirm="Are you sure you want to approve this request?">Approve</flux:button>
+            <flux:button wire:click="confirmReject" variant="danger" icon="x-circle">Reject</flux:button>
+            <flux:button wire:click="confirmApprove" variant="primary" icon="check-circle">Approve</flux:button>
         </div>
     </flux:card>
+    @else
+    <flux:card>
+        <flux:heading size="lg" class="mb-4">Awaiting Approval</flux:heading>
+        
+        <flux:text class="mb-4 text-zinc-600 dark:text-zinc-400">
+            This sales request is pending approval from authorized personnel.
+        </flux:text>
+
+        <div class="flex gap-2">
+            <flux:spacer/>
+            <flux:button :href="route('sales.request.approval.index')" variant="primary" wire:navigate>Back to List</flux:button>
+        </div>
+    </flux:card>
+    @endcan
+
+    {{-- Approve Confirmation Modal --}}
+    @can('approve sales request')
+    <flux:modal name="approve-confirmation" class="md:w-96">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Approve Sales Request</flux:heading>
+                <flux:subheading class="mt-2">
+                    You are about to approve request <strong>{{ $order->code }}</strong> for <strong>{{ $order->currency?->code }} {{ number_format((float)$order->total, 2) }}</strong>.
+                </flux:subheading>
+            </div>
+
+            <flux:textarea
+                wire:model="approvalNotes"
+                label="Approval Notes (Optional)"
+                placeholder="Add any notes about this approval..."
+                rows="3"
+            />
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button variant="ghost" x-on:click="$flux.modal('approve-confirmation').close()">Cancel</flux:button>
+                <flux:button variant="primary" wire:click="processApproval" icon="check-circle">Approve</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    {{-- Reject Confirmation Modal --}}
+    <flux:modal name="reject-confirmation" class="md:w-96">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Reject Sales Request</flux:heading>
+                <flux:subheading class="mt-2">
+                    Rejecting this request will return it to <strong>INIT (Draft)</strong> status. The requester will be able to edit and resubmit.
+                </flux:subheading>
+            </div>
+
+            <flux:textarea
+                wire:model="rejection_reason"
+                label="Rejection Reason"
+                badge="Required"
+                placeholder="Please provide a reason for rejection..."
+                rows="3"
+                :error="$errors->first('rejection_reason')"
+            />
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button variant="ghost" x-on:click="$flux.modal('reject-confirmation').close()">Cancel</flux:button>
+                <flux:button variant="danger" wire:click="processReject" icon="x-circle">Reject</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+    @endcan
 </div>

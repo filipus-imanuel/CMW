@@ -22,6 +22,15 @@ class SystemSettingSeeder extends Seeder
                 'name_ch' => '无需审批的价格变更阈值 (%)',
                 'category' => 'Inventory',
             ],
+            [
+                'key' => 'sales.request.floor_percentage_of_het',
+                'value' => '80.00',
+                'data_type' => 'decimal',
+                'name_id' => 'Batas Bawah Harga (% dari HET)',
+                'name_en' => 'Price Floor (% of HET)',
+                'name_ch' => '价格下限 (占最高零售价的百分比)',
+                'category' => 'Sales',
+            ],
         ];
 
         foreach ($settings as $setting) {

@@ -19,9 +19,14 @@ class Show extends Component
 
     public $rejection_reason = '';
 
+    public $approvalNotes = '';
+
     public function mount($id): void
     {
-        $this->authorize('approve sales request');
+        // Allow both view and approve permissions
+        if (! Auth::user()?->can('view sales request') && ! Auth::user()?->can('approve sales request')) {
+            abort(403);
+        }
 
         $this->order = OrderHeader::with([
             'partner', 'company', 'itemCategory', 'currency',
@@ -48,31 +53,54 @@ class Show extends Component
             $this->order->partner_id,
             $this->order->company_id,
             $this->order->item_category_id,
-            (float) $this->order->total
+            (float) $this->order->total,
+            $this->order->id
         );
     }
 
-    public function approve(): void
+    public function confirmApprove(): void
+    {
+        $this->reset(['approvalNotes']);
+        $this->resetValidation();
+        $this->modal('approve-confirmation')->show();
+    }
+
+    public function processApproval(): void
     {
         $this->authorize('approve sales request');
 
         DB::transaction(function () {
-            $this->order->update([
+            $updateData = [
                 'status' => 'REQUEST',
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
                 'rejection_reason' => null,
                 'updated_by' => Auth::id(),
-            ]);
+            ];
+
+            // Save approval notes if provided
+            if (! empty($this->approvalNotes)) {
+                $updateData['remarks'] = trim($this->order->remarks."\n\n[Approval Notes]\n".$this->approvalNotes);
+            }
+
+            $this->order->update($updateData);
         });
 
         Flux::toast('Sales request approved successfully', variant: 'success', position: 'top-end');
         $this->dispatch('sales.request.refresh.approval');
         $this->dispatch('sales.request.refresh.request');
+        $this->modal('approve-confirmation')->close();
         $this->redirectRoute('sales.request.approval.index', navigate: true);
     }
 
-    public function reject(): void
+    public function confirmReject(): void
+    {
+        $this->reset(['rejection_reason']);
+        $this->resetValidation();
+        $this->modal('reject-confirmation')->show();
+    }
+
+    public function processReject(): void
     {
         $this->authorize('reject sales request');
 
@@ -91,6 +119,7 @@ class Show extends Component
         Flux::toast('Sales request rejected and returned to draft', variant: 'warning', position: 'top-end');
         $this->dispatch('sales.request.refresh.approval');
         $this->dispatch('sales.request.refresh.init');
+        $this->modal('reject-confirmation')->close();
         $this->redirectRoute('sales.request.approval.index', navigate: true);
     }
 

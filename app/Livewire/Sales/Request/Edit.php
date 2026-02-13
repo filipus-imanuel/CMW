@@ -4,13 +4,17 @@ namespace App\Livewire\Sales\Request;
 
 use App\Helpers\CMW\CustomerCheckHelper;
 use App\Helpers\CMW\PopulateDataHelper;
+use App\Helpers\CMW\PriceResolutionHelper;
 use App\Helpers\CMW\TransactionHelper;
+use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Master\Tax;
+use App\Models\CMW\System\Setting;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -29,6 +33,22 @@ class Edit extends Component
     public $dropdown_data = [];
 
     public $deleteItemId = null;
+
+    /**
+     * Per-item guardrail data: het_price, floor_price, resolved_price, warnings.
+     *
+     * @var array<int, array{het_price: float, floor_price: float, resolved_price: float, warnings: array<string>}>
+     */
+    public $priceGuardrails = [];
+
+    /**
+     * Get the floor percentage from system settings.
+     */
+    #[Computed]
+    public function floorPercentage(): float
+    {
+        return (float) Setting::get('sales.request.floor_percentage_of_het', 80);
+    }
 
     public function mount($id): void
     {
@@ -66,6 +86,12 @@ class Edit extends Component
         $taxMode = $this->inputs['tax_mode'];
         $taxRate = (float) ($this->order->tax_rate ?? 0);
 
+        // Load items with their Item model for HET
+        $partner = $this->order->partner;
+        $detailItems = $this->order->details->pluck('item')->filter()->unique('id');
+        $resolvedPrices = PriceResolutionHelper::resolveMany($detailItems, $partner);
+        $floorPct = $this->floorPercentage;
+
         $this->items = $this->order->details->map(function ($detail) use ($taxMode, $taxRate) {
             $calc = TransactionHelper::calculateItemTax(
                 (float) $detail->quantity,
@@ -89,6 +115,22 @@ class Edit extends Component
                 'total' => number_format($calc['total'], 2, '.', ''),
             ];
         })->toArray();
+
+        // Build guardrails for each item row
+        $this->priceGuardrails = [];
+        foreach ($this->items as $index => $item) {
+            $hetPrice = (float) ($detailItems->firstWhere('id', $item['item_id'])?->sell_price ?? 0);
+            $resolved = $resolvedPrices[$item['item_id']] ?? null;
+            $resolvedPrice = $resolved ? $resolved['price'] : $hetPrice;
+            $floorPrice = $hetPrice * ($floorPct / 100);
+
+            $this->priceGuardrails[$index] = [
+                'het_price' => $hetPrice,
+                'floor_price' => round($floorPrice, 2),
+                'resolved_price' => $resolvedPrice,
+                'warnings' => $this->computePriceWarnings((float) $item['price'], $hetPrice, $floorPrice),
+            ];
+        }
     }
 
     public function runChecks(): void
@@ -101,7 +143,8 @@ class Edit extends Component
             $this->order->partner_id,
             $this->order->company_id,
             $this->order->item_category_id,
-            (float) $this->order->total
+            (float) $this->order->total,
+            $this->order->id
         );
     }
 
@@ -109,7 +152,7 @@ class Edit extends Component
      * Handle item selected from SearchItem modal.
      */
     #[On('sales.request.item-selected')]
-    public function addItem(int $itemId, string $itemCode, string $itemName, int $uomId, string $uomName, float $sellPrice): void
+    public function addItem(int $itemId, string $itemCode, string $itemName, int $uomId, string $uomName, float $sellPrice, float $hetPrice): void
     {
         // Check if item already exists in the list
         foreach ($this->items as $item) {
@@ -134,7 +177,19 @@ class Edit extends Component
             'total' => number_format($sellPrice, 2, '.', ''),
         ];
 
-        $this->recalculateItemTotal(count($this->items) - 1);
+        $newIndex = count($this->items) - 1;
+
+        // Build guardrail for the new item
+        $floorPct = $this->floorPercentage;
+        $floorPrice = $hetPrice * ($floorPct / 100);
+        $this->priceGuardrails[$newIndex] = [
+            'het_price' => $hetPrice,
+            'floor_price' => round($floorPrice, 2),
+            'resolved_price' => $sellPrice,
+            'warnings' => $this->computePriceWarnings($sellPrice, $hetPrice, $floorPrice),
+        ];
+
+        $this->recalculateItemTotal($newIndex);
     }
 
     /**
@@ -223,6 +278,14 @@ class Edit extends Component
         if (count($parts) === 2) {
             $index = (int) $parts[0];
             $this->recalculateItemTotal($index);
+
+            // Refresh guardrail warnings when price changes
+            if ($parts[1] === 'price' && isset($this->priceGuardrails[$index])) {
+                $currentPrice = (float) ($this->items[$index]['price'] ?? 0);
+                $hetPrice = $this->priceGuardrails[$index]['het_price'];
+                $floorPrice = $this->priceGuardrails[$index]['floor_price'];
+                $this->priceGuardrails[$index]['warnings'] = $this->computePriceWarnings($currentPrice, $hetPrice, $floorPrice);
+            }
         }
     }
 
@@ -261,6 +324,10 @@ class Edit extends Component
             unset($this->items[$index]);
             $this->items = array_values($this->items);
 
+            // Re-index guardrails
+            unset($this->priceGuardrails[$index]);
+            $this->priceGuardrails = array_values($this->priceGuardrails);
+
             Flux::toast('Item removed', variant: 'success', position: 'top-end');
         }
 
@@ -287,6 +354,20 @@ class Edit extends Component
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
         ]);
+
+        // Check if any item price was overridden from its resolved price
+        $hasPriceOverride = false;
+        foreach ($this->items as $index => $item) {
+            $resolvedPrice = $this->priceGuardrails[$index]['resolved_price'] ?? null;
+            if ($resolvedPrice !== null && (float) $item['price'] !== $resolvedPrice) {
+                $hasPriceOverride = true;
+                break;
+            }
+        }
+
+        if ($hasPriceOverride) {
+            $this->authorize('override price sales request');
+        }
 
         DB::transaction(function () {
             // Resolve tax rate
@@ -389,7 +470,8 @@ class Edit extends Component
                 $this->order->partner_id,
                 $this->order->company_id,
                 $this->order->item_category_id,
-                (float) $this->order->total
+                (float) $this->order->total,
+                $this->order->id
             );
 
             if ($checks['has_issues']) {
@@ -417,6 +499,26 @@ class Edit extends Component
         $this->dispatch('sales.request.refresh.approval');
         $this->dispatch('sales.request.refresh.request');
         $this->redirectRoute('sales.request.index.init', navigate: true);
+    }
+
+    /**
+     * Compute guardrail warnings for a given price vs HET and floor.
+     *
+     * @return array<string>
+     */
+    private function computePriceWarnings(float $price, float $hetPrice, float $floorPrice): array
+    {
+        $warnings = [];
+
+        if ($hetPrice > 0 && $price > $hetPrice) {
+            $warnings[] = 'above_het';
+        }
+
+        if ($floorPrice > 0 && $price < $floorPrice) {
+            $warnings[] = 'below_floor';
+        }
+
+        return $warnings;
     }
 
     public function render()

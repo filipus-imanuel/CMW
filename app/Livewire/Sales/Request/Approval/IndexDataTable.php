@@ -40,7 +40,7 @@ class IndexDataTable extends DataTableComponent
                 ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
                     'rowId' => $row->id,
                     'enable_this_row' => ! $row->trashed(),
-                    'showDetail' => Auth::user()?->can('approve sales request'),
+                    'showDetail' => Auth::user()?->can('view sales request') || Auth::user()?->can('approve sales request'),
                     'detailHref' => route('sales.request.approval.show', ['id' => $row->id]),
                 ])),
 
