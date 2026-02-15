@@ -5,5 +5,9 @@
     "editors": [
         "vscode"
     ],
-    "guidelines": []
+    "guidelines": [
+        ".ai/guidelines/00-rule-precedence.md",
+        ".ai/guidelines/10-repo-constraints.md",
+        ".ai/guidelines/20-security-audit.md"
+    ]
 }
