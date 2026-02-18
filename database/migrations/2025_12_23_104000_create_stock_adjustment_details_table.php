@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('stock_adjustment_header_id')->constrained('stock_adjustment_headers');
             $table->foreignId('item_id')->constrained('items');
-            $table->foreignId('uom_id')->constrained('uoms');
+            $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
             $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->decimal('quantity_system', 13, 2)->default(0);
             $table->decimal('quantity_actual', 13, 2)->default(0);

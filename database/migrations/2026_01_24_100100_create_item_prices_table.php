@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('item_prices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('item_id')->constrained('items');
+            $table->foreignId('item_uom_id')->constrained('item_uoms');
             $table->foreignId('category_price_id')->constrained('category_prices');
             $table->decimal('price', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
@@ -24,8 +24,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Composite unique constraint to prevent duplicate item+category combinations
-            $table->unique(['item_id', 'category_price_id'], 'item_prices_item_category_unique');
+            // Composite unique constraint to prevent duplicate item_uom+category combinations
+            $table->unique(['item_uom_id', 'category_price_id'], 'item_prices_uom_category_unique');
         });
 
         // Add foreign key constraint to partners.category_price_id

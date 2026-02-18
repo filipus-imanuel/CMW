@@ -19,21 +19,21 @@ use Livewire\Component;
 class Create extends Component
 {
     public $inputs = [
-        'item_id' => '',
+        'item_uom_id' => '',
         'category_price_id' => '',
         'price' => 0,
         'remarks' => '',
         'is_active' => true,
     ];
 
-    public $dropdown_items = [];
+    public $dropdown_item_uoms = [];
 
     public $dropdown_category_prices = [];
 
     public function rules(): array
     {
         return [
-            'inputs.item_id' => 'required|exists:items,id',
+            'inputs.item_uom_id' => 'required|exists:item_uoms,id',
             'inputs.category_price_id' => 'required|exists:category_prices,id',
             'inputs.price' => 'required|numeric|min:0',
             'inputs.remarks' => 'nullable|string|max:1024',
@@ -43,7 +43,7 @@ class Create extends Component
 
     private function loadDropdowns(): void
     {
-        $this->dropdown_items = PopulateDataHelper::getItems(['labelFormat' => 'code_name']);
+        $this->dropdown_item_uoms = PopulateDataHelper::getItemUoms(['useCache' => false]);
         $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices(['labelFormat' => 'code_name']);
     }
 
@@ -54,20 +54,20 @@ class Create extends Component
         try {
             $validated = $this->validate();
 
-            // Check for active duplicate item+category combination
-            $existsActive = ItemPrice::where('item_id', $validated['inputs']['item_id'])
+            // Check for active duplicate item_uom+category combination
+            $existsActive = ItemPrice::where('item_uom_id', $validated['inputs']['item_uom_id'])
                 ->where('category_price_id', $validated['inputs']['category_price_id'])
                 ->exists();
 
             if ($existsActive) {
-                Flux::toast('This item already has a price for this category', variant: 'danger', position: 'top right');
+                Flux::toast('This item UOM already has a price for this category', variant: 'danger', position: 'top right');
 
                 return;
             }
 
             // Check for soft-deleted duplicate — restore instead of creating new
             $trashedRecord = ItemPrice::onlyTrashed()
-                ->where('item_id', $validated['inputs']['item_id'])
+                ->where('item_uom_id', $validated['inputs']['item_uom_id'])
                 ->where('category_price_id', $validated['inputs']['category_price_id'])
                 ->first();
 
@@ -89,7 +89,7 @@ class Create extends Component
 
                     // Log history with old price from restored record
                     HistoryItemPrice::create([
-                        'item_id' => $itemPrice->item_id,
+                        'item_uom_id' => $itemPrice->item_uom_id,
                         'category_price_id' => $itemPrice->category_price_id,
                         'old_price' => $oldPrice,
                         'new_price' => $itemPrice->price,
@@ -99,7 +99,7 @@ class Create extends Component
                     Flux::toast('Item Price restored and updated successfully', variant: 'success', position: 'top right');
                 } else {
                     $itemPrice = ItemPrice::create([
-                        'item_id' => $validated['inputs']['item_id'],
+                        'item_uom_id' => $validated['inputs']['item_uom_id'],
                         'category_price_id' => $validated['inputs']['category_price_id'],
                         'price' => $validated['inputs']['price'],
                         'remarks' => $validated['inputs']['remarks'],
@@ -109,7 +109,7 @@ class Create extends Component
 
                     // Log history with old_price = 0 for new records
                     HistoryItemPrice::create([
-                        'item_id' => $itemPrice->item_id,
+                        'item_uom_id' => $itemPrice->item_uom_id,
                         'category_price_id' => $itemPrice->category_price_id,
                         'old_price' => 0,
                         'new_price' => $itemPrice->price,
@@ -126,7 +126,7 @@ class Create extends Component
             Flux::toast('Please fix the validation errors', variant: 'danger', position: 'top right');
             throw $e;
         } catch (QueryException $e) {
-            Flux::toast('This item already has a price for this category', variant: 'danger', position: 'top right');
+            Flux::toast('This item UOM already has a price for this category', variant: 'danger', position: 'top right');
             throw $e;
         } catch (Exception $e) {
             Flux::toast('An error occurred while creating item price', variant: 'danger', position: 'top right');
@@ -140,7 +140,7 @@ class Create extends Component
         $this->authorize('create item price');
 
         $this->inputs = [
-            'item_id' => '',
+            'item_uom_id' => '',
             'category_price_id' => '',
             'price' => 0,
             'remarks' => '',

@@ -94,10 +94,10 @@
                             @endif
                         </flux:table.cell>
                         <flux:table.cell variant="strong">
-                            {{ $pending->item?->code ?? 'N/A' }}
+                            {{ $pending->itemUom?->item?->code ?? 'N/A' }}
                         </flux:table.cell>
                         <flux:table.cell>
-                            {{ $pending->item?->name ?? 'N/A' }}
+                            {{ $pending->itemUom?->item?->name ?? 'N/A' }}
                         </flux:table.cell>
                         <flux:table.cell>
                             {{ $pending->categoryPrice?->name ?? 'N/A' }}

@@ -3,7 +3,7 @@
 namespace App\Models\CMW\History;
 
 use App\Models\CMW\Inventory\CategoryPrice;
-use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Inventory\ItemUom;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +13,7 @@ class HistoryItemPrice extends Model
     protected $table = 'history_item_prices';
 
     protected $fillable = [
-        'item_id',
+        'item_uom_id',
         'category_price_id',
         'old_price',
         'new_price',
@@ -28,9 +28,9 @@ class HistoryItemPrice extends Model
         ];
     }
 
-    public function item(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(ItemUom::class);
     }
 
     public function categoryPrice(): BelongsTo

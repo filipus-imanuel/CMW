@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_header_id')->constrained('order_headers');
             $table->foreignId('item_id')->constrained('items');
-            $table->foreignId('uom_id')->constrained('uoms');
+            $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
             $table->foreignId('company_setting_id')->nullable()->constrained('company_settings');
             $table->decimal('quantity', 13, 2)->default(0);
             $table->decimal('price', 13, 2)->default(0);

@@ -51,7 +51,7 @@ class Approval extends Component
     public function pendings()
     {
         return PendingItemPrice::query()
-            ->with(['item', 'categoryPrice', 'submittedBy', 'approvedBy'])
+            ->with(['itemUom.item', 'itemUom.uom', 'categoryPrice', 'submittedBy', 'approvedBy'])
             ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->categoryFilter, fn ($q) => $q->where('category_price_id', $this->categoryFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('submitted_at', '>=', $this->dateFrom))
@@ -189,7 +189,7 @@ class Approval extends Component
 
                         // Create history record
                         HistoryItemPrice::create([
-                            'item_id' => $pending->item_id,
+                            'item_uom_id' => $pending->item_uom_id,
                             'category_price_id' => $pending->category_price_id,
                             'old_price' => $pending->old_price,
                             'new_price' => $pending->new_price,

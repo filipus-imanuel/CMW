@@ -17,12 +17,6 @@ class Index extends Component
 {
     public $deleteId = null;
 
-    #[On('cmw.inventories.item.refresh')]
-    public function refresh(): void
-    {
-        // This method exists to trigger component refresh
-    }
-
     #[On('cmw.inventories.item.delete')]
     public function confirmDelete($id): void
     {

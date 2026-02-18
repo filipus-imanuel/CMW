@@ -4,6 +4,7 @@ namespace App\Models\CMW\Master;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Inventory\ItemUom;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BomDetail extends BaseModel
@@ -13,7 +14,7 @@ class BomDetail extends BaseModel
     protected $fillable = [
         'bom_header_id',
         'item_id',
-        'uom_id',
+        'item_uom_id',
         'quantity',
     ];
 
@@ -34,8 +35,8 @@ class BomDetail extends BaseModel
         return $this->belongsTo(Item::class);
     }
 
-    public function uom(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Uom::class);
+        return $this->belongsTo(ItemUom::class);
     }
 }

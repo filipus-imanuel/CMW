@@ -5,15 +5,15 @@
 
             <div class="space-y-6">
                 <flux:select
-                    wire:model="inputs.item_id"
-                    label="Item"
+                    wire:model="inputs.item_uom_id"
+                    label="Item UOM"
                     badge="Required"
-                    placeholder="Select item"
+                    placeholder="Select item UOM"
                     searchable
-                    :error="$errors->first('inputs.item_id')"
+                    :error="$errors->first('inputs.item_uom_id')"
                 >
-                    @foreach($dropdown_items as $item)
-                        <flux:select.option value="{{ $item['value'] }}">{{ $item['label'] }}</flux:select.option>
+                    @foreach($dropdown_item_uoms as $itemUom)
+                        <flux:select.option value="{{ $itemUom['value'] }}">{{ $itemUom['label'] }}</flux:select.option>
                     @endforeach
                 </flux:select>
 

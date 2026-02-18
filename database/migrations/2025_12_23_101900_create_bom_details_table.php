@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('bom_header_id')->constrained('bom_headers');
             $table->foreignId('item_id')->constrained('items'); // Raw material
-            $table->foreignId('uom_id')->constrained('uoms');
+            $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
             $table->decimal('quantity', 13, 2)->default(0);
             $table->text('remarks')->nullable();
             $table->boolean('is_edit_locked')->default(false);

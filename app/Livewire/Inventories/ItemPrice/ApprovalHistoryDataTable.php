@@ -79,7 +79,7 @@ class ApprovalHistoryDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return PendingItemPrice::query()
-            ->with(['item', 'categoryPrice', 'submittedBy', 'approvedBy'])
+            ->with(['itemUom.item', 'itemUom.uom', 'categoryPrice', 'submittedBy', 'approvedBy'])
             ->whereIn('status', ['approved', 'rejected']);
     }
 
@@ -94,14 +94,17 @@ class ApprovalHistoryDataTable extends DataTableComponent
                 ->sortable()
                 ->format(fn ($value) => view('components.datatables.approval-status-badge', ['status' => $value])),
 
-            Column::make('Item Code', 'item_id')
+            Column::make('Item Code', 'item_uom_id')
                 ->sortable()
-                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('item', fn ($q) => $q->where('code', 'like', "%{$term}%")))
-                ->format(fn ($value, $row) => $row->item?->code ?? 'N/A'),
+                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('itemUom.item', fn ($q) => $q->where('code', 'like', "%{$term}%")))
+                ->format(fn ($value, $row) => $row->itemUom?->item?->code ?? 'N/A'),
 
-            Column::make('Item Name', 'item_id')
-                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('item', fn ($q) => $q->where('name', 'like', "%{$term}%")))
-                ->format(fn ($value, $row) => $row->item?->name ?? 'N/A'),
+            Column::make('Item Name', 'item_uom_id')
+                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('itemUom.item', fn ($q) => $q->where('name', 'like', "%{$term}%")))
+                ->format(fn ($value, $row) => $row->itemUom?->item?->name ?? 'N/A'),
+
+            Column::make('UOM', 'item_uom_id')
+                ->format(fn ($value, $row) => $row->itemUom?->uom?->code ?? 'N/A'),
 
             Column::make('Category', 'category_price_id')
                 ->sortable()

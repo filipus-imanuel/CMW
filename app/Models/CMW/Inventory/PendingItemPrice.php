@@ -19,7 +19,7 @@ class PendingItemPrice extends BaseModel
      */
     protected $fillable = [
         'item_price_id',
-        'item_id',
+        'item_uom_id',
         'category_price_id',
         'old_price',
         'new_price',
@@ -99,11 +99,11 @@ class PendingItemPrice extends BaseModel
     }
 
     /**
-     * Get the item associated with this pending record.
+     * Get the item UOM associated with this pending record.
      */
-    public function item(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(ItemUom::class);
     }
 
     /**

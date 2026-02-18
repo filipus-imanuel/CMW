@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('history_item_prices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('item_id')->constrained('items');
+            $table->foreignId('item_uom_id')->constrained('item_uoms');
             $table->foreignId('category_price_id')->constrained('category_prices');
             $table->decimal('old_price', 13, 2)->default(0);
             $table->decimal('new_price', 13, 2)->default(0);
@@ -19,7 +19,7 @@ return new class extends Migration
 
             // Index for efficient querying by date range
             $table->index('created_at');
-            $table->index(['item_id', 'category_price_id', 'created_at']);
+            $table->index(['item_uom_id', 'category_price_id', 'created_at'], 'history_ip_uom_cat_date');
         });
     }
 

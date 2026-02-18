@@ -48,7 +48,7 @@ class IndexDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return Item::query()
-            ->with(['uom', 'category']);
+            ->with(['baseItemUom.uom', 'category']);
     }
 
     public function columns(): array
@@ -58,7 +58,7 @@ class IndexDataTable extends DataTableComponent
                 ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
                     'rowId' => $row->id,
                     'showEdit' => Auth::user()?->can('edit item'),
-                    'editDispatchEvent' => 'cmw.inventories.item.edit.open',
+                    'editHref' => route('inventories.items.edit', $row->id),
                     'showDelete' => Auth::user()?->can('delete item'),
                     'deleteDispatchEvent' => 'cmw.inventories.item.delete',
                 ])),
@@ -78,15 +78,11 @@ class IndexDataTable extends DataTableComponent
 
             Column::make('Category', 'item_category_id')
                 ->sortable()
-                ->searchable(fn($query, $term) => 
-                    $query->orWhereHas('category', fn($q) => 
-                        $q->where('name', 'like', "%{$term}%")))
-                ->format(fn($value, $row) => 
-                    $row->category ? $row->category->name : '-'),
+                ->searchable(fn ($query, $term) => $query->orWhereHas('category', fn ($q) => $q->where('name', 'like', "%{$term}%")))
+                ->format(fn ($value, $row) => $row->category ? $row->category->name : '-'),
 
-            Column::make('UOM', 'uom.code')
-                ->sortable()
-                ->searchable(),
+            Column::make('Base UOM', 'id')
+                ->format(fn ($value, $row) => $row->baseItemUom?->uom?->code ?? '-'),
 
             Column::make('Cost Price', 'cost_price')
                 ->sortable()

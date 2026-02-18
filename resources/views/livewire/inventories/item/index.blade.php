@@ -7,7 +7,8 @@
         <flux:button 
             icon="plus" 
             variant="primary"
-            wire:click="$dispatch('cmw.inventories.item.create.open')"
+            :href="route('inventories.items.create')"
+            wire:navigate
         >
             Create Item
         </flux:button>
@@ -23,10 +24,6 @@
     <flux:card>
         <livewire:inventories.item.index-data-table />
     </flux:card>
-
-    {{-- Modals --}}
-    <livewire:inventories.item.create />
-    <livewire:inventories.item.edit />
 
     {{-- Delete Confirmation Modal --}}
     <flux:modal name="delete-item-confirmation">

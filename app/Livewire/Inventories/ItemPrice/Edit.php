@@ -71,7 +71,7 @@ class Edit extends Component
                 DB::transaction(function () use ($validated, $oldPrice, $newPrice, $changePercentage) {
                     PendingItemPrice::create([
                         'item_price_id' => $this->itemPrice->id,
-                        'item_id' => $this->itemPrice->item_id,
+                        'item_uom_id' => $this->itemPrice->item_uom_id,
                         'category_price_id' => $this->itemPrice->category_price_id,
                         'old_price' => $oldPrice,
                         'new_price' => $newPrice,
@@ -103,7 +103,7 @@ class Edit extends Component
                 // Log history if price changed
                 if ($oldPrice !== $newPrice) {
                     HistoryItemPrice::create([
-                        'item_id' => $this->itemPrice->item_id,
+                        'item_uom_id' => $this->itemPrice->item_uom_id,
                         'category_price_id' => $this->itemPrice->category_price_id,
                         'old_price' => $oldPrice,
                         'new_price' => $newPrice,
@@ -140,7 +140,7 @@ class Edit extends Component
         $this->authorize('edit item price');
         $this->resetValidation();
 
-        $this->itemPrice = ItemPrice::with(['item', 'categoryPrice'])->findOrFail($id);
+        $this->itemPrice = ItemPrice::with(['itemUom.item', 'itemUom.uom', 'categoryPrice'])->findOrFail($id);
 
         // Auto-reject any existing pending approval for this item price
         $existingPending = PendingItemPrice::where('item_price_id', $id)

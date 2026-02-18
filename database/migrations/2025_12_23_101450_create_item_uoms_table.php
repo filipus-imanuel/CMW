@@ -8,17 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('production_headers', function (Blueprint $table) {
+        Schema::create('item_uoms', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 50)->unique();
-            $table->date('date');
-            $table->foreignId('currency_id')->default(1)->constrained('currencies');
-            $table->foreignId('item_id')->constrained('items'); // Finished product
-            $table->foreignId('bom_header_id')->nullable()->constrained('bom_headers');
-            $table->foreignId('warehouse_id')->constrained('warehouses');
-            $table->decimal('quantity', 13, 2)->default(0);
-            $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
-            $table->string('status', 20)->default('draft');
+            $table->foreignId('item_id')->constrained('items');
+            $table->foreignId('uom_id')->constrained('uoms');
+            $table->decimal('conversion_rate', 13, 4)->default(1.0000);
+            $table->boolean('is_base')->default(false);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
@@ -29,11 +24,14 @@ return new class extends Migration
             $table->foreignId('deleted_by')->nullable()->constrained('users');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['item_id', 'uom_id']);
+            $table->index(['item_id', 'is_base']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('production_headers');
+        Schema::dropIfExists('item_uoms');
     }
 };

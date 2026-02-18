@@ -4,7 +4,7 @@ namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\Item;
-use App\Models\CMW\Master\Uom;
+use App\Models\CMW\Inventory\ItemUom;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,7 +15,7 @@ class StockAdjustmentDetail extends BaseModel
     protected $fillable = [
         'stock_adjustment_header_id',
         'item_id',
-        'uom_id',
+        'item_uom_id',
         'warehouse_id',
         'quantity_system',
         'quantity_actual',
@@ -41,9 +41,9 @@ class StockAdjustmentDetail extends BaseModel
         return $this->belongsTo(Item::class);
     }
 
-    public function uom(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Uom::class);
+        return $this->belongsTo(ItemUom::class);
     }
 
     public function warehouse(): BelongsTo

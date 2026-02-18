@@ -4,9 +4,9 @@ namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Inventory\ItemUom;
 use App\Models\CMW\Master\BomHeader;
 use App\Models\CMW\Master\Currency;
-use App\Models\CMW\Master\Uom;
 use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,7 +22,7 @@ class ProductionHeader extends BaseModel
         'bom_header_id',
         'warehouse_id',
         'quantity',
-        'uom_id',
+        'item_uom_id',
         'status',
     ];
 
@@ -54,9 +54,9 @@ class ProductionHeader extends BaseModel
         return $this->belongsTo(Warehouse::class);
     }
 
-    public function uom(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Uom::class);
+        return $this->belongsTo(ItemUom::class);
     }
 
     public function consumeDetails(): HasMany

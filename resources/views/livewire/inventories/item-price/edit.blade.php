@@ -15,7 +15,14 @@
             <div class="space-y-6">
                 <flux:input
                     label="Item"
-                    :value="$itemPrice?->item?->code . ' - ' . $itemPrice?->item?->name"
+                    :value="($itemPrice?->itemUom?->item?->code ?? '') . ' - ' . ($itemPrice?->itemUom?->item?->name ?? '')"
+                    readonly
+                    disabled
+                />
+
+                <flux:input
+                    label="UOM"
+                    :value="$itemPrice?->itemUom?->uom?->name ?? ''"
                     readonly
                     disabled
                 />

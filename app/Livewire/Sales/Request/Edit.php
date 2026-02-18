@@ -54,7 +54,7 @@ class Edit extends Component
     {
         $this->authorize('edit sales request');
 
-        $this->order = OrderHeader::with(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.uom'])
+        $this->order = OrderHeader::with(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.itemUom.uom'])
             ->findOrFail($id);
 
         // Status guard - only INIT can be edited
@@ -106,8 +106,8 @@ class Edit extends Component
                 'item_id' => $detail->item_id,
                 'item_code' => $detail->item?->code ?? '',
                 'item_name' => $detail->item?->name ?? '',
-                'uom_id' => $detail->uom_id,
-                'uom_name' => $detail->uom?->name ?? '',
+                'item_uom_id' => $detail->item_uom_id,
+                'uom_name' => $detail->itemUom?->uom?->name ?? '',
                 'quantity' => number_format((float) $detail->quantity, 2, '.', ''),
                 'price' => number_format((float) $detail->price, 2, '.', ''),
                 'discount' => number_format((float) $detail->discount, 2, '.', ''),
@@ -152,7 +152,7 @@ class Edit extends Component
      * Handle item selected from SearchItem modal.
      */
     #[On('sales.request.item-selected')]
-    public function addItem(int $itemId, string $itemCode, string $itemName, int $uomId, string $uomName, float $sellPrice, float $hetPrice): void
+    public function addItem(int $itemId, string $itemCode, string $itemName, int $itemUomId, string $uomName, float $sellPrice, float $hetPrice): void
     {
         // Check if item already exists in the list
         foreach ($this->items as $item) {
@@ -168,7 +168,7 @@ class Edit extends Component
             'item_id' => $itemId,
             'item_code' => $itemCode,
             'item_name' => $itemName,
-            'uom_id' => $uomId,
+            'item_uom_id' => $itemUomId,
             'uom_name' => $uomName,
             'quantity' => '1.00',
             'price' => number_format($sellPrice, 2, '.', ''),
@@ -349,7 +349,7 @@ class Edit extends Component
             'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:items,id',
-            'items.*.uom_id' => 'required|exists:uoms,id',
+            'items.*.item_uom_id' => 'required|exists:item_uoms,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
@@ -402,7 +402,7 @@ class Edit extends Component
                 $detailData = [
                     'order_header_id' => $this->order->id,
                     'item_id' => $item['item_id'],
-                    'uom_id' => $item['uom_id'],
+                    'item_uom_id' => $item['item_uom_id'],
                     'quantity' => $qty,
                     'price' => $price,
                     'discount' => $discount,
@@ -439,7 +439,7 @@ class Edit extends Component
         });
 
         // Refresh data
-        $this->order = $this->order->fresh(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.uom']);
+        $this->order = $this->order->fresh(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.itemUom.uom']);
         $this->handlePopulateInputs();
         $this->runChecks();
 

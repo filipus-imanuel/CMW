@@ -132,7 +132,7 @@
                                 <td class="py-2 px-2 text-zinc-500">{{ $index + 1 }}</td>
                                 <td class="py-2 px-2">{{ $detail->item?->code }}</td>
                                 <td class="py-2 px-2">{{ $detail->item?->name }}</td>
-                                <td class="py-2 px-2">{{ $detail->uom?->name }}</td>
+                                <td class="py-2 px-2">{{ $detail->itemUom?->uom?->name }}</td>
                                 <td class="py-2 px-2 text-right">{{ number_format((float)$detail->quantity, 2) }}</td>
                                 <td class="py-2 px-2 text-right">{{ number_format((float)$detail->price, 2) }}</td>
                                 <td class="py-2 px-2 text-right">{{ number_format((float)$detail->discount, 2) }}</td>

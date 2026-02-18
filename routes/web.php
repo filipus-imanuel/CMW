@@ -2,6 +2,8 @@
 
 use App\Livewire\Inventories\CategoryPrice\Index as CategoryPriceIndex;
 use App\Livewire\Inventories\HistoryItemPrice\Index as HistoryItemPriceIndex;
+use App\Livewire\Inventories\Item\Create as ItemCreate;
+use App\Livewire\Inventories\Item\Edit as ItemEdit;
 use App\Livewire\Inventories\Item\Index as ItemIndex;
 use App\Livewire\Inventories\ItemCategory\Index as ItemCategoryIndex;
 use App\Livewire\Inventories\ItemPrice\Approval as ItemPriceApproval;
@@ -91,6 +93,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('item-price-history', HistoryItemPriceIndex::class)->name('item-price-history.index');
             Route::get('item-prices', ItemPriceIndex::class)->name('item-prices.index');
             Route::get('items', ItemIndex::class)->name('items.index');
+            Route::get('items/create', ItemCreate::class)->name('items.create');
+            Route::get('items/{id}/edit', ItemEdit::class)->name('items.edit');
         });
 
         Route::prefix('system')->name('system.')->group(function () {

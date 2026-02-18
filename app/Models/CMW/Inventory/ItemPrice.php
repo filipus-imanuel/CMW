@@ -6,15 +6,18 @@ use App\Models\CMW\BaseModel;
 use App\Models\CMW\History\HistoryItemPrice;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class ItemPrice extends BaseModel
 {
     protected $table = 'item_prices';
 
     protected $fillable = [
-        'item_id',
+        'item_uom_id',
         'category_price_id',
         'price',
+        'remarks',
+        'is_active',
     ];
 
     protected function casts(): array
@@ -24,9 +27,24 @@ class ItemPrice extends BaseModel
         ];
     }
 
-    public function item(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(ItemUom::class);
+    }
+
+    /**
+     * Convenience: get the Item through ItemUom.
+     */
+    public function item(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Item::class,
+            ItemUom::class,
+            'id',           // item_uoms.id
+            'id',           // items.id
+            'item_uom_id',  // item_prices.item_uom_id
+            'item_id'       // item_uoms.item_id
+        );
     }
 
     public function categoryPrice(): BelongsTo
@@ -36,7 +54,7 @@ class ItemPrice extends BaseModel
 
     public function historyItemPrices(): HasMany
     {
-        return $this->hasMany(HistoryItemPrice::class, 'item_id', 'item_id')
+        return $this->hasMany(HistoryItemPrice::class, 'item_uom_id', 'item_uom_id')
             ->where('category_price_id', $this->category_price_id);
     }
 }

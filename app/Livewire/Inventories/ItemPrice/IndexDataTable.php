@@ -54,7 +54,7 @@ class IndexDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return ItemPrice::query()
-            ->with(['item', 'categoryPrice', 'createdBy', 'updatedBy']);
+            ->with(['itemUom.item', 'itemUom.uom', 'categoryPrice', 'createdBy', 'updatedBy']);
     }
 
     public function columns(): array
@@ -69,14 +69,17 @@ class IndexDataTable extends DataTableComponent
                     'deleteDispatchEvent' => 'delete',
                 ])),
 
-            Column::make('Item Code', 'item_id')
+            Column::make('Item Code', 'item_uom_id')
                 ->sortable()
-                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('item', fn ($q) => $q->where('code', 'like', "%{$term}%")))
-                ->format(fn ($value, $row) => $row->item?->code ?? 'N/A'),
+                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('itemUom.item', fn ($q) => $q->where('code', 'like', "%{$term}%")))
+                ->format(fn ($value, $row) => $row->itemUom?->item?->code ?? 'N/A'),
 
-            Column::make('Item Name', 'item_id')
-                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('item', fn ($q) => $q->where('name', 'like', "%{$term}%")))
-                ->format(fn ($value, $row) => $row->item?->name ?? 'N/A'),
+            Column::make('Item Name', 'item_uom_id')
+                ->searchable(fn (Builder $query, string $term) => $query->orWhereHas('itemUom.item', fn ($q) => $q->where('name', 'like', "%{$term}%")))
+                ->format(fn ($value, $row) => $row->itemUom?->item?->name ?? 'N/A'),
+
+            Column::make('UOM', 'item_uom_id')
+                ->format(fn ($value, $row) => $row->itemUom?->uom?->code ?? 'N/A'),
 
             Column::make('Category', 'category_price_id')
                 ->sortable()

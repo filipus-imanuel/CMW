@@ -4,7 +4,7 @@ namespace App\Models\CMW\Transaction;
 
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Inventory\Item;
-use App\Models\CMW\Master\Uom;
+use App\Models\CMW\Inventory\ItemUom;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GoodsReceiptDetail extends BaseModel
@@ -14,7 +14,7 @@ class GoodsReceiptDetail extends BaseModel
     protected $fillable = [
         'goods_receipt_header_id',
         'item_id',
-        'uom_id',
+        'item_uom_id',
         'quantity',
         'price',
     ];
@@ -37,8 +37,8 @@ class GoodsReceiptDetail extends BaseModel
         return $this->belongsTo(Item::class);
     }
 
-    public function uom(): BelongsTo
+    public function itemUom(): BelongsTo
     {
-        return $this->belongsTo(Uom::class);
+        return $this->belongsTo(ItemUom::class);
     }
 }

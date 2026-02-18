@@ -7,6 +7,7 @@ namespace App\Helpers\CMW;
 use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Inventory\ItemCategory;
+use App\Models\CMW\Inventory\ItemUom;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
@@ -472,6 +473,24 @@ class PopulateDataHelper
     public static function getCategoryPrices(array $options = []): array
     {
         return self::get(CategoryPrice::class, $options);
+    }
+
+    /**
+     * Get item UOMs dropdown data.
+     *
+     * Returns list of item_uom records with label "ItemCode - UomName (conversion)".
+     *
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getItemUoms(array $options = []): array
+    {
+        $defaults = [
+            'with' => ['item', 'uom'],
+            'labelFormat' => fn (ItemUom $iu) => ($iu->item?->code ?? '?').' - '.($iu->uom?->name ?? '?').' (×'.$iu->conversion_rate.')',
+        ];
+
+        return self::get(ItemUom::class, array_merge($defaults, $options));
     }
 
     // ══════════════════════════════════════════════════════════════════════════

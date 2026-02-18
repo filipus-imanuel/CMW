@@ -49,7 +49,7 @@ class SearchItem extends Component
                 $q->where('name', 'like', "%{$this->search}%")
                     ->orWhere('code', 'like', "%{$this->search}%");
             })
-            ->with(['uom'])
+            ->with(['baseItemUom.uom'])
             ->limit(20)
             ->get();
 
@@ -77,8 +77,8 @@ class SearchItem extends Component
                     'id' => $item->id,
                     'code' => $item->code,
                     'name' => $item->name,
-                    'uom_id' => $item->uom_id,
-                    'uom_name' => $item->uom?->name ?? '',
+                    'item_uom_id' => $item->baseItemUom?->id,
+                    'uom_name' => $item->baseItemUom?->uom?->name ?? '',
                     'het_price' => (float) $item->sell_price,
                     'sell_price' => $resolved['price'] ?? (float) $item->sell_price,
                     'price_source' => $resolved['source'] ?? 'item_sell_price',
@@ -97,7 +97,7 @@ class SearchItem extends Component
                 itemId: $item['id'],
                 itemCode: $item['code'],
                 itemName: $item['name'],
-                uomId: $item['uom_id'],
+                itemUomId: $item['item_uom_id'],
                 uomName: $item['uom_name'],
                 sellPrice: $item['sell_price'],
                 hetPrice: $item['het_price']
