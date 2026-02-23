@@ -65,6 +65,7 @@ class PermissionHelper
             // ══════════════════════════════════════════════════════════════
             'sales' => [
                 'sales request' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
+                'sales order' => ['view', 'approve', 'reject'],
             ],
 
             // ══════════════════════════════════════════════════════════════
@@ -171,7 +172,10 @@ class PermissionHelper
             })),
             'Sales' => array_values(array_filter($allPermissions, function ($permission) {
                 // Sales gets full CRUD on customers/addresses, view on financial master data and items
+                // Plus full sales request and view sales order permissions
                 $isSalesResource = str_contains($permission, 'customer') || str_contains($permission, 'partner address');
+                $isSalesTransaction = str_contains($permission, 'sales request')
+                    || ($permission === 'view sales order');
                 $isViewOnly = str_contains($permission, 'view') && (
                     str_contains($permission, 'currency')
                     || str_contains($permission, 'tax')
@@ -179,7 +183,7 @@ class PermissionHelper
                     || str_contains($permission, 'item')
                 );
 
-                return $isSalesResource || $isViewOnly;
+                return $isSalesResource || $isSalesTransaction || $isViewOnly;
             })),
             'Purchasing' => array_values(array_filter($allPermissions, function ($permission) {
                 // Purchasing gets full CRUD on suppliers/addresses, view on financial master data and items

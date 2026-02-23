@@ -6,7 +6,7 @@
     </div>
 
     <flux:heading size="xl" class="mb-2">Edit Sales Request</flux:heading>
-    <flux:subheading class="mb-6">{{ $order->code }}</flux:subheading>
+    <flux:subheading class="mb-6">{{ $order->code_request }}</flux:subheading>
 
     {{-- Warning Banners --}}
     @if(!empty($checks))
@@ -77,7 +77,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
                 <flux:text class="text-sm text-zinc-500">Code</flux:text>
-                <flux:text class="font-medium">{{ $order->code }}</flux:text>
+                <flux:text class="font-medium">{{ $order->code_request }}</flux:text>
             </div>
             <div>
                 <flux:text class="text-sm text-zinc-500">Customer</flux:text>
@@ -108,39 +108,47 @@
                 badge="Required"
             />
 
+            <flux:date-picker
+                wire:model="inputs.delivery_date"
+                label="Delivery Date"
+                placeholder="Select delivery date..."
+            />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <flux:textarea
                 wire:model="inputs.remarks"
                 label="Remarks"
                 placeholder="Optional notes..."
                 rows="2"
             />
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div>
-                <flux:radio.group wire:model.live="inputs.tax_mode" label="Tax Mode" badge="Required" variant="segmented">
-                    <flux:radio value="INCLUDE" label="Include" />
-                    <flux:radio value="EXCLUDE" label="Exclude" />
-                    <flux:radio value="NONE" label="No Tax" />
-                </flux:radio.group>
-                @error('inputs.tax_mode')
-                    <flux:text class="text-sm text-red-500 mt-1">{{ $message }}</flux:text>
-                @enderror
+            <div class="flex flex-col gap-4">
+                <div>
+                    <flux:radio.group wire:model.live="inputs.tax_mode" label="Tax Mode" badge="Required" variant="segmented">
+                        <flux:radio value="INCLUDE" label="Include" />
+                        <flux:radio value="EXCLUDE" label="Exclude" />
+                        <flux:radio value="NONE" label="No Tax" />
+                    </flux:radio.group>
+                    @error('inputs.tax_mode')
+                        <flux:text class="text-sm text-red-500 mt-1">{{ $message }}</flux:text>
+                    @enderror
+                </div>
+
+                @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
+                    <flux:select
+                        wire:model.live="inputs.tax_id"
+                        label="Tax"
+                        badge="Required"
+                        placeholder="Select tax..."
+                        :error="$errors->first('inputs.tax_id')"
+                    >
+                        @foreach($dropdown_data['taxes'] ?? [] as $tax)
+                            <flux:select.option value="{{ $tax['value'] }}">{{ $tax['label'] }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
             </div>
-
-            @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
-                <flux:select
-                    wire:model.live="inputs.tax_id"
-                    label="Tax"
-                    badge="Required"
-                    placeholder="Select tax..."
-                    :error="$errors->first('inputs.tax_id')"
-                >
-                    @foreach($dropdown_data['taxes'] ?? [] as $tax)
-                        <flux:select.option value="{{ $tax['value'] }}">{{ $tax['label'] }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            @endif
         </div>
     </flux:card>
 
@@ -159,128 +167,119 @@
         </div>
 
         @if(count($items) > 0)
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-zinc-200 dark:border-zinc-700">
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">#</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Code</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Item Name</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">UOM</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Quantity</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Price</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Discount</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Tax</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Total</th>
-                            <th class="text-center py-3 px-2 font-medium text-zinc-500">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($items as $index => $item)
-                            @php
-                                $guardrail = $priceGuardrails[$index] ?? null;
-                                $warnings = $guardrail['warnings'] ?? [];
-                                $hasWarning = !empty($warnings);
-                            @endphp
-                            <tr wire:key="item-{{ $index }}" class="border-b border-zinc-100 dark:border-zinc-800">
-                                <td class="py-2 px-2 text-zinc-500">{{ $index + 1 }}</td>
-                                <td class="py-2 px-2">{{ $item['item_code'] }}</td>
-                                <td class="py-2 px-2">{{ $item['item_name'] }}</td>
-                                <td class="py-2 px-2">{{ $item['uom_name'] }}</td>
-                                <td class="py-2 px-2">
-                                    <flux:input
-                                        wire:model.live.debounce.500ms="items.{{ $index }}.quantity"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        class="text-right"
-                                        size="sm"
-                                    />
-                                </td>
-                                <td class="py-2 px-2">
-                                    <flux:input
-                                        wire:model.live.debounce.500ms="items.{{ $index }}.price"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        class="text-right"
-                                        size="sm"
-                                    />
-                                    @if($guardrail)
-                                        <div class="mt-1 text-xs text-zinc-400">
-                                            HET: {{ number_format($guardrail['het_price'], 2) }}
-                                            · Floor: {{ number_format($guardrail['floor_price'], 2) }}
-                                        </div>
-                                        @if(in_array('above_het', $warnings))
-                                            <div class="mt-0.5 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                                <flux:icon.exclamation-triangle class="size-3" />
-                                                Price exceeds HET
-                                            </div>
-                                        @endif
-                                        @if(in_array('below_floor', $warnings))
-                                            <div class="mt-0.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                                <flux:icon.exclamation-triangle class="size-3" />
-                                                Price below floor
-                                            </div>
-                                        @endif
-                                    @endif
-                                </td>
-                                <td class="py-2 px-2">
-                                    <flux:input
-                                        wire:model.live.debounce.500ms="items.{{ $index }}.discount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        class="text-right"
-                                        size="sm"
-                                    />
-                                </td>
-                                <td class="py-2 px-2 text-right">
-                                    {{ number_format((float)$item['tax'], 2) }}
-                                </td>
-                                <td class="py-2 px-2 text-right font-medium">
-                                    {{ number_format((float)$item['total'], 2) }}
-                                </td>
-                                <td class="py-2 px-2 text-center">
-                                    <flux:button
-                                        wire:click="confirmDeleteItem({{ $index }})"
-                                        variant="danger"
-                                        size="xs"
-                                        icon="trash"
-                                    />
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>#</flux:table.column>
+                    <flux:table.column>Code</flux:table.column>
+                    <flux:table.column>Item Name</flux:table.column>
+                    <flux:table.column>UOM</flux:table.column>
+                    <flux:table.column class="text-center">Quantity</flux:table.column>
+                    <flux:table.column class="text-center">Price Proposed</flux:table.column>
+                    <flux:table.column class="text-center">Price Deal</flux:table.column>
+                    <flux:table.column class="text-center">Discount</flux:table.column>
+                    <flux:table.column class="text-center">Tax</flux:table.column>
+                    <flux:table.column class="text-center">Total</flux:table.column>
+                    <flux:table.column class="text-center">Actions</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @foreach($items as $index => $item)
                         @php
-                            $sumSubtotal = collect($items)->sum(fn($i) => ((float)$i['quantity'] * (float)$i['price']) - (float)$i['discount']);
-                            $sumTax = collect($items)->sum(fn($i) => (float)$i['tax']);
-                            $sumTotal = collect($items)->sum(fn($i) => (float)$i['total']);
+                            $guardrail = $priceGuardrails[$index] ?? null;
+                            $warnings = $guardrail['warnings'] ?? [];
                         @endphp
-                        <tr class="border-t border-zinc-200 dark:border-zinc-700">
-                            <td colspan="8" class="py-2 px-2 text-right text-zinc-500">Subtotal:</td>
-                            <td class="py-2 px-2 text-right">{{ number_format($sumSubtotal, 2) }}</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td colspan="8" class="py-2 px-2 text-right text-zinc-500">
-                                Tax
-                                @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
-                                    ({{ $inputs['tax_mode'] }} {{ number_format((float)($order->tax_rate ?? 0), 2) }}%)
+                        <flux:table.row :key="'item-'.$index">
+                            <flux:table.cell>{{ $index + 1 }}</flux:table.cell>
+                            <flux:table.cell>{{ $item['item_code'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $item['item_name'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $item['uom_name'] }}</flux:table.cell>
+                            <flux:table.cell>
+                                <flux:input
+                                    wire:model.live.debounce.500ms="items.{{ $index }}.quantity"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    class="text-right"
+                                    size="sm"
+                                />
+                            </flux:table.cell>
+                            <flux:table.cell>
+                                <flux:input
+                                    wire:model.live.debounce.500ms="items.{{ $index }}.price_proposed"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    class="text-right"
+                                    size="sm"
+                                />
+                                @if($guardrail)
+                                    <div class="mt-1 text-xs text-zinc-400">
+                                        HET: {{ number_format($guardrail['het_price'], 2) }}
+                                        · Floor: {{ number_format($guardrail['floor_price'], 2) }}
+                                    </div>
+                                    @if(in_array('above_het', $warnings))
+                                        <div class="mt-0.5 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                            <flux:icon.exclamation-triangle class="size-3" />
+                                            Price exceeds HET
+                                        </div>
+                                    @endif
+                                    @if(in_array('below_floor', $warnings))
+                                        <div class="mt-0.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                            <flux:icon.exclamation-triangle class="size-3" />
+                                            Price below floor
+                                        </div>
+                                    @endif
                                 @endif
-                                :
-                            </td>
-                            <td class="py-2 px-2 text-right">{{ number_format($sumTax, 2) }}</td>
-                            <td></td>
-                        </tr>
-                        <tr class="border-t-2 border-zinc-300 dark:border-zinc-600">
-                            <td colspan="8" class="py-3 px-2 text-right font-semibold">Grand Total:</td>
-                            <td class="py-3 px-2 text-right font-semibold">{{ number_format($sumTotal, 2) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                            </flux:table.cell>
+                            <flux:table.cell>
+                                <flux:input
+                                    wire:model.live.debounce.500ms="items.{{ $index }}.price_deal"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    class="text-right"
+                                    size="sm"
+                                />
+                            </flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$item['discount'], 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$item['tax'], 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums" variant="strong">{{ number_format((float)$item['total'], 2) }}</flux:table.cell>
+                            <flux:table.cell>
+                                <flux:button
+                                    wire:click="confirmDeleteItem({{ $index }})"
+                                    variant="danger"
+                                    size="xs"
+                                    icon="trash"
+                                />
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
+
+            @php
+                $sumSubtotal = collect($items)->sum(fn($i) => ((float)$i['quantity'] * (float)$i['price_proposed']) - (float)$i['discount']);
+                $sumTax = collect($items)->sum(fn($i) => (float)$i['tax']);
+                $sumTotal = collect($items)->sum(fn($i) => (float)$i['total']);
+            @endphp
+            <div class="mt-3 border-t border-zinc-200 dark:border-zinc-700 pt-3 flex flex-col items-end gap-1 text-sm">
+                <div class="flex gap-8">
+                    <span class="text-zinc-500">Subtotal:</span>
+                    <span class="tabular-nums min-w-[120px] text-right">{{ number_format($sumSubtotal, 2) }}</span>
+                </div>
+                <div class="flex gap-8">
+                    <span class="text-zinc-500">
+                        Tax
+                        @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
+                            ({{ $inputs['tax_mode'] }} {{ number_format((float)($order->tax_rate ?? 0), 2) }}%)
+                        @endif
+                        :
+                    </span>
+                    <span class="tabular-nums min-w-[120px] text-right">{{ number_format($sumTax, 2) }}</span>
+                </div>
+                <div class="flex gap-8 border-t border-zinc-300 dark:border-zinc-600 pt-2 mt-1 font-semibold">
+                    <span>Grand Total:</span>
+                    <span class="tabular-nums min-w-[120px] text-right">{{ number_format($sumTotal, 2) }}</span>
+                </div>
             </div>
         @else
             <div class="text-center py-12 text-zinc-400">

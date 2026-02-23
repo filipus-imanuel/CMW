@@ -1,24 +1,23 @@
 <?php
 
-namespace App\Livewire\Sales\Request\Approval;
+namespace App\Livewire\Sales\Approval;
 
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Sales Request Approvals')]
+#[Title('SO Approval')]
 class Index extends Component
 {
     public function mount(): void
     {
-        // Allow both view and approve permissions
-        if (! Auth::user()?->can('view sales request') && ! Auth::user()?->can('approve sales request')) {
+        if (! Auth::user()?->can('view sales order') && ! Auth::user()?->can('approve sales order')) {
             abort(403);
         }
     }
 
-    #[On('sales.request.refresh.approval')]
+    #[On('shp.sales.order.refresh.approval')]
     public function refresh(): void
     {
         // Triggers component refresh
@@ -26,6 +25,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.sales.request.approval.index');
+        return view('livewire.sales.approval.index');
     }
 }

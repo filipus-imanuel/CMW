@@ -1,1 +1,1 @@
-php artisan optimize && npm run build && php artisan serve
+php artisan optimize:clear && npm run build && php artisan serve

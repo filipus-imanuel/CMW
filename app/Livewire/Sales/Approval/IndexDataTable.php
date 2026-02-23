@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Livewire\Sales\Request\Index;
+namespace App\Livewire\Sales\Approval;
 
 use App\Models\CMW\Transaction\OrderHeader;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 
-class RequestDataTable extends DataTableComponent
+class IndexDataTable extends DataTableComponent
 {
     protected $model = OrderHeader::class;
 
     protected $listeners = [
-        'sales.request.refresh.request' => '$refresh',
+        'shp.sales.order.refresh.approval' => '$refresh',
     ];
 
     public function configure(): void
@@ -28,20 +29,32 @@ class RequestDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return OrderHeader::query()
-            ->approved()
-            ->with(['partner', 'itemCategory', 'createdBy', 'approvedByUser']);
+            ->pendingApproval()
+            ->with(['partner', 'itemCategory', 'createdBy']);
     }
 
     public function columns(): array
     {
         return [
-            Column::make('Code', 'code')
+            Column::make('Actions', 'id')
+                ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
+                    'rowId' => $row->id,
+                    'enable_this_row' => ! $row->trashed(),
+                    'showDetail' => Auth::user()?->can('view sales order') || Auth::user()?->can('approve sales order'),
+                    'detailHref' => route('sales.order.approval.show', ['id' => $row->id]),
+                ])),
+
+            Column::make('Code', 'code_request')
                 ->sortable()
                 ->searchable(),
 
             Column::make('Date', 'date')
                 ->sortable()
                 ->format(fn ($value) => $value?->format('d M Y')),
+
+            Column::make('Delivery Date', 'delivery_date')
+                ->sortable()
+                ->format(fn ($value) => $value?->format('d M Y') ?? '-'),
 
             Column::make('Customer', 'partner_id')
                 ->sortable()
@@ -56,12 +69,8 @@ class RequestDataTable extends DataTableComponent
                 ->sortable()
                 ->format(fn ($value) => number_format((float) $value, 2)),
 
-            Column::make('Approved By', 'approved_by')
-                ->format(fn ($value, $row) => $row->approvedByUser?->name ?? 'N/A'),
-
-            Column::make('Approved At', 'approved_at')
-                ->sortable()
-                ->format(fn ($value) => $value?->format('d M Y H:i')),
+            Column::make('Requested By', 'created_by')
+                ->format(fn ($value, $row) => $row->createdBy?->name ?? 'N/A'),
         ];
     }
 }

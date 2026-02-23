@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Livewire\Sales\Request\Index;
+namespace App\Livewire\Sales\Order\Index;
 
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Sales Requests - Approved')]
-class Request extends Component
+#[Title('Ongoing Orders')]
+class Ongoing extends Component
 {
     public function mount(): void
     {
-        $this->authorize('view sales request');
+        $this->authorize('view sales order');
     }
 
-    #[On('sales.request.refresh.request')]
+    #[On('shp.sales.order.refresh.ongoing')]
     public function refresh(): void
     {
         // Triggers component refresh
@@ -22,6 +22,6 @@ class Request extends Component
 
     public function render()
     {
-        return view('livewire.sales.request.index.request');
+        return view('livewire.sales.order.index.ongoing');
     }
 }

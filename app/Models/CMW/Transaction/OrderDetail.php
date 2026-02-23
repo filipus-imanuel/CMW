@@ -18,7 +18,8 @@ class OrderDetail extends BaseModel
         'item_uom_id',
         'company_setting_id',
         'quantity',
-        'price',
+        'price_proposed',
+        'price_deal',
         'discount',
         'tax',
         'total',
@@ -28,7 +29,8 @@ class OrderDetail extends BaseModel
     {
         return [
             'quantity' => 'decimal:2',
-            'price' => 'decimal:2',
+            'price_proposed' => 'decimal:2',
+            'price_deal' => 'decimal:2',
             'discount' => 'decimal:2',
             'tax' => 'decimal:2',
             'total' => 'decimal:2',

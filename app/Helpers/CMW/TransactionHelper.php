@@ -89,7 +89,7 @@ class TransactionHelper
         foreach ($details as $detail) {
             $calc = self::calculateItemTax(
                 (float) $detail->quantity,
-                (float) $detail->price,
+                (float) $detail->price_proposed,
                 (float) $detail->discount,
                 $taxMode,
                 $taxRate
@@ -120,7 +120,7 @@ class TransactionHelper
 
         $calc = self::calculateItemTax(
             (float) $detail->quantity,
-            (float) $detail->price,
+            (float) $detail->price_proposed,
             (float) $detail->discount,
             $taxMode,
             $taxRate
@@ -144,7 +144,7 @@ class TransactionHelper
         foreach ($order->details as $detail) {
             $calc = self::calculateItemTax(
                 (float) $detail->quantity,
-                (float) $detail->price,
+                (float) $detail->price_proposed,
                 (float) $detail->discount,
                 $taxMode,
                 $taxRate

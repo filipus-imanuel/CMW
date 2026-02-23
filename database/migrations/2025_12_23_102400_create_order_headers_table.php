@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('order_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 50)->unique();
+            $table->string('code_request', 50)->unique();
+            $table->string('code_order', 50)->nullable()->unique();
             $table->date('date');
+            $table->date('delivery_date')->nullable();
             $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('partner_id')->constrained('partners');
             $table->foreignId('company_id')->nullable()->constrained('companies');
@@ -19,7 +21,7 @@ return new class extends Migration
             $table->string('tax_mode', 20)->default('NONE'); // INCLUDE, EXCLUDE, NONE
             $table->foreignId('tax_id')->nullable()->constrained('taxes');
             $table->decimal('tax_rate', 5, 2)->default(0);
-            $table->string('status', 20)->default('INIT'); // INIT, APPROVAL, REQUEST, ORDER, DELIVERY, FINISH, FINAL
+            $table->string('status', 20)->default('INIT'); // INIT, APPROVAL, ORDER, DELIVERY, FINISH, FINAL, REJECTED
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
             $table->string('rejection_reason', 1024)->nullable();

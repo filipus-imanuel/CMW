@@ -24,6 +24,8 @@ class Create extends Component
      */
     public $uoms = [];
 
+    public int $baseUomIndex = 0;
+
     public $dropdown_uom = [];
 
     public $dropdown_item_category = [];
@@ -36,7 +38,7 @@ class Create extends Component
             'inputs.code' => 'required|string|max:50|unique:items,code',
             'inputs.name' => 'required|string|max:100',
             'inputs.type' => 'required|in:RAW_MATERIAL,WORK_IN_PROCESS,FINISHED_GOOD,SPARE_PART',
-            'inputs.item_category_id' => 'nullable|exists:item_categories,id',
+            'inputs.item_category_id' => 'required|exists:item_categories,id',
             'inputs.cost_price' => 'required|numeric|min:0',
             'inputs.sell_price' => 'required|numeric|min:0',
             'inputs.min_stock' => 'nullable|numeric|min:0',
@@ -63,6 +65,7 @@ class Create extends Component
             'inputs.code.unique' => 'This code already exists',
             'inputs.name.required' => 'Name is required',
             'inputs.type.required' => 'Type is required',
+            'inputs.item_category_id.required' => 'Category is required',
             'inputs.cost_price.required' => 'Cost price is required',
             'inputs.sell_price.required' => 'Sell price is required',
             'uoms.required' => 'At least one UOM is required',
@@ -79,8 +82,6 @@ class Create extends Component
         $this->dropdown_uom = PopulateDataHelper::getUoms(['labelFormat' => 'name_code']);
         $this->dropdown_item_category = PopulateDataHelper::getItemCategories([
             'labelFormat' => 'name',
-            'prependDefault' => true,
-            'defaultLabel' => 'Select Category (Optional)',
         ]);
         $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices([
             'labelFormat' => 'name',
@@ -111,6 +112,7 @@ class Create extends Component
 
         // Auto-add one base UOM row with all category prices
         $this->addUomRow(true);
+        $this->baseUomIndex = 0;
     }
 
     /**
@@ -147,6 +149,10 @@ class Create extends Component
         if (! collect($this->uoms)->contains('is_base', true) && count($this->uoms) > 0) {
             $this->uoms[0]['is_base'] = true;
             $this->uoms[0]['conversion_rate'] = 1.0000;
+            $this->baseUomIndex = 0;
+        } else {
+            // Re-sync baseUomIndex after re-indexing
+            $this->baseUomIndex = collect($this->uoms)->search(fn ($u) => $u['is_base']) ?? 0;
         }
     }
 
@@ -155,6 +161,7 @@ class Create extends Component
      */
     public function setBaseUom(int $index): void
     {
+        $this->baseUomIndex = $index;
         foreach ($this->uoms as $i => &$uom) {
             $uom['is_base'] = ($i === $index);
             if ($uom['is_base']) {
@@ -162,6 +169,11 @@ class Create extends Component
             }
         }
         unset($uom);
+    }
+
+    public function updatedBaseUomIndex(int $value): void
+    {
+        $this->setBaseUom($value);
     }
 
     public function store(): void

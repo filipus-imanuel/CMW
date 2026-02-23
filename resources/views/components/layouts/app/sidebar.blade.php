@@ -58,11 +58,14 @@
                 <flux:navlist.group :heading="__('Sales')" expandable :expanded="request()->routeIs('sales.*')" class="grid">
                     @can('view sales request')
                     <flux:navlist.item icon="document-text" :href="route('sales.request.index.init')" :current="request()->routeIs('sales.request.index.init') || request()->routeIs('sales.request.create') || request()->routeIs('sales.request.edit')" wire:navigate>{{ __('Sales Requests') }}</flux:navlist.item>
-                    <flux:navlist.item icon="check-circle" :href="route('sales.request.index.request')" :current="request()->routeIs('sales.request.index.request')" wire:navigate>{{ __('Approved Requests') }}</flux:navlist.item>
                     @endcan
-                    @canany(['view sales request', 'approve sales request'])
-                    <flux:navlist.item icon="clipboard-document-check" :href="route('sales.request.approval.index')" :current="request()->routeIs('sales.request.approval.*')" wire:navigate>{{ __('Pending Approvals') }}</flux:navlist.item>
+                    @canany(['view sales order', 'approve sales order'])
+                    <flux:navlist.item icon="shield-check" :href="route('sales.order.approval.index')" :current="request()->routeIs('sales.order.approval.*')" wire:navigate>{{ __('SO Approval') }}</flux:navlist.item>
                     @endcanany
+                    @can('view sales order')
+                    <flux:navlist.item icon="truck" :href="route('sales.order.index.ongoing')" :current="request()->routeIs('sales.order.index.ongoing') || request()->routeIs('sales.order.show')" wire:navigate>{{ __('Ongoing Orders') }}</flux:navlist.item>
+                    <flux:navlist.item icon="x-circle" :href="route('sales.order.index.rejected')" :current="request()->routeIs('sales.order.index.rejected')" wire:navigate>{{ __('Rejected Orders') }}</flux:navlist.item>
+                    @endcan
                 </flux:navlist.group>
 
                 @can('edit system setting')

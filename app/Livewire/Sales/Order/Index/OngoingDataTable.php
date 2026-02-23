@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Sales\Request\Index;
+namespace App\Livewire\Sales\Order\Index;
 
 use App\Models\CMW\Transaction\OrderHeader;
 use Illuminate\Database\Eloquent\Builder;
@@ -8,18 +8,18 @@ use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 
-class InitDataTable extends DataTableComponent
+class OngoingDataTable extends DataTableComponent
 {
     protected $model = OrderHeader::class;
 
     protected $listeners = [
-        'sales.request.refresh.init' => '$refresh',
+        'shp.sales.order.refresh.ongoing' => '$refresh',
     ];
 
     public function configure(): void
     {
         $this->setPrimaryKey('id');
-        $this->setDefaultSort('created_at', 'desc');
+        $this->setDefaultSort('approved_at', 'desc');
         $this->setSearchStatus(true);
         $this->setColumnSelectStatus(true);
         $this->setPerPageAccepted([10, 25, 50, 100]);
@@ -29,8 +29,8 @@ class InitDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return OrderHeader::query()
-            ->init()
-            ->with(['partner', 'itemCategory', 'createdBy']);
+            ->ongoing()
+            ->with(['partner', 'itemCategory', 'approvedByUser']);
     }
 
     public function columns(): array
@@ -40,19 +40,25 @@ class InitDataTable extends DataTableComponent
                 ->format(fn ($value, $row, Column $column) => view('components.datatables.datatable-action', [
                     'rowId' => $row->id,
                     'enable_this_row' => ! $row->trashed(),
-                    'showEdit' => Auth::user()?->can('edit sales request'),
-                    'editHref' => route('sales.request.edit', ['id' => $row->id]),
-                    'showDelete' => Auth::user()?->can('delete sales request'),
-                    'deleteDispatchEvent' => 'sales.request.delete',
+                    'showDetail' => Auth::user()?->can('view sales order'),
+                    'detailHref' => route('sales.order.show', ['id' => $row->id]),
                 ])),
 
-            Column::make('Code', 'code_request')
+            Column::make('SO Code', 'code_order')
+                ->sortable()
+                ->searchable(),
+
+            Column::make('SR Code', 'code_request')
                 ->sortable()
                 ->searchable(),
 
             Column::make('Date', 'date')
                 ->sortable()
                 ->format(fn ($value) => $value?->format('d M Y')),
+
+            Column::make('Delivery Date', 'delivery_date')
+                ->sortable()
+                ->format(fn ($value) => $value?->format('d M Y') ?? '-'),
 
             Column::make('Customer', 'partner_id')
                 ->sortable()
@@ -67,8 +73,8 @@ class InitDataTable extends DataTableComponent
                 ->sortable()
                 ->format(fn ($value) => number_format((float) $value, 2)),
 
-            Column::make('Created By', 'created_by')
-                ->format(fn ($value, $row) => $row->createdBy?->name ?? 'N/A'),
+            Column::make('Approved By', 'approved_by')
+                ->format(fn ($value, $row) => $row->approvedByUser?->name ?? 'N/A'),
         ];
     }
 }

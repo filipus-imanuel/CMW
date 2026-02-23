@@ -20,12 +20,15 @@ class CodeGeneratorHelper
     {
         $yearMonth = date('ym');
 
+        // Determine which column to search based on prefix
+        $column = $prefix === 'SO' ? 'code_order' : 'code_request';
+
         $last = OrderHeader::withTrashed()
-            ->where('code', 'like', "{$prefix}/{$yearMonth}/%")
-            ->orderByDesc('code')
+            ->where($column, 'like', "{$prefix}/{$yearMonth}/%")
+            ->orderByDesc($column)
             ->first();
 
-        $number = $last ? (int) substr($last->code, -4) + 1 : 1;
+        $number = $last ? (int) substr($last->{$column}, -4) + 1 : 1;
 
         return "{$prefix}/{$yearMonth}/".str_pad((string) $number, 4, '0', STR_PAD_LEFT);
     }

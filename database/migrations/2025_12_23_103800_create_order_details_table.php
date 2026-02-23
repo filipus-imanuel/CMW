@@ -15,7 +15,8 @@ return new class extends Migration
             $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
             $table->foreignId('company_setting_id')->nullable()->constrained('company_settings');
             $table->decimal('quantity', 13, 2)->default(0);
-            $table->decimal('price', 13, 2)->default(0);
+            $table->decimal('price_proposed', 13, 2)->default(0);
+            $table->decimal('price_deal', 13, 2)->default(0);
             $table->decimal('discount', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);

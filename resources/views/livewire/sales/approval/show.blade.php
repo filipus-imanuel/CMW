@@ -1,14 +1,14 @@
 <div>
     <div class="mb-6">
-        <flux:button :href="route('sales.request.approval.index')" variant="ghost" icon="arrow-left" wire:navigate>
+        <flux:button :href="route('sales.order.approval.index')" variant="ghost" icon="arrow-left" wire:navigate>
             Back to Approvals
         </flux:button>
     </div>
 
-    <flux:heading size="xl" class="mb-2">Approve Sales Request</flux:heading>
-    <flux:subheading class="mb-6">{{ $order->code }}</flux:subheading>
+    <flux:heading size="xl" class="mb-2">Approve Sales Order</flux:heading>
+    <flux:subheading class="mb-6">{{ $order->code_request }}</flux:subheading>
 
-    {{-- Warning Banners --}}
+    {{-- Customer Check Info Cards --}}
     @if(!empty($checks))
         @if(!empty($checks['debt']) && $checks['debt']['exceeded'])
             <flux:callout color="red" icon="exclamation-triangle" class="mb-4">
@@ -67,11 +67,15 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
                 <flux:text class="text-sm text-zinc-500">Code</flux:text>
-                <flux:text class="font-medium">{{ $order->code }}</flux:text>
+                <flux:text class="font-medium">{{ $order->code_request }}</flux:text>
             </div>
             <div>
                 <flux:text class="text-sm text-zinc-500">Date</flux:text>
                 <flux:text class="font-medium">{{ $order->date?->format('d M Y') }}</flux:text>
+            </div>
+            <div>
+                <flux:text class="text-sm text-zinc-500">Delivery Date</flux:text>
+                <flux:text class="font-medium">{{ $order->delivery_date?->format('d M Y') ?? '-' }}</flux:text>
             </div>
             <div>
                 <flux:text class="text-sm text-zinc-500">Customer</flux:text>
@@ -111,43 +115,42 @@
         <flux:heading size="lg" class="mb-4">Items</flux:heading>
 
         @if($order->details->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-zinc-200 dark:border-zinc-700">
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">#</th>
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">Code</th>
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">Item Name</th>
-                            <th class="text-left py-3 px-2 font-medium text-zinc-500">UOM</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Quantity</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Price</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Discount</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Tax</th>
-                            <th class="text-right py-3 px-2 font-medium text-zinc-500">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($order->details as $index => $detail)
-                            <tr wire:key="detail-{{ $detail->id }}" class="border-b border-zinc-100 dark:border-zinc-800">
-                                <td class="py-2 px-2 text-zinc-500">{{ $index + 1 }}</td>
-                                <td class="py-2 px-2">{{ $detail->item?->code }}</td>
-                                <td class="py-2 px-2">{{ $detail->item?->name }}</td>
-                                <td class="py-2 px-2">{{ $detail->itemUom?->uom?->name }}</td>
-                                <td class="py-2 px-2 text-right">{{ number_format((float)$detail->quantity, 2) }}</td>
-                                <td class="py-2 px-2 text-right">{{ number_format((float)$detail->price, 2) }}</td>
-                                <td class="py-2 px-2 text-right">{{ number_format((float)$detail->discount, 2) }}</td>
-                                <td class="py-2 px-2 text-right">{{ number_format((float)$detail->tax, 2) }}</td>
-                                <td class="py-2 px-2 text-right font-medium">{{ number_format((float)$detail->total, 2) }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr class="border-t-2 border-zinc-300 dark:border-zinc-600">
-                            <td colspan="8" class="py-3 px-2 text-right font-semibold">Grand Total:</td>
-                            <td class="py-3 px-2 text-right font-semibold">{{ number_format((float)$order->total, 2) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>#</flux:table.column>
+                    <flux:table.column>Code</flux:table.column>
+                    <flux:table.column>Item Name</flux:table.column>
+                    <flux:table.column>UOM</flux:table.column>
+                    <flux:table.column class="text-center">Quantity</flux:table.column>
+                    <flux:table.column class="text-center">Price Proposed</flux:table.column>
+                    <flux:table.column class="text-center">Price Deal</flux:table.column>
+                    <flux:table.column class="text-center">Discount</flux:table.column>
+                    <flux:table.column class="text-center">Tax</flux:table.column>
+                    <flux:table.column class="text-center">Total</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @foreach($order->details as $index => $detail)
+                        <flux:table.row :key="'detail-'.$detail->id">
+                            <flux:table.cell>{{ $index + 1 }}</flux:table.cell>
+                            <flux:table.cell>{{ $detail->item?->code }}</flux:table.cell>
+                            <flux:table.cell>{{ $detail->item?->name }}</flux:table.cell>
+                            <flux:table.cell>{{ $detail->itemUom?->uom?->name }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->quantity, 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->price_proposed, 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->price_deal, 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->discount, 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->tax, 2) }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums" variant="strong">{{ number_format((float)$detail->total, 2) }}</flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
+
+            <div class="mt-3 border-t border-zinc-200 dark:border-zinc-700 pt-3 flex justify-end text-sm">
+                <div class="flex gap-8 font-semibold">
+                    <span>Grand Total:</span>
+                    <span class="tabular-nums min-w-[120px] text-right">{{ number_format((float)$order->total, 2) }}</span>
+                </div>
             </div>
         @else
             <div class="text-center py-8 text-zinc-400">
@@ -157,17 +160,18 @@
     </flux:card>
 
     {{-- Approval Actions --}}
-    @can('approve sales request')
+    @canany(['approve sales order', 'reject sales order'])
     <flux:card>
         <flux:heading size="lg" class="mb-4">Approval Decision</flux:heading>
 
         <flux:text class="mb-4 text-zinc-600 dark:text-zinc-400">
-            Review the request details above, then approve or reject this sales request.
+            Review the request details above, then choose an action.
         </flux:text>
 
         <div class="flex gap-2">
             <flux:spacer/>
-            <flux:button :href="route('sales.request.approval.index')" variant="ghost" wire:navigate>Cancel</flux:button>
+            <flux:button :href="route('sales.order.approval.index')" variant="ghost" wire:navigate>Cancel</flux:button>
+            <flux:button wire:click="confirmRestore" variant="filled" icon="arrow-uturn-left">Restore to Draft</flux:button>
             <flux:button wire:click="confirmReject" variant="danger" icon="x-circle">Reject</flux:button>
             <flux:button wire:click="confirmApprove" variant="primary" icon="check-circle">Approve</flux:button>
         </div>
@@ -175,26 +179,46 @@
     @else
     <flux:card>
         <flux:heading size="lg" class="mb-4">Awaiting Approval</flux:heading>
-        
+
         <flux:text class="mb-4 text-zinc-600 dark:text-zinc-400">
             This sales request is pending approval from authorized personnel.
         </flux:text>
 
         <div class="flex gap-2">
             <flux:spacer/>
-            <flux:button :href="route('sales.request.approval.index')" variant="primary" wire:navigate>Back to List</flux:button>
+            <flux:button :href="route('sales.order.approval.index')" variant="primary" wire:navigate>Back to List</flux:button>
         </div>
     </flux:card>
+    @endcanany
+
+    {{-- Restore Confirmation Modal --}}
+    @can('approve sales order')
+    <flux:modal name="restore-confirmation" class="md:w-96">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Restore to Draft</flux:heading>
+                <flux:subheading class="mt-2">
+                    This will return <strong>{{ $order->code_request }}</strong> to <strong>INIT (Draft)</strong> status. The requester will be able to edit and resubmit.
+                </flux:subheading>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button variant="ghost" x-on:click="$flux.modal('restore-confirmation').close()">Cancel</flux:button>
+                <flux:button variant="filled" wire:click="processRestore" icon="arrow-uturn-left">Restore</flux:button>
+            </div>
+        </div>
+    </flux:modal>
     @endcan
 
     {{-- Approve Confirmation Modal --}}
-    @can('approve sales request')
+    @can('approve sales order')
     <flux:modal name="approve-confirmation" class="md:w-96">
         <div class="space-y-6">
             <div>
-                <flux:heading size="lg">Approve Sales Request</flux:heading>
+                <flux:heading size="lg">Approve Sales Order</flux:heading>
                 <flux:subheading class="mt-2">
-                    You are about to approve request <strong>{{ $order->code }}</strong> for <strong>{{ $order->currency?->code }} {{ number_format((float)$order->total, 2) }}</strong>.
+                    You are about to approve <strong>{{ $order->code_request }}</strong> for <strong>{{ $order->currency?->code }} {{ number_format((float)$order->total, 2) }}</strong>. A Sales Order code will be generated.
                 </flux:subheading>
             </div>
 
@@ -212,14 +236,16 @@
             </div>
         </div>
     </flux:modal>
+    @endcan
 
     {{-- Reject Confirmation Modal --}}
+    @can('reject sales order')
     <flux:modal name="reject-confirmation" class="md:w-96">
         <div class="space-y-6">
             <div>
-                <flux:heading size="lg">Reject Sales Request</flux:heading>
+                <flux:heading size="lg">Reject Sales Order</flux:heading>
                 <flux:subheading class="mt-2">
-                    Rejecting this request will return it to <strong>INIT (Draft)</strong> status. The requester will be able to edit and resubmit.
+                    Rejecting this request will set it to <strong>REJECTED</strong> status.
                 </flux:subheading>
             </div>
 

@@ -78,6 +78,7 @@ class Edit extends Component
     {
         $this->inputs = [
             'date' => $this->order->date?->format('Y-m-d'),
+            'delivery_date' => $this->order->delivery_date?->format('Y-m-d') ?? '',
             'remarks' => $this->order->remarks ?? '',
             'tax_mode' => $this->order->tax_mode ?? 'NONE',
             'tax_id' => $this->order->tax_id ?? '',
@@ -89,13 +90,12 @@ class Edit extends Component
         // Load items with their Item model for HET
         $partner = $this->order->partner;
         $detailItems = $this->order->details->pluck('item')->filter()->unique('id');
-        $resolvedPrices = PriceResolutionHelper::resolveMany($detailItems, $partner);
         $floorPct = $this->floorPercentage;
 
         $this->items = $this->order->details->map(function ($detail) use ($taxMode, $taxRate) {
             $calc = TransactionHelper::calculateItemTax(
                 (float) $detail->quantity,
-                (float) $detail->price,
+                (float) $detail->price_proposed,
                 (float) $detail->discount,
                 $taxMode,
                 $taxRate
@@ -109,7 +109,8 @@ class Edit extends Component
                 'item_uom_id' => $detail->item_uom_id,
                 'uom_name' => $detail->itemUom?->uom?->name ?? '',
                 'quantity' => number_format((float) $detail->quantity, 2, '.', ''),
-                'price' => number_format((float) $detail->price, 2, '.', ''),
+                'price_proposed' => number_format((float) $detail->price_proposed, 2, '.', ''),
+                'price_deal' => number_format((float) ($detail->price_deal ?: $detail->price_proposed), 2, '.', ''),
                 'discount' => number_format((float) $detail->discount, 2, '.', ''),
                 'tax' => number_format($calc['tax'], 2, '.', ''),
                 'total' => number_format($calc['total'], 2, '.', ''),
@@ -118,17 +119,27 @@ class Edit extends Component
 
         // Build guardrails for each item row
         $this->priceGuardrails = [];
-        foreach ($this->items as $index => $item) {
-            $hetPrice = (float) ($detailItems->firstWhere('id', $item['item_id'])?->sell_price ?? 0);
-            $resolved = $resolvedPrices[$item['item_id']] ?? null;
-            $resolvedPrice = $resolved ? $resolved['price'] : $hetPrice;
+        foreach ($this->order->details as $index => $detail) {
+            $item = $this->items[$index] ?? null;
+            if ($item === null) {
+                continue;
+            }
+            $detailItem = $detailItems->firstWhere('id', $item['item_id']);
+            $hetResolved = $detailItem
+                ? PriceResolutionHelper::resolve($detailItem, null, $detail->item_uom_id)
+                : ['price' => 0.0];
+            $hetPrice = $hetResolved['price'];
+            $partnerResolved = $detailItem
+                ? PriceResolutionHelper::resolve($detailItem, $partner, $detail->item_uom_id)
+                : ['price' => 0.0];
+            $resolvedPrice = $partnerResolved['price'];
             $floorPrice = $hetPrice * ($floorPct / 100);
 
             $this->priceGuardrails[$index] = [
                 'het_price' => $hetPrice,
                 'floor_price' => round($floorPrice, 2),
                 'resolved_price' => $resolvedPrice,
-                'warnings' => $this->computePriceWarnings((float) $item['price'], $hetPrice, $floorPrice),
+                'warnings' => $this->computePriceWarnings((float) $item['price_proposed'], $hetPrice, $floorPrice),
             ];
         }
     }
@@ -154,9 +165,9 @@ class Edit extends Component
     #[On('sales.request.item-selected')]
     public function addItem(int $itemId, string $itemCode, string $itemName, int $itemUomId, string $uomName, float $sellPrice, float $hetPrice): void
     {
-        // Check if item already exists in the list
+        // Check if same item+UOM combination already exists in the list
         foreach ($this->items as $item) {
-            if ($item['item_id'] === $itemId) {
+            if ($item['item_uom_id'] === $itemUomId) {
                 Flux::toast('Item already added to the list', variant: 'warning', position: 'top-end');
 
                 return;
@@ -171,7 +182,8 @@ class Edit extends Component
             'item_uom_id' => $itemUomId,
             'uom_name' => $uomName,
             'quantity' => '1.00',
-            'price' => number_format($sellPrice, 2, '.', ''),
+            'price_proposed' => number_format($sellPrice, 2, '.', ''),
+            'price_deal' => number_format($sellPrice, 2, '.', ''),
             'discount' => '0.00',
             'tax' => '0.00',
             'total' => number_format($sellPrice, 2, '.', ''),
@@ -215,7 +227,7 @@ class Edit extends Component
         }
 
         $qty = (float) ($this->items[$index]['quantity'] ?? 0);
-        $price = (float) ($this->items[$index]['price'] ?? 0);
+        $price = (float) ($this->items[$index]['price_proposed'] ?? 0);
         $discount = (float) ($this->items[$index]['discount'] ?? 0);
         $taxMode = $this->inputs['tax_mode'] ?? 'NONE';
         $taxRate = $this->getCurrentTaxRate();
@@ -273,15 +285,26 @@ class Edit extends Component
      */
     public function updatedItems($value, $key): void
     {
-        // $key format: "0.quantity", "1.price", etc.
+        // $key format: "0.quantity", "1.price_proposed", etc.
         $parts = explode('.', $key);
         if (count($parts) === 2) {
             $index = (int) $parts[0];
+            $field = $parts[1];
+
+            // Auto-calc discount when price_deal, quantity, or price_proposed changes
+            if (in_array($field, ['price_deal', 'quantity', 'price_proposed'])) {
+                $qty = (float) ($this->items[$index]['quantity'] ?? 0);
+                $proposed = (float) ($this->items[$index]['price_proposed'] ?? 0);
+                $deal = (float) ($this->items[$index]['price_deal'] ?? 0);
+                $discount = max(0, $qty * ($proposed - $deal));
+                $this->items[$index]['discount'] = number_format($discount, 2, '.', '');
+            }
+
             $this->recalculateItemTotal($index);
 
-            // Refresh guardrail warnings when price changes
-            if ($parts[1] === 'price' && isset($this->priceGuardrails[$index])) {
-                $currentPrice = (float) ($this->items[$index]['price'] ?? 0);
+            // Refresh guardrail warnings when price_proposed changes
+            if ($field === 'price_proposed' && isset($this->priceGuardrails[$index])) {
+                $currentPrice = (float) ($this->items[$index]['price_proposed'] ?? 0);
                 $hetPrice = $this->priceGuardrails[$index]['het_price'];
                 $floorPrice = $this->priceGuardrails[$index]['floor_price'];
                 $this->priceGuardrails[$index]['warnings'] = $this->computePriceWarnings($currentPrice, $hetPrice, $floorPrice);
@@ -344,6 +367,7 @@ class Edit extends Component
 
         $this->validate([
             'inputs.date' => 'required|date',
+            'inputs.delivery_date' => 'nullable|date',
             'inputs.remarks' => 'nullable|string|max:1024',
             'inputs.tax_mode' => 'required|in:INCLUDE,EXCLUDE,NONE',
             'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
@@ -351,7 +375,8 @@ class Edit extends Component
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.item_uom_id' => 'required|exists:item_uoms,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.price' => 'required|numeric|min:0',
+            'items.*.price_proposed' => 'required|numeric|min:0',
+            'items.*.price_deal' => 'nullable|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
         ]);
 
@@ -359,7 +384,7 @@ class Edit extends Component
         $hasPriceOverride = false;
         foreach ($this->items as $index => $item) {
             $resolvedPrice = $this->priceGuardrails[$index]['resolved_price'] ?? null;
-            if ($resolvedPrice !== null && (float) $item['price'] !== $resolvedPrice) {
+            if ($resolvedPrice !== null && (float) $item['price_proposed'] !== $resolvedPrice) {
                 $hasPriceOverride = true;
                 break;
             }
@@ -382,6 +407,7 @@ class Edit extends Component
             // Update header with tax settings
             $this->order->update([
                 'date' => $this->inputs['date'],
+                'delivery_date' => $this->inputs['delivery_date'] ?: null,
                 'remarks' => $this->inputs['remarks'] ?? null,
                 'tax_mode' => $taxMode,
                 'tax_id' => $taxId,
@@ -394,8 +420,9 @@ class Edit extends Component
 
             foreach ($this->items as $item) {
                 $qty = (float) $item['quantity'];
-                $price = (float) $item['price'];
+                $price = (float) $item['price_proposed'];
                 $discount = (float) ($item['discount'] ?? 0);
+                $priceDeal = (float) ($item['price_deal'] ?? 0);
 
                 $calc = TransactionHelper::calculateItemTax($qty, $price, $discount, $taxMode, $taxRate);
 
@@ -404,7 +431,8 @@ class Edit extends Component
                     'item_id' => $item['item_id'],
                     'item_uom_id' => $item['item_uom_id'],
                     'quantity' => $qty,
-                    'price' => $price,
+                    'price_proposed' => $price,
+                    'price_deal' => $priceDeal,
                     'discount' => $discount,
                     'tax' => $calc['tax'],
                     'total' => $calc['total'],
@@ -448,7 +476,7 @@ class Edit extends Component
     }
 
     /**
-     * Submit the request - changes status based on checks.
+     * Submit the request - sends to APPROVAL status.
      */
     public function submit(): void
     {
@@ -461,43 +489,30 @@ class Edit extends Component
             return;
         }
 
+        // Validate delivery_date is required on submit
+        $this->validate([
+            'inputs.delivery_date' => 'required|date',
+            'items.*.price_deal' => 'required|numeric|min:0.01',
+        ], [
+            'inputs.delivery_date.required' => 'Delivery date is required before submitting.',
+            'items.*.price_deal.required' => 'Price deal is required for all items before submitting.',
+            'items.*.price_deal.min' => 'Price deal must be greater than 0.',
+        ]);
+
         // Save first
         $this->save();
 
         DB::transaction(function () {
-            // Run final checks
-            $checks = CustomerCheckHelper::runAllChecks(
-                $this->order->partner_id,
-                $this->order->company_id,
-                $this->order->item_category_id,
-                (float) $this->order->total,
-                $this->order->id
-            );
-
-            if ($checks['has_issues']) {
-                // Issues found - send to approval
-                $this->order->update([
-                    'status' => 'APPROVAL',
-                    'updated_by' => Auth::id(),
-                ]);
-
-                Flux::toast('Sales request submitted for approval (issues detected)', variant: 'warning', position: 'top-end');
-            } else {
-                // No issues - directly approved
-                $this->order->update([
-                    'status' => 'REQUEST',
-                    'approved_by' => Auth::id(),
-                    'approved_at' => now(),
-                    'updated_by' => Auth::id(),
-                ]);
-
-                Flux::toast('Sales request approved and submitted', variant: 'success', position: 'top-end');
-            }
+            $this->order->update([
+                'status' => 'APPROVAL',
+                'updated_by' => Auth::id(),
+            ]);
         });
 
+        Flux::toast('Sales request submitted for approval', variant: 'success', position: 'top-end');
+
         $this->dispatch('sales.request.refresh.init');
-        $this->dispatch('sales.request.refresh.approval');
-        $this->dispatch('sales.request.refresh.request');
+        $this->dispatch('shp.sales.order.refresh.approval');
         $this->redirectRoute('sales.request.index.init', navigate: true);
     }
 

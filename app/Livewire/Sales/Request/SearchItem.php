@@ -19,6 +19,8 @@ class SearchItem extends Component
 
     public $results = [];
 
+    public array $addedUomIds = [];
+
     #[On('sales.request.search-item.open')]
     public function openModal(int $itemCategoryId, ?int $partnerId = null): void
     {
@@ -26,6 +28,7 @@ class SearchItem extends Component
         $this->partnerId = $partnerId;
         $this->search = '';
         $this->results = [];
+        $this->addedUomIds = [];
         $this->modal('search-item')->show();
     }
 
@@ -49,48 +52,59 @@ class SearchItem extends Component
                 $q->where('name', 'like', "%{$this->search}%")
                     ->orWhere('code', 'like', "%{$this->search}%");
             })
-            ->with(['baseItemUom.uom'])
+            ->with(['itemUoms.uom'])
             ->limit(20)
             ->get();
 
         $partner = $this->partnerId ? Partner::find($this->partnerId) : null;
-        $resolvedPrices = PriceResolutionHelper::resolveMany($items, $partner);
 
-        // Get unique category price IDs and load them
-        $categoryPriceIds = collect($resolvedPrices)
-            ->pluck('category_price_id')
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
+        // Build one row per (item × uom)
+        $rows = [];
+        $categoryPriceIds = [];
 
-        $categoryPrices = CategoryPrice::whereIn('id', $categoryPriceIds)
-            ->pluck('code', 'id')
-            ->toArray();
+        foreach ($items as $item) {
+            foreach ($item->itemUoms as $itemUom) {
+                $resolved = PriceResolutionHelper::resolve($item, $partner, $itemUom->id);
+                $hetResolved = PriceResolutionHelper::resolve($item, null, $itemUom->id);
 
-        $this->results = $items
-            ->map(function ($item) use ($resolvedPrices, $categoryPrices) {
-                $resolved = $resolvedPrices[$item->id] ?? [];
-                $categoryPriceId = $resolved['category_price_id'] ?? null;
+                if ($resolved['category_price_id']) {
+                    $categoryPriceIds[] = $resolved['category_price_id'];
+                }
 
-                return [
+                $rows[] = [
                     'id' => $item->id,
                     'code' => $item->code,
                     'name' => $item->name,
-                    'item_uom_id' => $item->baseItemUom?->id,
-                    'uom_name' => $item->baseItemUom?->uom?->name ?? '',
-                    'het_price' => (float) $item->sell_price,
-                    'sell_price' => $resolved['price'] ?? (float) $item->sell_price,
-                    'price_source' => $resolved['source'] ?? 'item_sell_price',
-                    'category_price_code' => $categoryPriceId ? ($categoryPrices[$categoryPriceId] ?? null) : null,
+                    'item_uom_id' => $itemUom->id,
+                    'uom_name' => $itemUom->uom?->name ?? '',
+                    'is_base' => (bool) $itemUom->is_base,
+                    'het_price' => $hetResolved['price'],
+                    'sell_price' => $resolved['price'],
+                    'price_source' => $resolved['source'],
+                    'category_price_id' => $resolved['category_price_id'],
+                    'category_price_code' => null,
                 ];
-            })
+            }
+        }
+
+        // Batch-load category price codes
+        $categoryPriceCodes = CategoryPrice::whereIn('id', array_unique(array_filter($categoryPriceIds)))
+            ->pluck('code', 'id')
             ->toArray();
+
+        $this->results = array_map(function ($row) use ($categoryPriceCodes) {
+            $row['category_price_code'] = $row['category_price_id']
+                ? ($categoryPriceCodes[$row['category_price_id']] ?? null)
+                : null;
+            unset($row['category_price_id']);
+
+            return $row;
+        }, $rows);
     }
 
-    public function selectItem(int $itemId): void
+    public function selectItem(int $itemUomId): void
     {
-        $item = collect($this->results)->firstWhere('id', $itemId);
+        $item = collect($this->results)->firstWhere('item_uom_id', $itemUomId);
 
         if ($item) {
             $this->dispatch('sales.request.item-selected',
@@ -103,7 +117,7 @@ class SearchItem extends Component
                 hetPrice: $item['het_price']
             );
 
-            $this->modal('search-item')->close();
+            $this->addedUomIds[] = $itemUomId;
         }
     }
 

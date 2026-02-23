@@ -177,7 +177,7 @@ class Create extends Component
             }
 
             $order = OrderHeader::create([
-                'code' => CodeGeneratorHelper::generateOrderCode('SR'),
+                'code_request' => CodeGeneratorHelper::generateOrderCode('SR'),
                 'date' => $validated['inputs']['date'],
                 'currency_id' => $company->currency_id,
                 'partner_id' => $validated['inputs']['partner_id'],

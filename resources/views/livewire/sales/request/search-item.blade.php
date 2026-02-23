@@ -1,5 +1,5 @@
 <div>
-    <flux:modal name="search-item" class="md:w-[600px]">
+    <flux:modal name="search-item" class="!w-[50vw] !max-w-[75vw]">
         <flux:heading>Search Items</flux:heading>
         <flux:subheading class="mb-4">Search by item code or name</flux:subheading>
 
@@ -26,10 +26,15 @@
                     </thead>
                     <tbody>
                         @foreach($results as $item)
-                            <tr wire:key="search-item-{{ $item['id'] }}" class="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 cursor-pointer">
+                            <tr wire:key="search-item-{{ $item['item_uom_id'] }}" class="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 cursor-pointer">
                                 <td class="py-2 px-2">{{ $item['code'] }}</td>
                                 <td class="py-2 px-2">{{ $item['name'] }}</td>
-                                <td class="py-2 px-2">{{ $item['uom_name'] }}</td>
+                                <td class="py-2 px-2">
+                                    {{ $item['uom_name'] }}
+                                    @if($item['is_base'])
+                                        <span class="ml-1 text-xs text-zinc-400">(base)</span>
+                                    @endif
+                                </td>
                                 <td class="py-2 px-2 text-center">
                                     @if($item['category_price_code'])
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -42,14 +47,25 @@
                                 <td class="py-2 px-2 text-right text-zinc-400">{{ number_format($item['het_price'], 2) }}</td>
                                 <td class="py-2 px-2 text-right">{{ number_format($item['sell_price'], 2) }}</td>
                                 <td class="py-2 px-2 text-center">
-                                    <flux:button
-                                        wire:click="selectItem({{ $item['id'] }})"
-                                        variant="primary"
-                                        size="xs"
-                                        icon="plus"
-                                    >
-                                        Add
-                                    </flux:button>
+                                    @if(in_array($item['item_uom_id'], $addedUomIds))
+                                        <flux:button
+                                            variant="ghost"
+                                            size="xs"
+                                            icon="check"
+                                            disabled
+                                        >
+                                            Added
+                                        </flux:button>
+                                    @else
+                                        <flux:button
+                                            wire:click="selectItem({{ $item['item_uom_id'] }})"
+                                            variant="primary"
+                                            size="xs"
+                                            icon="plus"
+                                        >
+                                            Add
+                                        </flux:button>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

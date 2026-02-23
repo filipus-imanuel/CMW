@@ -38,6 +38,7 @@
                 <flux:select
                     wire:model="inputs.item_category_id"
                     label="Category"
+                    badge="Required"
                     placeholder="Select Category"
                     searchable
                 >
@@ -121,140 +122,139 @@
             @enderror
 
             @if(count($uoms) > 0)
-                <flux:table>
-                    <flux:table.columns>
-                        <flux:table.column class="text-center">Base</flux:table.column>
-                        <flux:table.column>UOM</flux:table.column>
-                        <flux:table.column class="text-center">Conversion Rate</flux:table.column>
-                        <flux:table.column>Remarks</flux:table.column>
-                        <flux:table.column class="text-center">Actions</flux:table.column>
-                    </flux:table.columns>
-                    <flux:table.rows>
-                        @foreach($uoms as $u => $uomRow)
-                            <flux:table.row wire:key="uom-row-{{ $u }}">
-                                <flux:table.cell class="text-center">
-                                    <input
-                                        type="radio"
-                                        name="base_uom"
-                                        {{ $uomRow['is_base'] ? 'checked' : '' }}
-                                        wire:click="setBaseUom({{ $u }})"
-                                        class="accent-blue-600"
-                                    />
-                                </flux:table.cell>
-                                <flux:table.cell>
-                                    <flux:select
-                                        wire:model="uoms.{{ $u }}.uom_id"
-                                        placeholder="Select UOM"
-                                        size="sm"
-                                        searchable
-                                    >
-                                        @foreach($dropdown_uom as $uom)
-                                            <flux:select.option value="{{ $uom['value'] }}">{{ $uom['label'] }}</flux:select.option>
-                                        @endforeach
-                                    </flux:select>
-                                    @error("uoms.{$u}.uom_id")
-                                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
-                                    @enderror
-                                </flux:table.cell>
-                                <flux:table.cell>
-                                    <flux:input
-                                        wire:model="uoms.{{ $u }}.conversion_rate"
-                                        type="number"
-                                        step="0.0001"
-                                        placeholder="1.0000"
-                                        size="sm"
-                                        :disabled="$uomRow['is_base']"
-                                    />
-                                    @error("uoms.{$u}.conversion_rate")
-                                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
-                                    @enderror
-                                </flux:table.cell>
-                                <flux:table.cell>
-                                    <flux:input
-                                        wire:model="uoms.{{ $u }}.remarks"
-                                        placeholder="Optional"
-                                        size="sm"
-                                    />
-                                </flux:table.cell>
-                                <flux:table.cell class="text-center">
-                                    @if(count($uoms) > 1)
-                                        <flux:button
-                                            type="button"
-                                            variant="danger"
-                                            icon="trash"
-                                            size="xs"
-                                            wire:click="removeUomRow({{ $u }})"
-                                        />
-                                    @endif
-                                </flux:table.cell>
-                            </flux:table.row>
-                        @endforeach
-                    </flux:table.rows>
-                </flux:table>
+                <div class="space-y-4">
+                    @foreach($uoms as $u => $uomRow)
+                        <div wire:key="uom-block-{{ $u }}" class="border border-zinc-700 rounded-lg overflow-hidden">
+                            {{-- UOM Row --}}
+                            <flux:table>
+                                <flux:table.columns>
+                                    <flux:table.column class="text-center w-16">Base</flux:table.column>
+                                    <flux:table.column>UOM</flux:table.column>
+                                    <flux:table.column class="text-center">Conversion Rate</flux:table.column>
+                                    <flux:table.column>Remarks</flux:table.column>
+                                    <flux:table.column class="text-center w-20">Actions</flux:table.column>
+                                </flux:table.columns>
+                                <flux:table.rows>
+                                    <flux:table.row wire:key="uom-row-{{ $u }}">
+                                        <flux:table.cell class="text-center">
+                                            <input
+                                                type="radio"
+                                                wire:model.live="baseUomIndex"
+                                                value="{{ $u }}"
+                                                class="accent-blue-600 cursor-pointer"
+                                            />
+                                        </flux:table.cell>
+                                        <flux:table.cell>
+                                            <flux:select
+                                                wire:model.live="uoms.{{ $u }}.uom_id"
+                                                placeholder="Select UOM"
+                                                size="sm"
+                                                searchable
+                                            >
+                                                @foreach($dropdown_uom as $uom)
+                                                    <flux:select.option value="{{ $uom['value'] }}">{{ $uom['label'] }}</flux:select.option>
+                                                @endforeach
+                                            </flux:select>
+                                            @error("uoms.{$u}.uom_id")
+                                                <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
+                                            @enderror
+                                        </flux:table.cell>
+                                        <flux:table.cell>
+                                            <flux:input
+                                                wire:model="uoms.{{ $u }}.conversion_rate"
+                                                type="number"
+                                                step="0.0001"
+                                                placeholder="1.0000"
+                                                size="sm"
+                                                :disabled="$uomRow['is_base']"
+                                            />
+                                            @error("uoms.{$u}.conversion_rate")
+                                                <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
+                                            @enderror
+                                        </flux:table.cell>
+                                        <flux:table.cell>
+                                            <flux:input
+                                                wire:model="uoms.{{ $u }}.remarks"
+                                                placeholder="Optional"
+                                                size="sm"
+                                            />
+                                        </flux:table.cell>
+                                        <flux:table.cell class="text-center">
+                                            @if(count($uoms) > 1)
+                                                <flux:button
+                                                    type="button"
+                                                    variant="danger"
+                                                    icon="trash"
+                                                    size="xs"
+                                                    wire:click="removeUomRow({{ $u }})"
+                                                />
+                                            @endif
+                                        </flux:table.cell>
+                                    </flux:table.row>
+                                </flux:table.rows>
+                            </flux:table>
+
+                            {{-- Nested Prices --}}
+                            @if(!empty($uomRow['prices']))
+                                <div class="border-t border-zinc-700 bg-zinc-900/40 px-4 py-3">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <flux:heading size="sm" class="text-zinc-400">
+                                            Prices &mdash; {{ collect($dropdown_uom)->firstWhere('value', $uomRow['uom_id'])['label'] ?? 'UOM #'.($u + 1) }}
+                                        </flux:heading>
+                                        @if($uomRow['is_base'])
+                                            <flux:badge variant="primary" size="sm">Base</flux:badge>
+                                        @endif
+                                    </div>
+                                    <flux:table>
+                                        <flux:table.columns>
+                                            <flux:table.column>Category Price</flux:table.column>
+                                            <flux:table.column class="text-center">Price</flux:table.column>
+                                            <flux:table.column>Remarks</flux:table.column>
+                                            <flux:table.column class="text-center">Active</flux:table.column>
+                                        </flux:table.columns>
+                                        <flux:table.rows>
+                                            @foreach($uomRow['prices'] as $p => $priceRow)
+                                                <flux:table.row wire:key="uom-{{ $u }}-price-{{ $p }}">
+                                                    <flux:table.cell>
+                                                        <flux:text class="font-medium">{{ $priceRow['category_price_label'] }}</flux:text>
+                                                    </flux:table.cell>
+                                                    <flux:table.cell>
+                                                        <flux:input
+                                                            wire:model="uoms.{{ $u }}.prices.{{ $p }}.price"
+                                                            type="number"
+                                                            step="0.01"
+                                                            placeholder="0.00"
+                                                            size="sm"
+                                                        />
+                                                        @error("uoms.{$u}.prices.{$p}.price")
+                                                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
+                                                        @enderror
+                                                    </flux:table.cell>
+                                                    <flux:table.cell>
+                                                        <flux:input
+                                                            wire:model="uoms.{{ $u }}.prices.{{ $p }}.remarks"
+                                                            placeholder="Optional"
+                                                            size="sm"
+                                                        />
+                                                    </flux:table.cell>
+                                                    <flux:table.cell class="text-center">
+                                                        <flux:switch wire:model="uoms.{{ $u }}.prices.{{ $p }}.is_active" />
+                                                    </flux:table.cell>
+                                                </flux:table.row>
+                                            @endforeach
+                                        </flux:table.rows>
+                                    </flux:table>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
             @else
                 <flux:callout variant="info" icon="information-circle">
                     At least one UOM is required. Click "Add UOM" to add a unit of measure.
                 </flux:callout>
             @endif
         </flux:card>
-
-        {{-- Category Prices per UOM --}}
-        @foreach($uoms as $u => $uomRow)
-            <flux:card class="mb-6" wire:key="uom-prices-{{ $u }}">
-                <flux:heading size="lg" class="mb-4">
-                    Prices &mdash; {{ collect($dropdown_uom)->firstWhere('value', $uomRow['uom_id'])['label'] ?? 'UOM #'.($u + 1) }}
-                    @if($uomRow['is_base'])
-                        <flux:badge variant="primary" size="sm" class="ml-2">Base</flux:badge>
-                    @endif
-                </flux:heading>
-
-                @if(!empty($uomRow['prices']))
-                    <flux:table>
-                        <flux:table.columns>
-                            <flux:table.column>Category Price</flux:table.column>
-                            <flux:table.column class="text-center">Price</flux:table.column>
-                            <flux:table.column>Remarks</flux:table.column>
-                            <flux:table.column class="text-center">Active</flux:table.column>
-                        </flux:table.columns>
-                        <flux:table.rows>
-                            @foreach($uomRow['prices'] as $p => $priceRow)
-                                <flux:table.row wire:key="uom-{{ $u }}-price-{{ $p }}">
-                                    <flux:table.cell>
-                                        <flux:text class="font-medium">{{ $priceRow['category_price_label'] }}</flux:text>
-                                    </flux:table.cell>
-                                    <flux:table.cell>
-                                        <flux:input
-                                            wire:model="uoms.{{ $u }}.prices.{{ $p }}.price"
-                                            type="number"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                            size="sm"
-                                        />
-                                        @error("uoms.{$u}.prices.{$p}.price")
-                                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
-                                        @enderror
-                                    </flux:table.cell>
-                                    <flux:table.cell>
-                                        <flux:input
-                                            wire:model="uoms.{{ $u }}.prices.{{ $p }}.remarks"
-                                            placeholder="Optional"
-                                            size="sm"
-                                        />
-                                    </flux:table.cell>
-                                    <flux:table.cell class="text-center">
-                                        <flux:switch wire:model="uoms.{{ $u }}.prices.{{ $p }}.is_active" />
-                                    </flux:table.cell>
-                                </flux:table.row>
-                            @endforeach
-                        </flux:table.rows>
-                    </flux:table>
-                @else
-                    <flux:callout variant="info" icon="information-circle">
-                        No category prices configured. Category prices will appear here automatically.
-                    </flux:callout>
-                @endif
-            </flux:card>
-        @endforeach
 
         {{-- Footer Actions --}}
         <div class="flex gap-2">

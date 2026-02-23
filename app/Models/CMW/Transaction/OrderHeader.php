@@ -18,7 +18,10 @@ class OrderHeader extends BaseModel
     protected $table = 'order_headers';
 
     protected $fillable = [
+        'code_request',
+        'code_order',
         'date',
+        'delivery_date',
         'currency_id',
         'partner_id',
         'company_id',
@@ -40,6 +43,7 @@ class OrderHeader extends BaseModel
     {
         return [
             'date' => 'date',
+            'delivery_date' => 'date',
             'approved_at' => 'datetime',
             'tax_rate' => 'decimal:2',
             'subtotal' => 'decimal:2',
@@ -99,7 +103,7 @@ class OrderHeader extends BaseModel
 
     public function scopeRequests(Builder $query): Builder
     {
-        return $query->whereIn('status', ['INIT', 'APPROVAL', 'REQUEST']);
+        return $query->whereIn('status', ['INIT', 'APPROVAL']);
     }
 
     public function scopeInit(Builder $query): Builder
@@ -112,9 +116,14 @@ class OrderHeader extends BaseModel
         return $query->where('status', 'APPROVAL');
     }
 
-    public function scopeApproved(Builder $query): Builder
+    public function scopeOngoing(Builder $query): Builder
     {
-        return $query->where('status', 'REQUEST');
+        return $query->where('status', 'ORDER');
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', 'REJECTED');
     }
 
     public function scopeOrders(Builder $query): Builder

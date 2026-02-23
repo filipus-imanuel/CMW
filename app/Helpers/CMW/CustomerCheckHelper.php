@@ -25,12 +25,12 @@ class CustomerCheckHelper
 
     /**
      * Get total of pending orders (not yet invoiced) for a customer.
-     * Statuses: APPROVAL, REQUEST, ORDER, DELIVERY.
+     * Statuses: APPROVAL, ORDER, DELIVERY.
      */
     public static function getPendingOrdersTotal(int $partnerId, ?int $excludeOrderId = null): float
     {
         return (float) OrderHeader::where('partner_id', $partnerId)
-            ->whereIn('status', ['APPROVAL', 'REQUEST', 'ORDER', 'DELIVERY'])
+            ->whereIn('status', ['APPROVAL', 'ORDER', 'DELIVERY'])
             ->when($excludeOrderId, fn ($q) => $q->where('id', '!=', $excludeOrderId))
             ->sum('total');
     }
@@ -63,10 +63,11 @@ class CustomerCheckHelper
     /**
      * Count pending deliveries (orders not yet finished) for a customer.
      */
-    public static function getPendingDeliveries(int $partnerId): int
+    public static function getPendingDeliveries(int $partnerId, ?int $excludeOrderId = null): int
     {
         return OrderHeader::where('partner_id', $partnerId)
-            ->whereNotIn('status', ['INIT', 'FINISH', 'FINAL'])
+            ->whereNotIn('status', ['INIT', 'FINISH', 'FINAL', 'REJECTED'])
+            ->when($excludeOrderId, fn ($q) => $q->where('id', '!=', $excludeOrderId))
             ->count();
     }
 
@@ -91,9 +92,9 @@ class CustomerCheckHelper
             ];
         }
 
-        // Calculate current total from active requests + orders for this company
+        // Calculate current total from active orders for this company
         $currentTotal = (float) OrderHeader::where('company_id', $companyId)
-            ->whereIn('status', ['REQUEST', 'ORDER', 'DELIVERY'])
+            ->whereIn('status', ['ORDER', 'DELIVERY'])
             ->sum('total');
 
         $afterTotal = $currentTotal + $additionalAmount;
@@ -117,7 +118,7 @@ class CustomerCheckHelper
     public static function runAllChecks(int $partnerId, int $companyId, int $categoryId, float $amount = 0, ?int $excludeOrderId = null): array
     {
         $debt = self::hasExcessiveDebt($partnerId, $amount, $excludeOrderId);
-        $deliveries = self::getPendingDeliveries($partnerId);
+        $deliveries = self::getPendingDeliveries($partnerId, $excludeOrderId);
         $limit = self::checkCompanyCategoryLimit($companyId, $categoryId, $amount);
 
         return [
