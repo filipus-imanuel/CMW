@@ -147,6 +147,87 @@ public function update()
 }
 ```
 
+## Sidebar Registration (Required for Every New Module)
+
+Whenever a new module with a route is created, **always add its nav item** to `resources/views/components/layouts/app/sidebar.blade.php`.
+
+- Wrap with `@can('view {entity}') … @endcan` if the module has a view permission.
+- Place inside the correct `<flux:navlist.group>` (Master / Partners / Inventory / Sales / System).
+- Use `:current="request()->routeIs('prefix.*')"` to highlight the active group.
+- Keep items alphabetically ordered within the group unless business priority dictates otherwise.
+
+```blade
+{{-- Example: add inside the Inventory group --}}
+@can('view stock adjustment')
+<flux:navlist.item
+    icon="adjustments-horizontal"
+    :href="route('inventories.stock-adjustments.index')"
+    :current="request()->routeIs('inventories.stock-adjustments.*')"
+    wire:navigate
+>{{ __('Stock Adjustments') }}</flux:navlist.item>
+@endcan
+```
+
+**Checklist when creating a new module:**
+1. Add routes to `routes/web.php` (use prefix group if 2+ routes share a parent)
+2. Add permissions to `PermissionHelper` and re-seed
+3. Add nav item to `sidebar.blade.php`
+4. Add menu entry to `MenusSeeder`
+
+## Validation Messages Pattern
+
+Use `validationAttributes()` to give fields human-readable names, then only override `messages()` for cases the default wording cannot express (e.g. array-level constraints).
+
+```php
+// ✅ CORRECT — minimal messages() + validationAttributes()
+public function rules(): array
+{
+    return [
+        'inputs.date'              => 'required|date',
+        'inputs.warehouse_id'      => 'required|exists:warehouses,id',
+        'lines'                    => 'required|array|min:1',
+        'lines.*.item_id'          => 'required|exists:items,id',
+        'lines.*.quantity_actual'  => 'required|numeric|min:0',
+    ];
+}
+
+public function messages(): array
+{
+    // Only override what :attribute wording cannot express
+    return [
+        'lines.required' => 'At least one line item is required.',
+        'lines.min'      => 'At least one line item is required.',
+    ];
+}
+
+public function validationAttributes(): array
+{
+    return [
+        'inputs.date'             => 'date',
+        'inputs.warehouse_id'     => 'warehouse',
+        'lines'                   => 'line items',
+        'lines.*.item_id'         => 'item',
+        'lines.*.quantity_actual' => 'actual quantity',
+    ];
+}
+
+// ❌ AVOID — per-rule message repetition
+public function messages(): array
+{
+    return [
+        'inputs.date.required'            => 'Date is required',
+        'inputs.warehouse_id.required'    => 'Warehouse is required',
+        'lines.*.item_id.required'        => 'Item is required',
+        'lines.*.quantity_actual.required'=> 'Actual quantity is required',
+        'lines.*.quantity_actual.min'     => 'Actual quantity must be at least 0',
+    ];
+}
+```
+
+The default Laravel message with `:attribute` is typically sufficient:
+- `"The :attribute field is required."` → `"The actual quantity field is required."`
+- `"The :attribute field must be at least :min."` → `"The actual quantity field must be at least 0."`
+
 ## Lifecycle with Status Guard
 
 ```php

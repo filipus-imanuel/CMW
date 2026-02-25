@@ -52,6 +52,25 @@ app/
     Inventory/          # Items, stock logs
 ```
 
+## Routing Conventions
+
+In `routes/web.php`, wrap routes in a `prefix()->name()->group()` when **two or more routes share the same URL parent segment**.
+
+```php
+// ✅ Correct — 2+ routes under same parent: use prefix group
+Route::prefix('items')->name('items.')->group(function () {
+    Route::get('/', ItemIndex::class)->name('index');
+    Route::get('/create', ItemCreate::class)->name('create');
+    Route::get('/{id}/edit', ItemEdit::class)->name('edit');
+});
+
+// ✅ Correct — single route: flat declaration is fine
+Route::get('item-prices', ItemPriceIndex::class)->name('item-prices.index');
+```
+
+Nested route names must not duplicate the prefix segment:
+`inventories.items.index` → inner route uses `->name('index')`, not `->name('items.index')`.
+
 ## Quick Reference Locations
 
 - **Flux component docs**: `docs/flux/components/{component}.md` (read before using)

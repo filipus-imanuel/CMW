@@ -7,6 +7,7 @@ use App\Models\CMW\History\HistoryItemPrice;
 use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Inventory\ItemPrice;
 use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Inventory\ItemWarehouse;
 use App\Models\CMW\Inventory\PendingItemPrice;
 use App\Models\CMW\System\Setting;
 use Flux\Flux;
@@ -31,11 +32,18 @@ class Edit extends Component
 
     public $removedUomIds = [];
 
+    /** Warehouse assignment rows: each has id (existing) and warehouse_id. */
+    public $item_warehouses = [];
+
+    public $removedWarehouseIds = [];
+
     public $dropdown_uom = [];
 
     public $dropdown_item_category = [];
 
     public $dropdown_category_prices = [];
+
+    public $dropdown_warehouses = [];
 
     /**
      * Get the approval threshold from system settings.
@@ -59,6 +67,7 @@ class Edit extends Component
             'inputs.max_stock' => 'nullable|numeric|min:0',
             'inputs.remarks' => 'nullable|string|max:500',
             'inputs.is_active' => 'boolean',
+            'inputs.default_warehouse_id' => 'nullable|exists:warehouses,id',
             'uoms' => 'required|array|min:1',
             'uoms.*.uom_id' => 'required|exists:uoms,id',
             'uoms.*.conversion_rate' => 'required|numeric|min:0.0001',
@@ -69,6 +78,8 @@ class Edit extends Component
             'uoms.*.prices.*.price' => 'required|numeric|min:0',
             'uoms.*.prices.*.remarks' => 'nullable|string|max:1024',
             'uoms.*.prices.*.is_active' => 'boolean',
+            'item_warehouses' => 'nullable|array',
+            'item_warehouses.*.warehouse_id' => 'required|exists:warehouses,id',
         ];
     }
 
@@ -104,6 +115,7 @@ class Edit extends Component
             'orderDirection' => 'asc',
             'useCache' => false,
         ]);
+        $this->dropdown_warehouses = PopulateDataHelper::getWarehouses(['useCache' => false]);
     }
 
     /**
@@ -126,13 +138,14 @@ class Edit extends Component
     {
         $this->authorize('edit item');
 
-        $this->item = Item::with(['itemUoms.uom', 'itemUoms.itemPrices.categoryPrice'])->findOrFail($id);
+        $this->item = Item::with(['itemUoms.uom', 'itemUoms.itemPrices.categoryPrice', 'itemWarehouses.warehouse'])->findOrFail($id);
 
         $this->inputs = [
             'code' => $this->item->code,
             'name' => $this->item->name,
             'type' => $this->item->type,
             'item_category_id' => $this->item->item_category_id ?? '',
+            'default_warehouse_id' => $this->item->default_warehouse_id ?? '',
             'cost_price' => $this->item->cost_price,
             'sell_price' => $this->item->sell_price,
             'min_stock' => $this->item->min_stock,
@@ -182,6 +195,12 @@ class Edit extends Component
                 'prices' => $existingPrices,
             ];
         })->toArray();
+
+        // Populate existing warehouse assignments
+        $this->item_warehouses = $this->item->itemWarehouses->map(fn ($iw) => [
+            'id' => $iw->id,
+            'warehouse_id' => $iw->warehouse_id,
+        ])->toArray();
     }
 
     public function addUomRow(): void
@@ -213,6 +232,44 @@ class Edit extends Component
             $this->uoms[0]['is_base'] = true;
             $this->uoms[0]['conversion_rate'] = 1.0000;
         }
+    }
+
+    public function addWarehouseRow(): void
+    {
+        $this->item_warehouses[] = [
+            'id' => null,
+            'warehouse_id' => '',
+        ];
+    }
+
+    public function removeWarehouseRow(int $index): void
+    {
+        $row = $this->item_warehouses[$index] ?? null;
+
+        if ($row && ! empty($row['id'])) {
+            $this->removedWarehouseIds[] = $row['id'];
+        }
+
+        $removedWarehouseId = $row['warehouse_id'] ?? null;
+        unset($this->item_warehouses[$index]);
+        $this->item_warehouses = array_values($this->item_warehouses);
+
+        // Clear default warehouse if it was removed from the list
+        if ($removedWarehouseId && $this->inputs['default_warehouse_id'] == $removedWarehouseId) {
+            $this->inputs['default_warehouse_id'] = '';
+        }
+    }
+
+    /**
+     * Get warehouse IDs currently assigned (for default warehouse dropdown filtering).
+     */
+    public function getAssignedWarehouseIdsProperty(): array
+    {
+        return collect($this->item_warehouses)
+            ->pluck('warehouse_id')
+            ->filter()
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -249,17 +306,88 @@ class Edit extends Component
             return;
         }
 
+        // Validate no duplicate warehouses
+        $warehouseIds = array_column($this->item_warehouses, 'warehouse_id');
+        $warehouseIds = array_filter($warehouseIds);
+        if (count($warehouseIds) !== count(array_unique($warehouseIds))) {
+            Flux::toast('Duplicate warehouses are not allowed', variant: 'danger', position: 'top right');
+
+            return;
+        }
+
+        // Validate default warehouse is in assigned warehouses
+        $defaultWarehouseId = $this->inputs['default_warehouse_id'] ?? '';
+        if ($defaultWarehouseId && ! in_array($defaultWarehouseId, $warehouseIds)) {
+            Flux::toast('Default warehouse must be one of the assigned warehouses', variant: 'danger', position: 'top right');
+
+            return;
+        }
+
         $validated = $this->validate();
 
         $threshold = $this->threshold;
         $pendingCount = 0;
 
         DB::transaction(function () use ($validated, $threshold, &$pendingCount) {
+            // Prepare inputs — clear empty default_warehouse_id
+            $itemInputs = $validated['inputs'];
+            if (empty($itemInputs['default_warehouse_id'])) {
+                $itemInputs['default_warehouse_id'] = null;
+            }
+
             // Update item fields
             $this->item->update([
-                ...$validated['inputs'],
+                ...$itemInputs,
                 'updated_by' => Auth::id(),
             ]);
+
+            // Process removed warehouses (soft-delete)
+            foreach ($this->removedWarehouseIds as $whId) {
+                $itemWarehouse = ItemWarehouse::find($whId);
+                if ($itemWarehouse) {
+                    $itemWarehouse->update(['deleted_by' => Auth::id()]);
+                    $itemWarehouse->delete();
+                }
+            }
+
+            // Process warehouse rows
+            foreach ($validated['item_warehouses'] ?? [] as $whIndex => $whData) {
+                $existingWhId = $this->item_warehouses[$whIndex]['id'] ?? null;
+
+                if ($existingWhId) {
+                    // Update existing
+                    $itemWarehouse = ItemWarehouse::find($existingWhId);
+                    if ($itemWarehouse) {
+                        $itemWarehouse->update([
+                            'warehouse_id' => $whData['warehouse_id'],
+                            'updated_by' => Auth::id(),
+                        ]);
+                    }
+                } else {
+                    // Create new
+                    if (! empty($whData['warehouse_id'])) {
+                        // Check for soft-deleted duplicate — restore instead
+                        $trashed = ItemWarehouse::onlyTrashed()
+                            ->where('item_id', $this->item->id)
+                            ->where('warehouse_id', $whData['warehouse_id'])
+                            ->first();
+
+                        if ($trashed) {
+                            $trashed->restore();
+                            $trashed->update([
+                                'updated_by' => Auth::id(),
+                                'deleted_by' => null,
+                            ]);
+                        } else {
+                            ItemWarehouse::create([
+                                'item_id' => $this->item->id,
+                                'warehouse_id' => $whData['warehouse_id'],
+                                'created_by' => Auth::id(),
+                            ]);
+                        }
+                    }
+                }
+            }
 
             // Process removed UOMs (soft-delete UOM + its prices)
             foreach ($this->removedUomIds as $uomId) {

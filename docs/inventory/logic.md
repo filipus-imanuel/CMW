@@ -1,6 +1,6 @@
 # Inventory Module — Business Logic
 
-**Last Updated**: 2026-02-18
+**Last Updated**: 2026-02-25
 
 ---
 
@@ -65,6 +65,8 @@ OrderHeader ──hasMany──▶ OrderDetail ──belongsTo──▶ Item
     └──belongsTo──▶ Partner  │                        │               │
                              │                        │               └──hasMany──▶ ItemPrice ──belongsTo──▶ CategoryPrice
                              │                        ├──belongsTo──▶ Currency
+                             │                        ├──belongsTo──▶ Warehouse (default_warehouse_id)
+                             │                        ├──hasMany──▶ ItemWarehouse ──belongsTo──▶ Warehouse
                              │                        ├──hasMany (through)──▶ ItemPrice
                              │                        ├──hasMany (through)──▶ HistoryItemPrice
                              │                        ├──hasMany──▶ BomHeader
@@ -77,6 +79,12 @@ ItemPrice ──hasMany──▶ PendingItemPrice ──belongsTo──▶ User 
 
 ItemCategory ──belongsToMany──▶ Company (pivot: company_item_category)
              ──hasMany──▶ CompanySetting
+
+Company ──belongsToMany──▶ Warehouse (pivot: company_warehouses)
+
+Warehouse ──belongsToMany──▶ Company (pivot: company_warehouses)
+          ──belongsToMany──▶ Item (pivot: item_warehouses)
+          ──hasMany──▶ InventoryLedger
 ```
 
 ### Cardinality Summary
@@ -99,6 +107,11 @@ ItemCategory ──belongsToMany──▶ Company (pivot: company_item_category)
 | HistoryItemPrice | N:1 | ItemUom | `item_uom_id` |
 | Partner | N:1 | CategoryPrice | `category_price_id` |
 | OrderDetail | N:1 | ItemUom | `item_uom_id` |
+| Item | N:1 | Warehouse (default) | `default_warehouse_id` |
+| Item | M:N | Warehouse | pivot: `item_warehouses` |
+| ItemWarehouse | N:1 | Item | `item_id` |
+| ItemWarehouse | N:1 | Warehouse | `warehouse_id` |
+| Company | M:N | Warehouse | pivot: `company_warehouses` |
 | InventoryLedger | N:1 | Warehouse | `warehouse_id` |
 | InventoryLedger | morph | reference | `reference_type` + `reference_id` |
 
@@ -193,25 +206,134 @@ All transaction detail tables (`order_details`, `purchase_order_details`, `goods
 
 ---
 
-## 8. Inventory Ledger (Future Phase)
+## 8. Warehouse Assignment Design
+
+### 8.1 Three-layer Warehouse Attachment
+
+| Layer | Table | Purpose |
+|-------|-------|---------|
+| Company → Warehouse | `company_warehouses` (pivot) | Which warehouses belong to a company |
+| Item → Warehouse (whitelist) | `item_warehouses` | Which warehouses are allowed to hold this item |
+| Item default warehouse | `items.default_warehouse_id` | UX convenience — auto-fill on transaction entry |
+
+These three layers are **independent but related**: the default warehouse must always be a member of the item's whitelist.
+
+### 8.2 Item Warehouse Whitelist (`item_warehouses`)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint PK | |
+| `item_id` | FK → items | Parent item |
+| `warehouse_id` | FK → warehouses | Allowed warehouse |
+| `is_active` | boolean | Whether assignment is active |
+
+**Constraints**: `unique(item_id, warehouse_id)`, SoftDeletes. The soft-delete + restore pattern mirrors `ItemPrice`: if a trashed `(item_id, warehouse_id)` combination is re-added, it is **restored** rather than recreated.
+
+### 8.3 Default Warehouse
+
+`items.default_warehouse_id` (nullable FK → `warehouses`, `nullOnDelete`) is purely a UX hint — it auto-populates the warehouse field when this item is selected in a transaction form. It must always reference a warehouse that exists in `item_warehouses` for the same item; this is enforced at the Livewire layer (not at DB level).
+
+### 8.4 Impact on Transaction Forms
+
+When a warehouse is selected at the header level of a transaction (e.g., Stock Adjustment, Transfer), the **items dropdown is filtered** to only show items whose `item_warehouses` whitelist includes that warehouse. This uses `PopulateDataHelper::getItemsByWarehouse(int $warehouseId)`.
+
+### 8.5 Transfer Validation
+
+For warehouse transfers (`transfer_headers.warehouse_from_id` / `warehouse_to_id`), both warehouses must be in the item's whitelist — validated independently:
+- Item must exist in `item_warehouses` for `warehouse_from_id`
+- Item must exist in `item_warehouses` for `warehouse_to_id`
+
+UOM selection for the transferred quantity is **not bound to a specific warehouse** — any valid `item_uom_id` for the item may be used.
+
+---
+
+## 9. Inventory Ledger & Stock Tracking (Future Phase)
 
 The `InventoryLedger` model and `inventory_ledgers` table are **structurally ready** but not yet actively posted to by transactions. The design supports:
 
 - **Polymorphic references** (`reference_type` / `reference_id`) to link back to source documents (GR, Sales Delivery, Transfer, Adjustment, Production, etc.)
-- **Per-warehouse tracking** with `warehouse_id`
-- **Running balance** via `balance` column (always in **base UOM**)
+- **Per-warehouse running balance** via `balance` column (always in **base UOM**)
 - **Indexed** on `(item_id, warehouse_id, date)` and `(reference_type, reference_id)`
 
-When activated, all stock-affecting transactions must write ledger entries within their DB transaction scope, converting quantities to base UOM using `ItemUom.conversion_rate`.
+### 9.1 Transfer Ledger Pattern
+
+A single warehouse transfer produces **two ledger rows** within one DB transaction:
+
+```
+item_id | warehouse_id     | type          | qty_in | qty_out | balance
+--------|------------------|---------------|--------|---------|--------
+1       | warehouse_from   | transfer_out  | 0      | 20      | 50   ← balance in source warehouse
+1       | warehouse_to     | transfer_in   | 20     | 0       | 20   ← balance in destination warehouse
+```
+
+### 9.2 Atomic Write Pattern
+
+Every ledger write must use `lockForUpdate()` on the previous balance row to prevent race conditions:
+
+```php
+DB::transaction(function () use ($itemId, $warehouseId, $qtyIn, $qtyOut) {
+    $lastBalance = InventoryLedger::where('item_id', $itemId)
+        ->where('warehouse_id', $warehouseId)
+        ->lockForUpdate()
+        ->orderByDesc('id')
+        ->value('balance') ?? 0;
+
+    InventoryLedger::create([
+        'item_id'      => $itemId,
+        'warehouse_id' => $warehouseId,
+        'quantity_in'  => $qtyIn,
+        'quantity_out' => $qtyOut,
+        'balance'      => $lastBalance + $qtyIn - $qtyOut,
+        // ...
+    ]);
+});
+```
+
+### 9.3 Current Stock Query
+
+Until a dedicated `item_warehouse_stocks` cache table is added, current stock is queried directly from the ledger:
+
+```php
+// Single item + warehouse
+InventoryLedger::where('item_id', $itemId)
+    ->where('warehouse_id', $warehouseId)
+    ->orderByDesc('id')
+    ->value('balance');
+
+// All warehouses for one item
+InventoryLedger::where('item_id', $itemId)
+    ->whereIn('id', fn ($q) => $q
+        ->selectRaw('MAX(id)')
+        ->from('inventory_ledgers')
+        ->where('item_id', $itemId)
+        ->groupBy('warehouse_id')
+    )
+    ->get(['warehouse_id', 'balance']);
+```
+
+### 9.4 Future: `item_warehouse_stocks` Cache Table
+
+When ledger volume grows, a denormalized cache table `item_warehouse_stocks` (`item_id`, `warehouse_id`, `item_uom_id` base, `quantity`) can be added. It must be:
+- Written **atomically within the same DB transaction** as every ledger insert
+- Seeded from aggregate of existing ledger on activation
+- Accompanied by an artisan command `recalculate:stock` for reconciliation
+
+When activated, all stock queries can use this table instead of aggregating the ledger.
+
+When the posting service is built, all stock-affecting transactions must write ledger entries within their DB transaction scope, converting quantities to base UOM using `ItemUom.conversion_rate`.
 
 ---
 
-## 9. Database Constraints & Indexes
+## 10. Database Constraints & Indexes
 
 | Table | Constraint | Type |
 |-------|-----------|------|
 | `items` | `code` | Unique |
+| `items` | `default_warehouse_id` | Nullable FK → `warehouses`, nullOnDelete |
 | `item_categories` | `code` | Unique |
+| `item_warehouses` | `(item_id, warehouse_id)` | Unique (composite) |
+| `item_warehouses` | SoftDeletes | Yes |
+| `company_warehouses` | `(company_id, warehouse_id)` | Primary key (composite) |
 | `category_prices` | `code` | Unique |
 | `item_uoms` | `(item_id, uom_id)` | Unique (composite) |
 | `item_uoms` | `(item_id, is_base)` | Index |
@@ -225,28 +347,41 @@ When activated, all stock-affecting transactions must write ledger entries withi
 
 ---
 
-## 10. Known Limitations & Future Considerations
+## 11. Known Limitations & Future Considerations
 
-1. **Ledger not active** — stock quantities are not journaled yet; activation requires writing entries in every stock-affecting transaction
-2. **Category price assignment** — currently stored on Partner directly; may need per-company or per-item-category granularity in the future
-3. **Price history cleanup** — `cleanup:item-price-history` command retains records for configurable months (default 12), uses `created_at` column
-4. **Item.sell_price / cost_price** — serve as last-resort fallback (assumed to be base-UOM prices); should be kept reasonably up to date as a safety net
-5. **Multi-UOM price creation** — Item create/edit screens auto-generate price rows for all category prices × all UOMs; standalone ItemPrice CRUD uses `item_uom_id` selector
+1. **Ledger not active** — stock quantities are not journaled yet; activation requires an `InventoryService` (or Observer) that writes ledger entries within every stock-affecting transaction's DB transaction scope
+2. **item_warehouse_stocks not yet built** — current stock must be queried by aggregating `inventory_ledgers`; the cache table is deferred until the posting service is implemented (see §9.4)
+3. **Default warehouse soft constraint** — `items.default_warehouse_id` is enforced at Livewire layer only (must be in `item_warehouses` whitelist); there is intentionally no DB-level check to avoid constraint complexity on soft-deleted rows
+4. **Transfer warehouse validation** — item whitelist check on both `warehouse_from_id` and `warehouse_to_id` is deferred to transaction form validation; not enforced at DB level
+5. **Company → Warehouse pivot is simple** — `company_warehouses` uses timestamps only (no `is_active`, no soft deletes) matching `company_item_category` pattern; elevate to full model if business rules require per-assignment status
+6. **Category price assignment** — currently stored on Partner directly; may need per-company or per-item-category granularity in the future
+7. **Price history cleanup** — `cleanup:item-price-history` command retains records for configurable months (default 12), uses `created_at` column
+8. **Item.sell_price / cost_price** — serve as last-resort fallback (assumed to be base-UOM prices); should be kept reasonably up to date as a safety net
+9. **Multi-UOM price creation** — Item create/edit screens auto-generate price rows for all category prices × all UOMs; standalone ItemPrice CRUD uses `item_uom_id` selector
 
 ---
 
-## 11. Related Files
+## 12. Related Files
 
 | Area | Path |
 |------|------|
 | Models | `app/Models/CMW/Inventory/` |
+| Item Model | `app/Models/CMW/Inventory/Item.php` |
 | ItemUom Model | `app/Models/CMW/Inventory/ItemUom.php` |
+| ItemWarehouse Model | `app/Models/CMW/Inventory/ItemWarehouse.php` |
 | History Model | `app/Models/CMW/History/HistoryItemPrice.php` |
 | Partner Model | `app/Models/CMW/Master/Partner.php` |
+| Company Model | `app/Models/CMW/Master/Company.php` |
+| Warehouse Model | `app/Models/CMW/Master/Warehouse.php` |
 | Pricing Helper | `app/Helpers/CMW/PriceResolutionHelper.php` |
+| Populate Helper | `app/Helpers/CMW/PopulateDataHelper.php` |
 | Item Livewire | `app/Livewire/Inventories/Item/` |
+| Adjustment Livewire | `app/Livewire/Inventories/Adjustment/` |
 | ItemPrice Livewire | `app/Livewire/Inventories/ItemPrice/` |
 | CategoryPrice Livewire | `app/Livewire/Inventories/CategoryPrice/` |
 | Sales Search Item | `app/Livewire/Sales/Request/SearchItem.php` |
 | Cleanup Command | `app/Console/Commands/CleanupItemPriceHistory.php` |
-| Migrations | `database/migrations/` (item/price/ledger related) |
+| Migration: items | `database/migrations/2025_12_23_101400_create_items_table.php` |
+| Migration: item_warehouses | `database/migrations/2025_12_23_101451_create_item_warehouses_table.php` |
+| Migration: company_warehouses | `database/migrations/2025_12_23_101403_create_company_warehouses_table.php` |
+| Migration: inventory_ledgers | `database/migrations/2025_12_23_102000_create_inventory_ledgers_table.php` |

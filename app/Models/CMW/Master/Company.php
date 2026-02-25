@@ -44,4 +44,9 @@ class Company extends BaseModel
     {
         return $this->belongsToMany(ItemCategory::class, 'company_item_category')->withTimestamps();
     }
+
+    public function warehouses(): BelongsToMany
+    {
+        return $this->belongsToMany(Warehouse::class, 'company_warehouses')->withTimestamps();
+    }
 }

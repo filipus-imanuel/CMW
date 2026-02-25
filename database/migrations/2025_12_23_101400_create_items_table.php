@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('type', 50)->nullable(); // raw_material, finished_goods, etc.
             $table->foreignId('item_category_id')->nullable()->constrained('item_categories');
+            $table->foreignId('default_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignId('currency_id')->nullable()->constrained('currencies');
             $table->decimal('cost_price', 13, 2)->default(0);
             $table->decimal('sell_price', 13, 2)->default(0);

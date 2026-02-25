@@ -1,5 +1,9 @@
 <?php
 
+use App\Livewire\Inventories\Adjustment\Create as AdjustmentCreate;
+use App\Livewire\Inventories\Adjustment\Edit as AdjustmentEdit;
+use App\Livewire\Inventories\Adjustment\Index as AdjustmentIndex;
+use App\Livewire\Inventories\Adjustment\Show as AdjustmentShow;
 use App\Livewire\Inventories\CategoryPrice\Index as CategoryPriceIndex;
 use App\Livewire\Inventories\HistoryItemPrice\Index as HistoryItemPriceIndex;
 use App\Livewire\Inventories\Item\Create as ItemCreate;
@@ -94,9 +98,18 @@ Route::middleware(['auth'])->group(function () {
             Route::get('item-price-approvals', ItemPriceApproval::class)->name('item-price-approvals.index');
             Route::get('item-price-history', HistoryItemPriceIndex::class)->name('item-price-history.index');
             Route::get('item-prices', ItemPriceIndex::class)->name('item-prices.index');
-            Route::get('items', ItemIndex::class)->name('items.index');
-            Route::get('items/create', ItemCreate::class)->name('items.create');
-            Route::get('items/{id}/edit', ItemEdit::class)->name('items.edit');
+            Route::prefix('items')->name('items.')->group(function () {
+                Route::get('/', ItemIndex::class)->name('index');
+                Route::get('/create', ItemCreate::class)->name('create');
+                Route::get('/{id}/edit', ItemEdit::class)->name('edit');
+            });
+
+            Route::prefix('stock-adjustments')->name('stock-adjustments.')->group(function () {
+                Route::get('/', AdjustmentIndex::class)->name('index');
+                Route::get('/create', AdjustmentCreate::class)->name('create');
+                Route::get('/{id}/edit', AdjustmentEdit::class)->name('edit');
+                Route::get('/{id}', AdjustmentShow::class)->name('show');
+            });
         });
 
         Route::prefix('system')->name('system.')->group(function () {

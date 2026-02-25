@@ -20,6 +20,7 @@ class StockAdjustmentDetail extends BaseModel
         'quantity_system',
         'quantity_actual',
         'quantity_difference',
+        'remarks',
     ];
 
     protected function casts(): array

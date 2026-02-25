@@ -4,9 +4,12 @@ namespace App\Livewire\Inventories\Item;
 
 use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\History\HistoryItemPrice;
+use App\Models\CMW\Inventory\InventoryLedger;
 use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Inventory\ItemPrice;
 use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Inventory\ItemWarehouse;
+use App\Models\CMW\Master\Warehouse;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +27,12 @@ class Create extends Component
      */
     public $uoms = [];
 
+    /** Warehouse assignment — flat array of warehouse IDs (checkbox-driven). */
+    public $item_warehouses = [];
+
+    /** Initial stock qty per warehouse — keyed by warehouse ID: [warehouseId => ['qty' => 0]]. */
+    public $initial_stocks = [];
+
     public int $baseUomIndex = 0;
 
     public $dropdown_uom = [];
@@ -31,6 +40,8 @@ class Create extends Component
     public $dropdown_item_category = [];
 
     public $dropdown_category_prices = [];
+
+    public $dropdown_warehouses = [];
 
     public function rules(): array
     {
@@ -45,6 +56,7 @@ class Create extends Component
             'inputs.max_stock' => 'nullable|numeric|min:0',
             'inputs.remarks' => 'nullable|string|max:500',
             'inputs.is_active' => 'boolean',
+            'inputs.default_warehouse_id' => 'nullable|exists:warehouses,id',
             'uoms' => 'required|array|min:1',
             'uoms.*.uom_id' => 'required|exists:uoms,id',
             'uoms.*.conversion_rate' => 'required|numeric|min:0.0001',
@@ -55,6 +67,10 @@ class Create extends Component
             'uoms.*.prices.*.price' => 'required|numeric|min:0',
             'uoms.*.prices.*.remarks' => 'nullable|string|max:1024',
             'uoms.*.prices.*.is_active' => 'boolean',
+            'item_warehouses' => 'nullable|array',
+            'item_warehouses.*' => 'exists:warehouses,id',
+            'initial_stocks' => 'nullable|array',
+            'initial_stocks.*.qty' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -89,6 +105,16 @@ class Create extends Component
             'orderDirection' => 'asc',
             'useCache' => false,
         ]);
+        $this->dropdown_warehouses = Warehouse::with('companies')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($w) => [
+                'value' => $w->id,
+                'label' => $w->name,
+                'company_name' => $w->companies->pluck('name')->join(', ') ?: '—',
+            ])
+            ->toArray();
     }
 
     public function mount(): void
@@ -100,6 +126,7 @@ class Create extends Component
             'name' => '',
             'type' => 'FINISHED_GOOD',
             'item_category_id' => '',
+            'default_warehouse_id' => '',
             'cost_price' => 0,
             'sell_price' => 0,
             'min_stock' => 0,
@@ -107,6 +134,9 @@ class Create extends Component
             'remarks' => '',
             'is_active' => true,
         ];
+
+        $this->item_warehouses = [];
+        $this->initial_stocks = [];
 
         $this->loadDropdowns();
 
@@ -157,6 +187,61 @@ class Create extends Component
     }
 
     /**
+     * Sync initial_stocks when warehouse checkboxes change.
+     */
+    public function updatedItemWarehouses(): void
+    {
+        $currentIds = collect($this->item_warehouses)->map(fn ($v) => (int) $v)->toArray();
+
+        // Add entries for newly-checked warehouses
+        foreach ($currentIds as $whId) {
+            if (! isset($this->initial_stocks[$whId])) {
+                $this->initial_stocks[$whId] = ['qty' => 0];
+            }
+        }
+
+        // Remove entries for unchecked warehouses
+        foreach (array_keys($this->initial_stocks) as $existingId) {
+            if (! in_array((int) $existingId, $currentIds)) {
+                unset($this->initial_stocks[$existingId]);
+            }
+        }
+
+        // Clear default warehouse if it was unchecked
+        $defaultWarehouseId = $this->inputs['default_warehouse_id'] ?? '';
+        if ($defaultWarehouseId && ! in_array((int) $defaultWarehouseId, $currentIds)) {
+            $this->inputs['default_warehouse_id'] = '';
+        }
+    }
+
+    /**
+     * Get warehouse IDs currently assigned (for default warehouse dropdown filtering).
+     */
+    public function getAssignedWarehouseIdsProperty(): array
+    {
+        return collect($this->item_warehouses)
+            ->map(fn ($v) => (int) $v)
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Get the label of the base UOM for display in initial stock inputs.
+     */
+    public function getBaseUomLabelProperty(): string
+    {
+        $baseRow = collect($this->uoms)->firstWhere('is_base', true);
+        if (! $baseRow) {
+            return '';
+        }
+
+        $uom = collect($this->dropdown_uom)->firstWhere('value', $baseRow['uom_id']);
+
+        return $uom['label'] ?? '';
+    }
+
+    /**
      * When user sets a UOM as base, clear others.
      */
     public function setBaseUom(int $index): void
@@ -196,13 +281,39 @@ class Create extends Component
             return;
         }
 
+        // Validate default warehouse is in assigned warehouses
+        $warehouseIds = array_map('intval', array_filter($this->item_warehouses));
+        $defaultWarehouseId = $this->inputs['default_warehouse_id'] ?? '';
+        if ($defaultWarehouseId && ! in_array((int) $defaultWarehouseId, $warehouseIds)) {
+            Flux::toast('Default warehouse must be one of the assigned warehouses', variant: 'danger', position: 'top right');
+
+            return;
+        }
+
         $validated = $this->validate();
 
         DB::transaction(function () use ($validated) {
+            // Prepare inputs — clear empty default_warehouse_id
+            $itemInputs = $validated['inputs'];
+            if (empty($itemInputs['default_warehouse_id'])) {
+                $itemInputs['default_warehouse_id'] = null;
+            }
+
             $item = Item::create([
-                ...$validated['inputs'],
+                ...$itemInputs,
                 'created_by' => Auth::id(),
             ]);
+
+            // Create warehouse assignments
+            foreach ($validated['item_warehouses'] ?? [] as $warehouseId) {
+                if (! empty($warehouseId)) {
+                    ItemWarehouse::create([
+                        'item_id' => $item->id,
+                        'warehouse_id' => $warehouseId,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
 
             // Create item UOMs and their prices
             foreach ($validated['uoms'] as $uomData) {
@@ -257,6 +368,39 @@ class Create extends Component
                         'created_by' => Auth::id(),
                     ]);
                 }
+            }
+
+            // Write initial stock ledger entries
+            foreach ($this->initial_stocks as $warehouseId => $stockData) {
+                $qty = (float) ($stockData['qty'] ?? 0);
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                // Only write for warehouses that are actually assigned
+                if (! in_array((int) $warehouseId, array_map('intval', $validated['item_warehouses'] ?? []))) {
+                    continue;
+                }
+
+                $lastBalance = InventoryLedger::where('item_id', $item->id)
+                    ->where('warehouse_id', $warehouseId)
+                    ->lockForUpdate()
+                    ->orderByDesc('id')
+                    ->value('balance') ?? 0;
+
+                InventoryLedger::create([
+                    'item_id' => $item->id,
+                    'warehouse_id' => $warehouseId,
+                    'date' => now()->toDateString(),
+                    'type' => 'initial_stock',
+                    'reference_type' => Item::class,
+                    'reference_id' => $item->id,
+                    'quantity_in' => $qty,
+                    'quantity_out' => 0,
+                    'balance' => $lastBalance + $qty,
+                    'remarks' => 'Initial stock on item creation',
+                    'created_by' => Auth::id(),
+                ]);
             }
         });
 

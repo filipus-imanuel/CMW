@@ -242,6 +242,21 @@ class MenusSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
+            [
+                'code' => 'INV_STOCK_ADJUSTMENT',
+                'name' => 'Stock Adjustment',
+                'parent_id' => $menus['INVENTORY'],
+                'user_group_id' => $groups['WAREHOUSE'],
+                'url' => '/cmw/inventories/stock-adjustments',
+                'icon' => 'adjustments-horizontal',
+                'order' => 3,
+                'remarks' => 'Penyesuaian stok',
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
 
             // FINANCE
             [

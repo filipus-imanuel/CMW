@@ -8,6 +8,7 @@ use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Inventory\ItemCategory;
 use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Inventory\ItemWarehouse;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Country;
 use App\Models\CMW\Master\CreditTerm;
@@ -487,7 +488,77 @@ class PopulateDataHelper
     {
         $defaults = [
             'with' => ['item', 'uom'],
+            'orderBy' => 'item_id',
             'labelFormat' => fn (ItemUom $iu) => ($iu->item?->code ?? '?').' - '.($iu->uom?->name ?? '?').' (×'.$iu->conversion_rate.')',
+        ];
+
+        return self::get(ItemUom::class, array_merge($defaults, $options));
+    }
+
+    /**
+     * Get warehouses assigned to a specific item.
+     *
+     * @param  int  $itemId  The item ID
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getWarehousesByItem(int $itemId, array $options = []): array
+    {
+        $warehouseIds = ItemWarehouse::where('item_id', $itemId)
+            ->where('is_active', true)
+            ->pluck('warehouse_id')
+            ->toArray();
+
+        if (empty($warehouseIds)) {
+            return [];
+        }
+
+        return self::get(Warehouse::class, array_merge([
+            'filters' => ['id' => $warehouseIds],
+            'useCache' => false,
+        ], $options));
+    }
+
+    /**
+     * Get items assigned to a specific warehouse.
+     *
+     * @param  int  $warehouseId  The warehouse ID
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getItemsByWarehouse(int $warehouseId, array $options = []): array
+    {
+        $itemIds = ItemWarehouse::where('warehouse_id', $warehouseId)
+            ->where('is_active', true)
+            ->pluck('item_id')
+            ->toArray();
+
+        if (empty($itemIds)) {
+            return [];
+        }
+
+        return self::get(Item::class, array_merge([
+            'filters' => ['id' => $itemIds],
+            'useCache' => false,
+        ], $options));
+    }
+
+    /**
+     * Get item UOM options for a specific item (for per-line UOM selectors).
+     *
+     * @param  int  $itemId  The item ID
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getItemUomsByItem(int $itemId, array $options = []): array
+    {
+        $defaults = [
+            'with' => ['uom'],
+            'filters' => ['item_id' => $itemId],
+            'orderBy' => 'is_base',
+            'orderDirection' => 'desc',
+            'labelFormat' => fn (ItemUom $iu) => ($iu->uom?->name ?? '?').' (×'.rtrim(rtrim(number_format((float) $iu->conversion_rate, 4, '.', ''), '0'), '.').')',
+            'useCache' => false,
         ];
 
         return self::get(ItemUom::class, array_merge($defaults, $options));

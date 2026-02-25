@@ -108,6 +108,81 @@
             </div>
         </flux:card>
 
+        {{-- Warehouse Assignments --}}
+        <flux:card class="mb-6">
+            <flux:heading size="lg" class="mb-4">Warehouse Assignments</flux:heading>
+
+            @if(count($dropdown_warehouses) > 0)
+                <flux:checkbox.group wire:model.live="item_warehouses" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    @foreach($dropdown_warehouses as $wh)
+                        <flux:checkbox
+                            wire:key="wh-chk-{{ $wh['value'] }}"
+                            value="{{ $wh['value'] }}"
+                            label="{{ $wh['label'] }}"
+                            description="{{ $wh['company_name'] }}"
+                        />
+                    @endforeach
+                </flux:checkbox.group>
+
+                {{-- Default Warehouse --}}
+                @if(count($this->assignedWarehouseIds) > 0)
+                    <div class="mt-4">
+                        <flux:select
+                            wire:model="inputs.default_warehouse_id"
+                            label="Default Warehouse"
+                            placeholder="Select Default Warehouse (Optional)"
+                            searchable
+                        >
+                            @foreach($dropdown_warehouses as $wh)
+                                @if(in_array($wh['value'], $this->assignedWarehouseIds))
+                                    <flux:select.option value="{{ $wh['value'] }}">{{ $wh['label'] }}</flux:select.option>
+                                @endif
+                            @endforeach
+                        </flux:select>
+                    </div>
+                @endif
+            @else
+                <flux:callout variant="info" icon="information-circle">
+                    No warehouses available.
+                </flux:callout>
+            @endif
+        </flux:card>
+
+        {{-- Initial Stock (Qty Awal) --}}
+        <flux:card class="mb-6">
+            <flux:heading size="lg" class="mb-4">Initial Stock (Qty Awal)</flux:heading>
+
+            @if(count($this->assignedWarehouseIds) > 0)
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($this->assignedWarehouseIds as $whId)
+                        @php
+                            $whData = collect($dropdown_warehouses)->firstWhere('value', $whId);
+                        @endphp
+                        @if($whData)
+                            <div wire:key="init-stock-{{ $whId }}">
+                                <flux:input
+                                    wire:model="initial_stocks.{{ $whId }}.qty"
+                                    type="number"
+                                    step="0.01"
+                                    label="{{ $whData['label'] }}"
+                                    description="{{ $whData['company_name'] }}"
+                                    placeholder="0.00"
+                                    :badge="$this->baseUomLabel ?: null"
+                                />
+                                @error("initial_stocks.{$whId}.qty")
+                                    <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            @else
+                <flux:callout variant="info" icon="information-circle">
+                    Assign at least one warehouse to set initial stock.
+                </flux:callout>
+            @endif
+        </flux:card>
+
         {{-- Units of Measure --}}
         <flux:card class="mb-6">
             <div class="flex items-center justify-between mb-4">

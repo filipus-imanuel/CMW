@@ -107,6 +107,77 @@
             </div>
         </flux:card>
 
+        {{-- Warehouse Assignments --}}
+        <flux:card class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <flux:heading size="lg">Warehouse Assignments</flux:heading>
+                <flux:button type="button" icon="plus" size="sm" variant="primary" wire:click="addWarehouseRow">
+                    Add Warehouse
+                </flux:button>
+            </div>
+
+            @if(count($item_warehouses) > 0)
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>Warehouse</flux:table.column>
+                        <flux:table.column class="text-center w-20">Actions</flux:table.column>
+                    </flux:table.columns>
+                    <flux:table.rows>
+                        @foreach($item_warehouses as $w => $whRow)
+                            <flux:table.row wire:key="wh-row-{{ $w }}">
+                                <flux:table.cell>
+                                    <flux:select
+                                        wire:model.live="item_warehouses.{{ $w }}.warehouse_id"
+                                        placeholder="Select Warehouse"
+                                        size="sm"
+                                        searchable
+                                    >
+                                        @foreach($dropdown_warehouses as $wh)
+                                            <flux:select.option value="{{ $wh['value'] }}">{{ $wh['label'] }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    @error("item_warehouses.{$w}.warehouse_id")
+                                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
+                                    @enderror
+                                </flux:table.cell>
+                                <flux:table.cell class="text-center">
+                                    <flux:button
+                                        type="button"
+                                        variant="danger"
+                                        icon="trash"
+                                        size="xs"
+                                        wire:click="removeWarehouseRow({{ $w }})"
+                                    />
+                                </flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+
+                {{-- Default Warehouse --}}
+                @if(count($this->assignedWarehouseIds) > 0)
+                    <div class="mt-4">
+                        <flux:select
+                            wire:model="inputs.default_warehouse_id"
+                            label="Default Warehouse"
+                            placeholder="Select Default Warehouse (Optional)"
+                            searchable
+                        >
+                            @foreach($dropdown_warehouses as $wh)
+                                @if(in_array($wh['value'], $this->assignedWarehouseIds))
+                                    <flux:select.option value="{{ $wh['value'] }}">{{ $wh['label'] }}</flux:select.option>
+                                @endif
+                            @endforeach
+                        </flux:select>
+                    </div>
+                @endif
+            @else
+                <flux:callout variant="info" icon="information-circle">
+                    No warehouses assigned. Click "Add Warehouse" to assign warehouses to this item.
+                </flux:callout>
+            @endif
+        </flux:card>
+
         {{-- Units of Measure --}}
         <flux:card class="mb-6">
             <div class="flex items-center justify-between mb-4">

@@ -6,7 +6,9 @@ use App\Models\CMW\BaseModel;
 use App\Models\CMW\History\HistoryItemPrice;
 use App\Models\CMW\Master\BomHeader;
 use App\Models\CMW\Master\Currency;
+use App\Models\CMW\Master\Warehouse;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -16,6 +18,7 @@ class Item extends BaseModel
     protected $fillable = [
         'type',
         'item_category_id',
+        'default_warehouse_id',
         'currency_id',
         'cost_price',
         'sell_price',
@@ -36,6 +39,11 @@ class Item extends BaseModel
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
+    }
+
+    public function defaultWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class, 'default_warehouse_id');
     }
 
     public function itemUoms(): HasMany
@@ -74,5 +82,15 @@ class Item extends BaseModel
     public function historyItemPrices(): HasManyThrough
     {
         return $this->hasManyThrough(HistoryItemPrice::class, ItemUom::class);
+    }
+
+    public function itemWarehouses(): HasMany
+    {
+        return $this->hasMany(ItemWarehouse::class);
+    }
+
+    public function warehouses(): BelongsToMany
+    {
+        return $this->belongsToMany(Warehouse::class, 'item_warehouses')->withTimestamps();
     }
 }

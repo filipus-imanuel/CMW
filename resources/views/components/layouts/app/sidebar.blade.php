@@ -53,6 +53,9 @@
                     <flux:navlist.item icon="clock" :href="route('inventories.item-price-history.index')" :current="request()->routeIs('inventories.item-price-history.*')" wire:navigate>{{ __('Item Price History') }}</flux:navlist.item>
                     <flux:navlist.item icon="banknotes" :href="route('inventories.item-prices.index')" :current="request()->routeIs('inventories.item-prices.*')" wire:navigate>{{ __('Item Prices') }}</flux:navlist.item>
                     <flux:navlist.item icon="cube-transparent" :href="route('inventories.items.index')" :current="request()->routeIs('inventories.items.*')" wire:navigate>{{ __('Items') }}</flux:navlist.item>
+                    @can('view stock adjustment')
+                    <flux:navlist.item icon="adjustments-horizontal" :href="route('inventories.stock-adjustments.index')" :current="request()->routeIs('inventories.stock-adjustments.*')" wire:navigate>{{ __('Stock Adjustments') }}</flux:navlist.item>
+                    @endcan
                 </flux:navlist.group>
 
                 <flux:navlist.group :heading="__('Sales')" expandable :expanded="request()->routeIs('sales.*')" class="grid">

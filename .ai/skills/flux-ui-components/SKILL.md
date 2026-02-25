@@ -61,6 +61,40 @@ public function store()
 </flux:modal>
 ```
 
+## Confirmation Modal Pattern
+
+**ALWAYS use `flux:modal` for confirmations — NEVER use `wire:confirm` (triggers browser native dialog).**
+
+Pattern: trigger button uses `x-on:click="$flux.modal('name').show()"` (no `wire:click`). The confirm button inside the modal has both `wire:click` (the action) and `x-on:click` (close the modal).
+
+```blade
+{{-- Trigger button --}}
+<flux:button variant="danger" x-on:click="$flux.modal('delete-entity').show()">
+    Delete
+</flux:button>
+
+{{-- Confirmation modal (place at bottom of component, outside any form) --}}
+<flux:modal name="delete-entity" class="max-w-sm">
+    <div class="space-y-4">
+        <div>
+            <flux:heading size="lg">Delete Entity</flux:heading>
+            <flux:text class="mt-2 text-zinc-400">Are you sure? This action cannot be undone.</flux:text>
+        </div>
+        <div class="flex gap-2 justify-end">
+            <flux:button variant="ghost" x-on:click="$flux.modal('delete-entity').close()">Back</flux:button>
+            <flux:button variant="danger" wire:click="delete" x-on:click="$flux.modal('delete-entity').close()">Yes, Delete</flux:button>
+        </div>
+    </div>
+</flux:modal>
+```
+
+**Rules:**
+- Trigger: `x-on:click="$flux.modal('name').show()"` — no `wire:click` on the trigger
+- Confirm button: both `wire:click="method"` + `x-on:click="$flux.modal('name').close()"`
+- Back/dismiss button: `x-on:click="$flux.modal('name').close()"` only
+- Use `variant="ghost"` for Back, match the action severity for Confirm (`danger`, `primary`, etc.)
+- Use `class="max-w-sm"` for compact confirmation dialogs
+
 ## Table Patterns
 
 ### Numeric Columns (aligned digits)
@@ -147,13 +181,35 @@ public function store()
 {{-- Single boolean toggle --}}
 <flux:switch wire:model="inputs.is_active" label="Active" />
 
-{{-- Multiple choices --}}
-<flux:checkbox.group>
-    <flux:checkbox wire:model="inputs.permissions" value="create" label="Create" />
-    <flux:checkbox wire:model="inputs.permissions" value="read" label="Read" />
-    <flux:checkbox wire:model="inputs.permissions" value="update" label="Update" />
+{{-- Multiple choices — wire:model on the GROUP, value on each checkbox --}}
+<flux:checkbox.group wire:model="inputs.permissions">
+    <flux:checkbox value="create" label="Create" />
+    <flux:checkbox value="read" label="Read" />
+    <flux:checkbox value="update" label="Update" />
 </flux:checkbox.group>
 ```
+
+**IMPORTANT**: Put `wire:model` on `flux:checkbox.group`, NOT on individual `flux:checkbox` items inside the group.
+
+### Checkbox Group with Description (e.g. warehouse/category selectors)
+
+Use `description` attribute on individual checkboxes for secondary info. Use `class` on the group for custom grid layout:
+
+```blade
+{{-- Grid layout with description per item --}}
+<flux:checkbox.group wire:model.live="item_warehouses" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+    @foreach($dropdown_warehouses as $wh)
+        <flux:checkbox
+            value="{{ $wh['value'] }}"
+            label="{{ $wh['label'] }}"
+            description="{{ $wh['company_name'] }}"
+        />
+    @endforeach
+</flux:checkbox.group>
+```
+
+- Do **not** use native `<input type="checkbox">` — always use `flux:checkbox`.
+- `wire:model.live` triggers reactive updates (e.g., to sync dependent state).
 
 ## Input Attributes
 
