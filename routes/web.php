@@ -38,6 +38,16 @@ use App\Livewire\Sales\Request\Create as SalesRequestCreate;
 use App\Livewire\Sales\Request\Edit as SalesRequestEdit;
 use App\Livewire\Sales\Request\Index\Init as SalesRequestInitIndex;
 use App\Livewire\System\Setting\Edit as SystemSettingEdit;
+use App\Livewire\Warehouses\Delivery\Cancelled\Index as DeliveryCancelledIndex;
+use App\Livewire\Warehouses\Delivery\Cancelled\Show as DeliveryCancelledShow;
+use App\Livewire\Warehouses\Delivery\Create as DeliveryCreate;
+use App\Livewire\Warehouses\Delivery\Finish\Index as DeliveryFinishIndex;
+use App\Livewire\Warehouses\Delivery\Finish\Show as DeliveryFinishShow;
+use App\Livewire\Warehouses\Delivery\Ongoing\Index as DeliveryOngoingIndex;
+use App\Livewire\Warehouses\Delivery\Ongoing\Show as DeliveryOngoingShow;
+use App\Livewire\Warehouses\Delivery\Ongoing\So as DeliveryOngoingSo;
+use App\Livewire\Warehouses\Delivery\Upcoming\Index as DeliveryUpcomingIndex;
+use App\Livewire\Warehouses\Delivery\Upcoming\Show as DeliveryUpcomingShow;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
@@ -114,6 +124,30 @@ Route::middleware(['auth'])->group(function () {
 
         Route::prefix('system')->name('system.')->group(function () {
             Route::get('settings', SystemSettingEdit::class)->name('settings.edit');
+        });
+
+        Route::prefix('warehouses')->name('warehouses.')->group(function () {
+            Route::prefix('delivery')->name('delivery.')->group(function () {
+                Route::get('/upcoming', DeliveryUpcomingIndex::class)->name('upcoming');
+                Route::get('/upcoming/{id}', DeliveryUpcomingShow::class)->name('upcoming.show');
+                Route::get('/create/{orderId}', DeliveryCreate::class)->name('create');
+
+                Route::prefix('ongoing')->name('ongoing.')->group(function () {
+                    Route::get('/', DeliveryOngoingIndex::class)->name('index');
+                    Route::get('/so', DeliveryOngoingSo::class)->name('so');
+                    Route::get('/{id}', DeliveryOngoingShow::class)->name('show');
+                });
+
+                Route::prefix('finish')->name('finish.')->group(function () {
+                    Route::get('/', DeliveryFinishIndex::class)->name('index');
+                    Route::get('/{id}', DeliveryFinishShow::class)->name('show');
+                });
+
+                Route::prefix('cancelled')->name('cancelled.')->group(function () {
+                    Route::get('/', DeliveryCancelledIndex::class)->name('index');
+                    Route::get('/{id}', DeliveryCancelledShow::class)->name('show');
+                });
+            });
         });
 
         Route::prefix('sales')->name('sales.')->group(function () {

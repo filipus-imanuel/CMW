@@ -97,6 +97,11 @@ class OrderHeader extends BaseModel
         return $this->hasMany(ArInvoiceHeader::class, 'order_header_id');
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(DeliveryHeader::class, 'order_header_id');
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // SCOPES
     // ══════════════════════════════════════════════════════════════════════════
@@ -118,7 +123,7 @@ class OrderHeader extends BaseModel
 
     public function scopeOngoing(Builder $query): Builder
     {
-        return $query->where('status', 'ORDER');
+        return $query->whereIn('status', ['ORDER', 'DELIVERY']);
     }
 
     public function scopeRejected(Builder $query): Builder
@@ -129,5 +134,10 @@ class OrderHeader extends BaseModel
     public function scopeOrders(Builder $query): Builder
     {
         return $query->whereIn('status', ['ORDER', 'DELIVERY', 'FINISH', 'FINAL']);
+    }
+
+    public function scopeReadyForDelivery(Builder $query): Builder
+    {
+        return $query->where('status', 'ORDER');
     }
 }

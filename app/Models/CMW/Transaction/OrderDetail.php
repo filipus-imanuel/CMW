@@ -7,6 +7,7 @@ use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Inventory\ItemUom;
 use App\Models\CMW\Master\CompanySetting;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderDetail extends BaseModel
 {
@@ -55,5 +56,10 @@ class OrderDetail extends BaseModel
     public function companySetting(): BelongsTo
     {
         return $this->belongsTo(CompanySetting::class, 'company_setting_id');
+    }
+
+    public function deliveryDetails(): HasMany
+    {
+        return $this->hasMany(DeliveryDetail::class, 'order_detail_id');
     }
 }

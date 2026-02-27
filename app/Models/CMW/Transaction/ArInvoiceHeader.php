@@ -18,6 +18,7 @@ class ArInvoiceHeader extends BaseModel
         'currency_id',
         'partner_id',
         'order_header_id',
+        'delivery_header_id',
         'subtotal',
         'tax',
         'total',
@@ -52,6 +53,11 @@ class ArInvoiceHeader extends BaseModel
     public function orderHeader(): BelongsTo
     {
         return $this->belongsTo(OrderHeader::class, 'order_header_id');
+    }
+
+    public function deliveryHeader(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryHeader::class, 'delivery_header_id');
     }
 
     public function paymentDetails(): HasMany

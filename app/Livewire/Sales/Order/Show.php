@@ -23,11 +23,13 @@ class Show extends Component
         $this->order = OrderHeader::with([
             'partner', 'company', 'itemCategory', 'currency',
             'details.item', 'details.itemUom.uom',
+            'details.deliveryDetails.header',
             'createdBy', 'approvedByUser',
+            'deliveries',
         ])->findOrFail($id);
 
-        // Guard: only ORDER or REJECTED status
-        if (! in_array($this->order->status, ['ORDER', 'REJECTED'])) {
+        // Guard: allow ORDER, DELIVERY, FINISH, or REJECTED status
+        if (! in_array($this->order->status, ['ORDER', 'DELIVERY', 'FINISH', 'REJECTED'])) {
             $this->redirectRoute('sales.order.index.ongoing', navigate: true);
 
             return;

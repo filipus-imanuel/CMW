@@ -8,21 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('ar_invoice_headers', function (Blueprint $table) {
+        Schema::create('delivery_details', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 50)->unique();
-            $table->date('date');
-            $table->date('due_date')->nullable();
-            $table->foreignId('currency_id')->default(1)->constrained('currencies');
-            $table->foreignId('partner_id')->constrained('partners');
-            $table->foreignId('order_header_id')->nullable()->constrained('order_headers');
-            $table->unsignedBigInteger('delivery_header_id')->nullable();
-            $table->decimal('subtotal', 13, 2)->default(0);
+            $table->foreignId('delivery_header_id')->constrained('delivery_headers');
+            $table->foreignId('order_detail_id')->constrained('order_details');
+            $table->foreignId('item_id')->constrained('items');
+            $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
+            $table->foreignId('warehouse_id')->constrained('warehouses');
+            $table->decimal('quantity_sent', 13, 2)->default(0);
+            $table->decimal('quantity_received', 13, 2)->default(0);
+            $table->decimal('price', 13, 2)->default(0);
+            $table->decimal('discount', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);
-            $table->decimal('paid', 13, 2)->default(0);
-            $table->decimal('balance', 13, 2)->default(0);
-            $table->string('status', 20)->default('unpaid');
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
@@ -38,6 +36,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('ar_invoice_headers');
+        Schema::dropIfExists('delivery_details');
     }
 };

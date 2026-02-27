@@ -71,6 +71,16 @@
                     @endcan
                 </flux:navlist.group>
 
+                @can('view delivery order')
+                <flux:navlist.group :heading="__('Warehouse')" expandable :expanded="request()->routeIs('warehouses.*')" class="grid">
+                    <flux:navlist.item icon="inbox-arrow-down" :href="route('warehouses.delivery.upcoming')" :current="request()->routeIs('warehouses.delivery.upcoming') || request()->routeIs('warehouses.delivery.create')" wire:navigate>{{ __('Upcoming SO') }}</flux:navlist.item>
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('warehouses.delivery.ongoing.so')" :current="request()->routeIs('warehouses.delivery.ongoing.so')" wire:navigate>{{ __('Ongoing SO') }}</flux:navlist.item>
+                    <flux:navlist.item icon="truck" :href="route('warehouses.delivery.ongoing.index')" :current="request()->routeIs('warehouses.delivery.ongoing.index') || request()->routeIs('warehouses.delivery.ongoing.show')" wire:navigate>{{ __('Ongoing Delivery') }}</flux:navlist.item>
+                    <flux:navlist.item icon="check-circle" :href="route('warehouses.delivery.finish.index')" :current="request()->routeIs('warehouses.delivery.finish.*')" wire:navigate>{{ __('Finished Delivery') }}</flux:navlist.item>
+                    <flux:navlist.item icon="x-circle" :href="route('warehouses.delivery.cancelled.index')" :current="request()->routeIs('warehouses.delivery.cancelled.*')" wire:navigate>{{ __('Cancelled Delivery') }}</flux:navlist.item>
+                </flux:navlist.group>
+                @endcan
+
                 @can('edit system setting')
                 <flux:navlist.group :heading="__('System')" expandable :expanded="request()->routeIs('system.*')" class="grid">
                     <flux:navlist.item icon="cog-6-tooth" :href="route('system.settings.edit')" :current="request()->routeIs('system.settings.*')" wire:navigate>{{ __('Settings') }}</flux:navlist.item>

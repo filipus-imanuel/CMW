@@ -67,6 +67,7 @@ class PermissionHelper
             'sales' => [
                 'sales request' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
                 'sales order' => ['view', 'approve', 'reject'],
+                'delivery order' => ['view', 'create', 'confirm', 'cancel', 'force finish'],
             ],
 
             // ══════════════════════════════════════════════════════════════
@@ -199,11 +200,12 @@ class PermissionHelper
                 return $isPurchasingResource || $isViewOnly;
             })),
             'Warehouse' => array_values(array_filter($allPermissions, function ($permission) {
-                // Warehouse gets full CRUD on warehouse, items, category price, and stock adjustment
+                // Warehouse gets full CRUD on warehouse, items, category price, stock adjustment, and delivery order
                 return str_contains($permission, 'warehouse')
                     || str_contains($permission, 'item')
                     || str_contains($permission, 'category price')
-                    || str_contains($permission, 'stock adjustment');
+                    || str_contains($permission, 'stock adjustment')
+                    || str_contains($permission, 'delivery order');
             })),
             default => throw new InvalidArgumentException("Unknown role: {$role}"),
         };

@@ -8,22 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('ar_invoice_headers', function (Blueprint $table) {
+        Schema::create('delivery_headers', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
             $table->date('date');
-            $table->date('due_date')->nullable();
-            $table->foreignId('currency_id')->default(1)->constrained('currencies');
+            $table->foreignId('order_header_id')->constrained('order_headers');
             $table->foreignId('partner_id')->constrained('partners');
-            $table->foreignId('order_header_id')->nullable()->constrained('order_headers');
-            $table->unsignedBigInteger('delivery_header_id')->nullable();
+            $table->foreignId('company_id')->nullable()->constrained('companies');
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
+            $table->string('status', 20)->default('ongoing')->comment('ongoing, finished, cancelled');
+            $table->string('cancel_reason', 1024)->nullable();
+            $table->foreignId('confirmed_by')->nullable()->constrained('users');
+            $table->timestamp('confirmed_at')->nullable();
             $table->decimal('subtotal', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);
-            $table->decimal('paid', 13, 2)->default(0);
-            $table->decimal('balance', 13, 2)->default(0);
-            $table->string('status', 20)->default('unpaid');
             $table->string('remarks', 1024)->nullable();
+            $table->string('delivery_address', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);
@@ -34,10 +35,18 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        // Add FK to ar_invoice_headers (created before delivery_headers)
+        Schema::table('ar_invoice_headers', function (Blueprint $table) {
+            $table->foreign('delivery_header_id')->references('id')->on('delivery_headers');
+        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('ar_invoice_headers');
+        Schema::table('ar_invoice_headers', function (Blueprint $table) {
+            $table->dropForeign(['delivery_header_id']);
+        });
+        Schema::dropIfExists('delivery_headers');
     }
 };
