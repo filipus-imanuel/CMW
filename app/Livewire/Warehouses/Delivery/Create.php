@@ -40,20 +40,24 @@ class Create extends Component
             'inputs.date' => 'required|date',
             'inputs.remarks' => 'nullable|string|max:1024',
             'inputs.delivery_address' => 'nullable|string|max:1024',
-            'lines' => 'required|array|min:1',
-            'lines.*.warehouse_id' => 'required|exists:warehouses,id',
-            'lines.*.quantity_sent' => 'required|numeric|min:0.01',
         ];
 
-        // Validate quantity_sent does not exceed remaining or available stock
+        // Only validate enabled lines (those with remaining qty)
         foreach ($this->lines as $i => $line) {
+            if (! ($line['enabled'] ?? false)) {
+                continue;
+            }
+
+            $rules["lines.{$i}.warehouse_id"] = 'required|exists:warehouses,id';
+
             $maxQty = (float) ($line['quantity_remaining'] ?? 0);
             if ($line['quantity_available'] !== null) {
                 $maxQty = min($maxQty, (float) $line['quantity_available']);
             }
-            if ($maxQty > 0) {
-                $rules["lines.{$i}.quantity_sent"] = "required|numeric|min:0.01|max:{$maxQty}";
-            }
+
+            $rules["lines.{$i}.quantity_sent"] = $maxQty > 0
+                ? "required|numeric|min:0.01|max:{$maxQty}"
+                : 'required|numeric|min:0.01';
         }
 
         return $rules;
@@ -196,7 +200,7 @@ class Create extends Component
                 'quantity_ordered' => number_format((float) $detail->quantity, 2),
                 'quantity_delivered' => number_format((float) $deliveredQty, 2),
                 'quantity_remaining' => $remaining,
-                'quantity_sent' => $remaining > 0 ? number_format($remaining, 2) : '0.00',
+                'quantity_sent' => $remaining > 0 ? round($remaining, 2) : 0,
                 'price' => (float) $detail->price_deal > 0 ? (float) $detail->price_deal : (float) $detail->price_proposed,
                 'discount' => (float) $detail->discount,
                 'warehouse_id' => '',

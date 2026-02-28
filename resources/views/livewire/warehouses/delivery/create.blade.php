@@ -137,18 +137,11 @@
                                             @endif
                                         </flux:table.cell>
                                         <flux:table.cell>
-                                            @php
-                                                $maxQty = (float)($line['quantity_remaining'] ?? 0);
-                                                if ($line['quantity_available'] !== null) {
-                                                    $maxQty = min($maxQty, (float)$line['quantity_available']);
-                                                }
-                                            @endphp
                                             <flux:input
                                                 wire:model.live.debounce.500ms="lines.{{ $i }}.quantity_sent"
                                                 type="number"
                                                 step="0.01"
                                                 min="0"
-                                                :max="$maxQty"
                                                 placeholder="0.00"
                                                 size="sm"
                                             />

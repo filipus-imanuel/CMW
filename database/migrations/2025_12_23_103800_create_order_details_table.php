@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
             $table->foreignId('company_setting_id')->nullable()->constrained('company_settings');
-            $table->foreignId('return_detail_id')->nullable()->constrained('return_details')->nullOnDelete();
+            $table->unsignedBigInteger('return_detail_id')->nullable();
             $table->decimal('quantity', 13, 2)->default(0);
             $table->decimal('price_proposed', 13, 2)->default(0);
             $table->decimal('price_deal', 13, 2)->default(0);
