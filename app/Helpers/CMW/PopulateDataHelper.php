@@ -343,6 +343,25 @@ class PopulateDataHelper
         return self::get(Employee::class, $options);
     }
 
+    /**
+     * Get roles dropdown data.
+     *
+     * @param  array<string, mixed>  $options  Additional options
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function getRoles(array $options = []): array
+    {
+        $query = \Spatie\Permission\Models\Role::query()
+            ->where('guard_name', 'web')
+            ->where('name', '!=', 'Super Admin')
+            ->orderBy('name');
+
+        return $query->get()->map(fn ($role) => [
+            'value' => $role->id,
+            'label' => $role->name,
+        ])->toArray();
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // CONVENIENCE METHODS - PARTNERS
     // ══════════════════════════════════════════════════════════════════════════

@@ -1,5 +1,12 @@
 <?php
 
+use App\Livewire\Employees\Role\Create as EmployeeRoleCreate;
+use App\Livewire\Employees\Role\Edit as EmployeeRoleEdit;
+use App\Livewire\Employees\Role\Index as EmployeeRoleIndex;
+use App\Livewire\Employees\Role\User as EmployeeRoleUser;
+use App\Livewire\Employees\User\Create as EmployeeUserCreate;
+use App\Livewire\Employees\User\Edit as EmployeeUserEdit;
+use App\Livewire\Employees\User\Index as EmployeeUserIndex;
 use App\Livewire\Inventories\Adjustment\Create as AdjustmentCreate;
 use App\Livewire\Inventories\Adjustment\Edit as AdjustmentEdit;
 use App\Livewire\Inventories\Adjustment\Index as AdjustmentIndex;
@@ -164,6 +171,21 @@ Route::middleware(['auth'])->group(function () {
             Route::prefix('return')->name('return.')->group(function () {
                 Route::get('/', WarehouseReturnIndex::class)->name('index');
                 Route::get('/{id}', WarehouseReturnShow::class)->name('show');
+            });
+        });
+
+        Route::prefix('employees')->name('employees.')->group(function () {
+            Route::prefix('users')->name('users.')->group(function () {
+                Route::get('/', EmployeeUserIndex::class)->name('index');
+                Route::get('/create', EmployeeUserCreate::class)->name('create');
+                Route::get('/{id}/edit', EmployeeUserEdit::class)->name('edit');
+            });
+
+            Route::prefix('roles')->name('roles.')->group(function () {
+                Route::get('/', EmployeeRoleIndex::class)->name('index');
+                Route::get('/create', EmployeeRoleCreate::class)->name('create');
+                Route::get('/{id}/edit', EmployeeRoleEdit::class)->name('edit');
+                Route::get('/{id}/users', EmployeeRoleUser::class)->name('user');
             });
         });
 

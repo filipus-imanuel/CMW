@@ -79,6 +79,14 @@ class PermissionHelper
             ],
 
             // ══════════════════════════════════════════════════════════════
+            // EMPLOYEE
+            // ══════════════════════════════════════════════════════════════
+            'employee' => [
+                'user' => ['view', 'create', 'edit', 'delete'],
+                'role' => ['view', 'create', 'edit', 'delete'],
+            ],
+
+            // ══════════════════════════════════════════════════════════════
             // EXTRA PERMISSIONS (non-standard actions)
             // ══════════════════════════════════════════════════════════════
             'extra' => [
@@ -150,7 +158,7 @@ class PermissionHelper
             'Super Admin' => $allPermissions,
             'Management' => array_values(array_filter($allPermissions, fn ($p) => str_contains($p, 'view'))),
             'Admin' => array_values(array_filter($allPermissions, function ($permission) {
-                // Admin gets full CRUD on all master, partners, and inventory resources
+                // Admin gets full CRUD on all master, partners, inventory, and employee resources
                 // Plus system settings and view item price approval
                 return str_contains($permission, 'country')
                     || str_contains($permission, 'department')
@@ -169,6 +177,8 @@ class PermissionHelper
                     || str_contains($permission, 'item')
                     || str_contains($permission, 'category price')
                     || str_contains($permission, 'system setting')
+                    || str_contains($permission, 'user')
+                    || str_contains($permission, 'role')
                     || ($permission === 'view item price approval');
             })),
             'Finance' => array_values(array_filter($allPermissions, function ($permission) {

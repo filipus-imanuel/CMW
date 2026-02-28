@@ -95,6 +95,17 @@
                 </flux:navlist.group>
                 @endcan
 
+                @canany(['view user', 'view role'])
+                <flux:navlist.group :heading="__('Employee')" expandable :expanded="request()->routeIs('employees.*')" class="grid">
+                    @can('view user')
+                    <flux:navlist.item icon="users" :href="route('employees.users.index')" :current="request()->routeIs('employees.users.*')" wire:navigate>{{ __('Users') }}</flux:navlist.item>
+                    @endcan
+                    @can('view role')
+                    <flux:navlist.item icon="shield-check" :href="route('employees.roles.index')" :current="request()->routeIs('employees.roles.*')" wire:navigate>{{ __('Roles') }}</flux:navlist.item>
+                    @endcan
+                </flux:navlist.group>
+                @endcanany
+
                 @can('edit system setting')
                 <flux:navlist.group :heading="__('System')" expandable :expanded="request()->routeIs('system.*')" class="grid">
                     <flux:navlist.item icon="cog-6-tooth" :href="route('system.settings.edit')" :current="request()->routeIs('system.settings.*')" wire:navigate>{{ __('Settings') }}</flux:navlist.item>
