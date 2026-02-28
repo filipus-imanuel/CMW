@@ -7,10 +7,11 @@ use App\Helpers\CMW\PopulateDataHelper;
 use App\Helpers\CMW\TransactionHelper;
 use App\Models\CMW\Inventory\InventoryLedger;
 use App\Models\CMW\Inventory\Item;
-use App\Models\CMW\Inventory\ItemUom;
 use App\Models\CMW\Transaction\DeliveryDetail;
 use App\Models\CMW\Transaction\DeliveryHeader;
 use App\Models\CMW\Transaction\OrderHeader;
+use App\Models\CMW\Transaction\ReturnDetail;
+use App\Models\CMW\Transaction\ReturnHeader;
 use Exception;
 use Flux\Flux;
 use Illuminate\Database\QueryException;
@@ -174,7 +175,17 @@ class Create extends Component
                 ->whereHas('header', fn ($q) => $q->whereIn('status', ['ongoing', 'finished']))
                 ->sum('quantity_sent');
 
-            $remaining = (float) $detail->quantity - (float) $deliveredQty;
+            // Add back redelivery quantities from finished ITEM-type returns
+            $redeliveryQty = ReturnDetail::whereHas('deliveryDetail', function ($q) use ($detail) {
+                $q->where('order_detail_id', $detail->id);
+            })
+                ->whereHas('header', function ($q) {
+                    $q->where('status', ReturnHeader::STATUS_FINISH)
+                        ->where('return_type', 'ITEM');
+                })
+                ->sum('quantity_redelivery');
+
+            $remaining = (float) $detail->quantity - (float) $deliveredQty + (float) $redeliveryQty;
 
             $this->lines[] = [
                 'order_detail_id' => $detail->id,
@@ -202,37 +213,13 @@ class Create extends Component
             // Auto-select if only one warehouse option
             if (count($this->lines[$i]['warehouse_options']) === 1) {
                 $this->lines[$i]['warehouse_id'] = $this->lines[$i]['warehouse_options'][0]['value'];
-                $this->lines[$i]['quantity_available'] = $this->getAvailableStock(
+                $this->lines[$i]['quantity_available'] = TransactionHelper::getAvailableStock(
                     (int) $line['item_id'],
                     (int) $this->lines[$i]['warehouse_id'],
                     $line['item_uom_id'] ? (int) $line['item_uom_id'] : null
                 );
             }
         }
-    }
-
-    /**
-     * Get the available stock for an item in a warehouse, converted to the line's UOM.
-     * The ledger balance already reflects deductions from previous delivery orders.
-     */
-    private function getAvailableStock(int $itemId, int $warehouseId, ?int $itemUomId): float
-    {
-        // Current warehouse balance in base UOM (already deducted by previous DOs)
-        $baseBalance = (float) (InventoryLedger::where('item_id', $itemId)
-            ->where('warehouse_id', $warehouseId)
-            ->orderByDesc('date')
-            ->orderByDesc('id')
-            ->value('balance') ?? 0);
-
-        // Convert from base UOM to line UOM
-        if ($itemUomId) {
-            $conversionRate = (float) (ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
-            if ($conversionRate > 0) {
-                return round($baseBalance / $conversionRate, 2);
-            }
-        }
-
-        return round($baseBalance, 2);
     }
 
     /**
@@ -246,7 +233,7 @@ class Create extends Component
 
             if (! empty($value) && isset($this->lines[$index])) {
                 $line = $this->lines[$index];
-                $this->lines[$index]['quantity_available'] = $this->getAvailableStock(
+                $this->lines[$index]['quantity_available'] = TransactionHelper::getAvailableStock(
                     (int) $line['item_id'],
                     (int) $value,
                     $line['item_uom_id'] ? (int) $line['item_uom_id'] : null
@@ -316,17 +303,8 @@ class Create extends Component
                     $itemUomId = $line['item_uom_id'] ? (int) $line['item_uom_id'] : null;
 
                     // Convert to base UOM for stock check
-                    $baseQty = $quantitySent;
-                    if ($itemUomId) {
-                        $conversionRate = (float) (ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
-                        $baseQty = $quantitySent * $conversionRate;
-                    }
-
-                    $currentBalance = (float) (InventoryLedger::where('item_id', $itemId)
-                        ->where('warehouse_id', $warehouseId)
-                        ->orderByDesc('date')
-                        ->orderByDesc('id')
-                        ->value('balance') ?? 0);
+                    $baseQty = TransactionHelper::convertToBaseUom($quantitySent, $itemUomId);
+                    $currentBalance = TransactionHelper::getWarehouseBalance($itemId, $warehouseId);
 
                     if ($currentBalance < $baseQty) {
                         $itemName = $line['item_name'];
@@ -415,17 +393,8 @@ class Create extends Component
 
                     // Deduct stock via inventory ledger
                     $itemUomId = $line['item_uom_id'] ? (int) $line['item_uom_id'] : null;
-                    $baseQty = $data['quantity_sent'];
-                    if ($itemUomId) {
-                        $conversionRate = (float) (ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
-                        $baseQty = $data['quantity_sent'] * $conversionRate;
-                    }
-
-                    $currentBalance = (float) (InventoryLedger::where('item_id', $line['item_id'])
-                        ->where('warehouse_id', $line['warehouse_id'])
-                        ->orderByDesc('date')
-                        ->orderByDesc('id')
-                        ->value('balance') ?? 0);
+                    $baseQty = TransactionHelper::convertToBaseUom($data['quantity_sent'], $itemUomId);
+                    $currentBalance = TransactionHelper::getWarehouseBalance((int) $line['item_id'], (int) $line['warehouse_id']);
 
                     $unitCost = (float) (Item::where('id', $line['item_id'])->value('cost_price') ?? 0);
 

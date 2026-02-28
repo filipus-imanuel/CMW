@@ -68,6 +68,17 @@
                     @can('view sales order')
                     <flux:navlist.item icon="truck" :href="route('sales.order.index.ongoing')" :current="request()->routeIs('sales.order.index.ongoing') || request()->routeIs('sales.order.show')" wire:navigate>{{ __('Ongoing Orders') }}</flux:navlist.item>
                     <flux:navlist.item icon="x-circle" :href="route('sales.order.index.rejected')" :current="request()->routeIs('sales.order.index.rejected')" wire:navigate>{{ __('Rejected Orders') }}</flux:navlist.item>
+                    <flux:navlist.item icon="no-symbol" :href="route('sales.order.index.cancelled')" :current="request()->routeIs('sales.order.index.cancelled')" wire:navigate>{{ __('Cancelled Orders') }}</flux:navlist.item>
+                    @endcan
+                    @can('view sales return')
+                    <flux:navlist.group heading="Return" expandable :expanded="request()->routeIs('sales.return.*')" class="grid">
+                        <flux:navlist.item icon="document-text" :href="route('sales.return.index.draft')" :current="request()->routeIs('sales.return.index.draft') || request()->routeIs('sales.return.create') || request()->routeIs('sales.return.edit')" wire:navigate>{{ __('Draft') }}</flux:navlist.item>
+                        <flux:navlist.item icon="shield-check" :href="route('sales.return.index.approval')" :current="request()->routeIs('sales.return.index.approval')" wire:navigate>{{ __('Approval') }}</flux:navlist.item>
+                        <flux:navlist.item icon="arrow-path" :href="route('sales.return.index.ongoing')" :current="request()->routeIs('sales.return.index.ongoing') || request()->routeIs('sales.return.show')" wire:navigate>{{ __('Ongoing') }}</flux:navlist.item>
+                        <flux:navlist.item icon="check-circle" :href="route('sales.return.index.finish')" :current="request()->routeIs('sales.return.index.finish')" wire:navigate>{{ __('Finish') }}</flux:navlist.item>
+                        <flux:navlist.item icon="no-symbol" :href="route('sales.return.index.cancelled')" :current="request()->routeIs('sales.return.index.cancelled')" wire:navigate>{{ __('Cancelled') }}</flux:navlist.item>
+                        <flux:navlist.item icon="x-circle" :href="route('sales.return.index.rejected')" :current="request()->routeIs('sales.return.index.rejected')" wire:navigate>{{ __('Rejected') }}</flux:navlist.item>
+                    </flux:navlist.group>
                     @endcan
                 </flux:navlist.group>
 
@@ -78,6 +89,9 @@
                     <flux:navlist.item icon="truck" :href="route('warehouses.delivery.ongoing.index')" :current="request()->routeIs('warehouses.delivery.ongoing.index') || request()->routeIs('warehouses.delivery.ongoing.show')" wire:navigate>{{ __('Ongoing Delivery') }}</flux:navlist.item>
                     <flux:navlist.item icon="check-circle" :href="route('warehouses.delivery.finish.index')" :current="request()->routeIs('warehouses.delivery.finish.*')" wire:navigate>{{ __('Finished Delivery') }}</flux:navlist.item>
                     <flux:navlist.item icon="x-circle" :href="route('warehouses.delivery.cancelled.index')" :current="request()->routeIs('warehouses.delivery.cancelled.*')" wire:navigate>{{ __('Cancelled Delivery') }}</flux:navlist.item>
+                    @can('view warehouse return')
+                    <flux:navlist.item icon="arrow-uturn-left" :href="route('warehouses.return.index')" :current="request()->routeIs('warehouses.return.*')" wire:navigate>{{ __('Return') }}</flux:navlist.item>
+                    @endcan
                 </flux:navlist.group>
                 @endcan
 

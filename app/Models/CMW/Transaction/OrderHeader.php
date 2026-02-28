@@ -102,6 +102,11 @@ class OrderHeader extends BaseModel
         return $this->hasMany(DeliveryHeader::class, 'order_header_id');
     }
 
+    public function returns(): HasMany
+    {
+        return $this->hasMany(ReturnHeader::class, 'order_header_id');
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // SCOPES
     // ══════════════════════════════════════════════════════════════════════════
@@ -129,6 +134,11 @@ class OrderHeader extends BaseModel
     public function scopeRejected(Builder $query): Builder
     {
         return $query->where('status', 'REJECTED');
+    }
+
+    public function scopeCancelled(Builder $query): Builder
+    {
+        return $query->where('status', 'CANCELLED');
     }
 
     public function scopeOrders(Builder $query): Builder

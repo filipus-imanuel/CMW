@@ -191,6 +191,54 @@
         </flux:card>
     @endif
 
+    {{-- Sales Returns --}}
+    @if($header->returns->count() > 0)
+        <flux:card class="mb-6">
+            <flux:heading size="lg" class="mb-4">Sales Returns</flux:heading>
+
+            <div class="overflow-x-auto">
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column class="w-8">#</flux:table.column>
+                        <flux:table.column>RTN Code</flux:table.column>
+                        <flux:table.column>Date</flux:table.column>
+                        <flux:table.column>Type</flux:table.column>
+                        <flux:table.column>Status</flux:table.column>
+                        <flux:table.column class="text-center">Total</flux:table.column>
+                    </flux:table.columns>
+                    <flux:table.rows>
+                        @foreach($header->returns as $ri => $return)
+                            <flux:table.row>
+                                <flux:table.cell>{{ $ri + 1 }}</flux:table.cell>
+                                <flux:table.cell>
+                                    <a href="{{ route('sales.return.show', $return->id) }}" class="text-blue-600 dark:text-blue-400 hover:underline font-medium" wire:navigate>{{ $return->code }}</a>
+                                </flux:table.cell>
+                                <flux:table.cell>{{ $return->date?->format('d M Y') }}</flux:table.cell>
+                                <flux:table.cell>
+                                    <flux:badge :color="$return->return_type === 'ITEM' ? 'blue' : 'purple'" size="sm">{{ $return->return_type }}</flux:badge>
+                                </flux:table.cell>
+                                <flux:table.cell>
+                                    @php
+                                        $rtnStatusColor = match($return->status) {
+                                            'INIT' => 'zinc',
+                                            'APPROVAL' => 'amber',
+                                            'PROCESSING' => 'blue',
+                                            'FINISH' => 'green',
+                                            'CANCELLED' => 'red',
+                                            default => 'zinc',
+                                        };
+                                    @endphp
+                                    <flux:badge :color="$rtnStatusColor" size="sm">{{ $return->status }}</flux:badge>
+                                </flux:table.cell>
+                                <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$return->total, 2) }}</flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+            </div>
+        </flux:card>
+    @endif
+
     {{-- Inventory Ledger Entries --}}
     @if($header->inventoryLedgers->count() > 0)
         <flux:card>

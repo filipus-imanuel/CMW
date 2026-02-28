@@ -19,10 +19,12 @@ The Sales module manages the lifecycle of sales from **request → approval → 
 
 ```
 INIT ──submit──▶ APPROVAL ──approve──▶ ORDER ──▶ DELIVERY ──▶ FINISH ──▶ FINAL
-                    │
-                    ├──reject──▶ REJECTED
-                    │
-                    └──restore──▶ INIT
+  │                 │
+  │                 ├──reject──▶ REJECTED
+  │                 │
+  │                 └──restore──▶ INIT
+  │
+  └──cancel──▶ CANCELLED  (also from ORDER if no deliveries)
 ```
 
 | Status | Meaning | Editable | Scope |
@@ -30,7 +32,8 @@ INIT ──submit──▶ APPROVAL ──approve──▶ ORDER ──▶ DELIV
 | `INIT` | Draft request | Yes | `scopeInit` |
 | `APPROVAL` | Pending approval | No | `scopePendingApproval` |
 | `ORDER` | Approved, ongoing | No | `scopeOngoing` |
-| `REJECTED` | Rejected by approver | No | `scopeRejected` |
+| `REJECTED` | Rejected by approver (imposed) | No | `scopeRejected` |
+| `CANCELLED` | Cancelled by user (voluntary) | No | `scopeCancelled` |
 | `DELIVERY`+ | Future statuses | No | `scopeOrders` |
 
 ---
@@ -69,7 +72,9 @@ Each `OrderDetail` has two price fields:
 
 1. Permission: `create sales request`
 2. Generates `code_request` via `CodeGeneratorHelper::generateOrderCode('SR')`
-3. Sets status `INIT`, redirects to Edit
+3. Sets status `INIT`
+4. **Return items**: shows checklist of available return items (see §4.4). Selected items create `OrderDetail` rows directly inside the creation transaction with `return_detail_id` set, `price = 0`.
+5. Redirects to Edit
 
 ### 4.2 Edit (`Sales\Request\Edit`)
 
@@ -78,15 +83,32 @@ Each `OrderDetail` has two price fields:
 3. Fields: header info + `delivery_date` + line items
 4. Items added via `SearchItem` modal (dispatches resolved price → `price_proposed`)
 5. Price override requires `override price sales request` permission
+6. Return-origin items (linked via `return_detail_id`) display with "↩" prefix
+7. Additional return items can be toggled from the "Return Items Available" card
 
 ### 4.3 Submit (INIT → APPROVAL)
 
 Validation before submit:
 - At least 1 detail item
 - `delivery_date` required
-- All items must have `price_deal > 0`
+- Non-return items must have `price_deal > 0` (return items allowed at 0)
 
-On submit: status changes to `APPROVAL`, dispatches `shp.sales.order.refresh.approval`.
+On submit:
+- Status → `APPROVAL`
+- Return consumption: `ReturnDetail` rows linked via `order_details.return_detail_id` are marked `is_next_so_consumed = true`, `consumed_by_order_id` = this order
+- Dispatches `shp.sales.order.refresh.approval`
+
+### 4.4 Return Items Integration
+
+Both Create and Edit show available return items filtered by **all** of:
+- Same `partner_id`
+- Same `company_id` (on `return_headers`)
+- Same `item_category_id` (on original SO `order_headers`)
+- Same `tax_mode` + `tax_id` (on original SO `order_headers`)
+- Return status = `FINISH`, type = `ITEM`
+- `quantity_next_so > 0`, `is_next_so_consumed = false`
+
+`order_details.return_detail_id` (nullable FK → `return_details`) tracks which order detail originated from a return.
 
 ---
 
@@ -128,12 +150,25 @@ On submit: status changes to `APPROVAL`, dispatches `shp.sales.order.refresh.app
 
 ### 6.3 Show (Detail View)
 
-- Read-only detail for `ORDER` or `REJECTED` status
-- Shows both codes, approval info, rejection reason
-- **Replicate** button (REJECTED only, requires `create sales request`):
+- Read-only detail for all non-INIT statuses (ORDER, DELIVERY, FINISH, FINAL, REJECTED, CANCELLED)
+- Back navigation: INIT → SR init index, REJECTED → rejected index, CANCELLED → cancelled index, else → ongoing index
+- Shows both codes, approval info
+- **Rejection callout** (REJECTED): displays `rejection_reason` with `x-circle` icon
+- **Cancellation callout** (CANCELLED): displays `rejection_reason` (labelled "Cancellation Reason") with `no-symbol` icon
+- **Cancel** button (INIT or ORDER + no deliveries, requires `edit sales order`):
+  - Opens modal with required cancellation reason textarea
+  - Sets status `CANCELLED`, stores reason in `rejection_reason`
+  - Dispatches `shp.sales.order.refresh.cancelled`, redirects to cancelled index
+- **Replicate** button (REJECTED or CANCELLED, requires `create sales request`):
   - Creates new `INIT` OrderHeader with fresh `code_request`
   - Copies details with `price_proposed = source.price_deal` (or `price_proposed` if no deal)
   - Redirects to Edit of new record
+
+### 6.4 Cancelled Orders
+
+- Permission: `view sales order`
+- Scope: `cancelled` (status = `CANCELLED`)
+- Columns: Actions, Code, Date, Customer, Category, Total, Cancellation Reason, Requested By
 
 ---
 
@@ -176,6 +211,7 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `sales.order.approval.show` | `/cmw/sales/orders/approval/{id}` | `Sales\Approval\Show` |
 | `sales.order.index.ongoing` | `/cmw/sales/orders` | `Sales\Order\Index\Ongoing` |
 | `sales.order.index.rejected` | `/cmw/sales/orders/rejected` | `Sales\Order\Index\Rejected` |
+| `sales.order.index.cancelled` | `/cmw/sales/orders/cancelled` | `Sales\Order\Index\Cancelled` |
 | `sales.order.show` | `/cmw/sales/orders/{id}` | `Sales\Order\Show` |
 
 ---
@@ -188,6 +224,7 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | SO Approval | `shield-check` | `view/approve sales order` | `sales.order.approval.index` |
 | Ongoing Orders | `truck` | `view sales order` | `sales.order.index.ongoing` |
 | Rejected Orders | `x-circle` | `view sales order` | `sales.order.index.rejected` |
+| Cancelled Orders | `no-symbol` | `view sales order` | `sales.order.index.cancelled` |
 
 ---
 
@@ -199,6 +236,7 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `shp.sales.order.refresh.approval` | SR submitted, approval action taken |
 | `shp.sales.order.refresh.ongoing` | Order approved |
 | `shp.sales.order.refresh.rejected` | Order rejected |
+| `shp.sales.order.refresh.cancelled` | Order cancelled |
 
 ---
 
@@ -206,7 +244,7 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 
 | Area | Path |
 |------|------|
-| Models | `app/Models/CMW/Transaction/OrderHeader.php`, `OrderDetail.php` |
+| Models | `app/Models/CMW/Transaction/OrderHeader.php`, `OrderDetail.php`, `ReturnDetail.php` |
 | SR Components | `app/Livewire/Sales/Request/` |
 | SO Approval | `app/Livewire/Sales/Approval/` |
 | SO Views | `app/Livewire/Sales/Order/` |

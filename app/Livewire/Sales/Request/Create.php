@@ -8,7 +8,9 @@ use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Partner;
 use App\Models\CMW\Master\Tax;
+use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
+use App\Models\CMW\Transaction\ReturnDetail;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,16 @@ class Create extends Component
     public $dropdown_data = [];
 
     public $checks = [];
+
+    /**
+     * Available return items for the selected partner.
+     */
+    public $returnItems = [];
+
+    /**
+     * IDs of selected return detail items to carry over to Edit.
+     */
+    public $selectedReturnItems = [];
 
     public function rules(): array
     {
@@ -82,29 +94,8 @@ class Create extends Component
         if ($value === 'NONE') {
             $this->inputs['tax_id'] = '';
         }
-    }
 
-    /**
-     * Load item categories based on selected company.
-     */
-    public function updatedInputsCompanyId($value): void
-    {
-        $this->dropdown_data['item_categories'] = [];
-        $this->inputs['item_category_id'] = '';
-
-        if (! $value) {
-            return;
-        }
-
-        $company = Company::with('itemCategories')->find($value);
-
-        if ($company) {
-            $this->dropdown_data['item_categories'] = $company->itemCategories
-                ->where('is_active', true)
-                ->map(fn ($cat) => ['value' => $cat->id, 'label' => "{$cat->code} - {$cat->name}"])
-                ->values()
-                ->toArray();
-        }
+        $this->loadReturnItems();
     }
 
     /**
@@ -145,11 +136,114 @@ class Create extends Component
     public function updatedInputsPartnerId(): void
     {
         $this->runChecks();
+        $this->loadReturnItems();
+    }
+
+    /**
+     * Load available return items for the selected partner (preview only).
+     * Only shows items matching same partner, company, item category, and tax settings.
+     */
+    public function loadReturnItems(): void
+    {
+        $partnerId = $this->inputs['partner_id'] ?? null;
+        $companyId = $this->inputs['company_id'] ?? null;
+        $categoryId = $this->inputs['item_category_id'] ?? null;
+        $taxMode = $this->inputs['tax_mode'] ?? 'NONE';
+        $taxId = $this->inputs['tax_id'] ?? null;
+
+        if (! $partnerId || ! $companyId || ! $categoryId) {
+            $this->returnItems = [];
+            $this->selectedReturnItems = [];
+
+            return;
+        }
+
+        $details = ReturnDetail::with(['header.orderHeader', 'item', 'itemUom.uom'])
+            ->where('quantity_next_so', '>', 0)
+            ->where('is_next_so_consumed', false)
+            ->whereHas('header', function ($q) use ($partnerId, $companyId) {
+                $q->where('partner_id', $partnerId)
+                    ->where('company_id', $companyId)
+                    ->where('status', 'FINISH')
+                    ->where('return_type', 'ITEM');
+            })
+            ->whereHas('header.orderHeader', function ($q) use ($categoryId, $taxMode, $taxId) {
+                $q->where('item_category_id', $categoryId)
+                    ->where('tax_mode', $taxMode);
+                if ($taxMode !== 'NONE' && $taxId) {
+                    $q->where('tax_id', $taxId);
+                }
+            })
+            ->get();
+
+        $this->returnItems = $details->map(function ($detail) {
+            return [
+                'return_detail_id' => $detail->id,
+                'return_code' => $detail->header?->code ?? '',
+                'item_id' => $detail->item_id,
+                'item_uom_id' => $detail->item_uom_id,
+                'item_code' => $detail->item?->code ?? '',
+                'item_name' => $detail->item?->name ?? '',
+                'uom_name' => $detail->itemUom?->uom?->name ?? '',
+                'quantity_next_so' => (float) $detail->quantity_next_so,
+                'original_so_code' => $detail->header?->orderHeader?->code_order ?? '',
+            ];
+        })->toArray();
+
+        // Clear selections that are no longer available
+        $availableIds = collect($this->returnItems)->pluck('return_detail_id')->toArray();
+        $this->selectedReturnItems = array_values(array_intersect($this->selectedReturnItems, $availableIds));
+    }
+
+    /**
+     * Toggle a return item selection.
+     */
+    public function toggleReturnItem(int $detailId): void
+    {
+        $returnItem = collect($this->returnItems)->firstWhere('return_detail_id', $detailId);
+        if (! $returnItem) {
+            return;
+        }
+
+        if (in_array($detailId, $this->selectedReturnItems)) {
+            $this->selectedReturnItems = array_values(array_filter($this->selectedReturnItems, fn ($id) => $id !== $detailId));
+        } else {
+            $this->selectedReturnItems[] = $detailId;
+        }
+    }
+
+    /**
+     * Reload return items when tax selection changes.
+     */
+    public function updatedInputsTaxId(): void
+    {
+        $this->loadReturnItems();
+    }
+
+    public function updatedInputsCompanyId($value): void
+    {
+        $this->dropdown_data['item_categories'] = [];
+        $this->inputs['item_category_id'] = '';
+
+        if ($value) {
+            $company = Company::with('itemCategories')->find($value);
+
+            if ($company) {
+                $this->dropdown_data['item_categories'] = $company->itemCategories
+                    ->where('is_active', true)
+                    ->map(fn ($cat) => ['value' => $cat->id, 'label' => "{$cat->code} - {$cat->name}"])
+                    ->values()
+                    ->toArray();
+            }
+        }
+
+        $this->loadReturnItems();
     }
 
     public function updatedInputsItemCategoryId(): void
     {
         $this->runChecks();
+        $this->loadReturnItems();
     }
 
     public function store(): void
@@ -194,6 +288,29 @@ class Create extends Component
                 'total' => 0,
                 'created_by' => Auth::id(),
             ]);
+
+            // Create OrderDetails for selected return items directly
+            if (! empty($this->selectedReturnItems)) {
+                $returnDetails = ReturnDetail::with(['item', 'itemUom'])
+                    ->whereIn('id', $this->selectedReturnItems)
+                    ->get();
+
+                foreach ($returnDetails as $returnDetail) {
+                    OrderDetail::create([
+                        'order_header_id' => $order->id,
+                        'item_id' => $returnDetail->item_id,
+                        'item_uom_id' => $returnDetail->item_uom_id,
+                        'return_detail_id' => $returnDetail->id,
+                        'quantity' => (float) $returnDetail->quantity_next_so,
+                        'price_proposed' => 0,
+                        'price_deal' => 0,
+                        'discount' => 0,
+                        'tax' => 0,
+                        'total' => 0,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
 
             return $order;
         });

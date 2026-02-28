@@ -19,6 +19,7 @@ class Show extends Component
             'orderHeader', 'partner', 'company', 'currency',
             'details.item', 'details.itemUom.uom', 'details.warehouse',
             'createdBy', 'confirmedByUser', 'arInvoices', 'inventoryLedgers',
+            'returns',
         ])->finished()->findOrFail($id);
     }
 

@@ -18,6 +18,7 @@ class OrderDetail extends BaseModel
         'item_id',
         'item_uom_id',
         'company_setting_id',
+        'return_detail_id',
         'quantity',
         'price_proposed',
         'price_deal',
@@ -56,6 +57,11 @@ class OrderDetail extends BaseModel
     public function companySetting(): BelongsTo
     {
         return $this->belongsTo(CompanySetting::class, 'company_setting_id');
+    }
+
+    public function returnDetail(): BelongsTo
+    {
+        return $this->belongsTo(ReturnDetail::class, 'return_detail_id');
     }
 
     public function deliveryDetails(): HasMany

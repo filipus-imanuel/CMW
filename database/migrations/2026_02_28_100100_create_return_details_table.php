@@ -8,16 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('order_details', function (Blueprint $table) {
+        Schema::create('return_details', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_header_id')->constrained('order_headers');
+            $table->foreignId('return_header_id')->constrained('return_headers');
+            $table->foreignId('delivery_detail_id')->constrained('delivery_details');
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('item_uom_id')->nullable()->constrained('item_uoms');
-            $table->foreignId('company_setting_id')->nullable()->constrained('company_settings');
-            $table->foreignId('return_detail_id')->nullable()->constrained('return_details')->nullOnDelete();
-            $table->decimal('quantity', 13, 2)->default(0);
-            $table->decimal('price_proposed', 13, 2)->default(0);
-            $table->decimal('price_deal', 13, 2)->default(0);
+            $table->decimal('quantity_return', 13, 2)->default(0);
+            $table->decimal('quantity_received_good', 13, 2)->default(0);
+            $table->decimal('quantity_received_damaged', 13, 2)->default(0);
+            $table->decimal('quantity_redelivery', 13, 2)->default(0);
+            $table->decimal('quantity_next_so', 13, 2)->default(0);
+            $table->boolean('is_next_so_consumed')->default(false);
+            $table->foreignId('consumed_by_order_id')->nullable()->constrained('order_headers');
+            $table->decimal('price', 13, 2)->default(0);
             $table->decimal('discount', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);
@@ -36,6 +40,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('order_details');
+        Schema::dropIfExists('return_details');
     }
 };

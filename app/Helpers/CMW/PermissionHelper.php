@@ -68,6 +68,14 @@ class PermissionHelper
                 'sales request' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
                 'sales order' => ['view', 'approve', 'reject'],
                 'delivery order' => ['view', 'create', 'confirm', 'cancel', 'force finish'],
+                'sales return' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
+            ],
+
+            // ══════════════════════════════════════════════════════════════
+            // WAREHOUSE
+            // ══════════════════════════════════════════════════════════════
+            'warehouse' => [
+                'warehouse return' => ['view', 'receive'],
             ],
 
             // ══════════════════════════════════════════════════════════════
@@ -177,7 +185,8 @@ class PermissionHelper
                 // Plus full sales request and view sales order permissions
                 $isSalesResource = str_contains($permission, 'customer') || str_contains($permission, 'partner address');
                 $isSalesTransaction = str_contains($permission, 'sales request')
-                    || ($permission === 'view sales order');
+                    || ($permission === 'view sales order')
+                    || str_contains($permission, 'sales return');
                 $isViewOnly = str_contains($permission, 'view') && (
                     str_contains($permission, 'currency')
                     || str_contains($permission, 'tax')
@@ -205,7 +214,8 @@ class PermissionHelper
                     || str_contains($permission, 'item')
                     || str_contains($permission, 'category price')
                     || str_contains($permission, 'stock adjustment')
-                    || str_contains($permission, 'delivery order');
+                    || str_contains($permission, 'delivery order')
+                    || str_contains($permission, 'warehouse return');
             })),
             default => throw new InvalidArgumentException("Unknown role: {$role}"),
         };

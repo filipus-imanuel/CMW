@@ -11,6 +11,7 @@ use App\Models\CMW\Master\Tax;
 use App\Models\CMW\System\Setting;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
+use App\Models\CMW\Transaction\ReturnDetail;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,16 @@ class Edit extends Component
     public $dropdown_data = [];
 
     public $deleteItemId = null;
+
+    /**
+     * Available return items for this partner (quantity_next_so > 0, not consumed).
+     */
+    public $returnItems = [];
+
+    /**
+     * IDs of selected return detail items to attach.
+     */
+    public $selectedReturnItems = [];
 
     /**
      * Per-item guardrail data: het_price, floor_price, resolved_price, warnings.
@@ -67,6 +78,7 @@ class Edit extends Component
         $this->loadDropdownData();
         $this->handlePopulateInputs();
         $this->runChecks();
+        $this->loadReturnItems();
     }
 
     public function loadDropdownData(): void
@@ -101,11 +113,13 @@ class Edit extends Component
                 $taxRate
             );
 
+            $isReturn = ! empty($detail->return_detail_id);
+
             return [
                 'id' => $detail->id,
                 'item_id' => $detail->item_id,
                 'item_code' => $detail->item?->code ?? '',
-                'item_name' => $detail->item?->name ?? '',
+                'item_name' => ($isReturn ? '↩ ' : '').($detail->item?->name ?? ''),
                 'item_uom_id' => $detail->item_uom_id,
                 'uom_name' => $detail->itemUom?->uom?->name ?? '',
                 'quantity' => number_format((float) $detail->quantity, 2, '.', ''),
@@ -114,8 +128,16 @@ class Edit extends Component
                 'discount' => number_format((float) $detail->discount, 2, '.', ''),
                 'tax' => number_format($calc['tax'], 2, '.', ''),
                 'total' => number_format($calc['total'], 2, '.', ''),
+                'return_detail_id' => $detail->return_detail_id,
             ];
         })->toArray();
+
+        // Populate selectedReturnItems from existing return-origin details
+        $this->selectedReturnItems = $this->order->details
+            ->whereNotNull('return_detail_id')
+            ->pluck('return_detail_id')
+            ->values()
+            ->toArray();
 
         // Build guardrails for each item row
         $this->priceGuardrails = [];
@@ -430,6 +452,7 @@ class Edit extends Component
                     'order_header_id' => $this->order->id,
                     'item_id' => $item['item_id'],
                     'item_uom_id' => $item['item_uom_id'],
+                    'return_detail_id' => $item['return_detail_id'] ?? null,
                     'quantity' => $qty,
                     'price_proposed' => $price,
                     'price_deal' => $priceDeal,
@@ -490,13 +513,20 @@ class Edit extends Component
         }
 
         // Validate delivery_date is required on submit
+        // Check non-return items have price_deal > 0
+        $nonReturnItems = collect($this->items)->filter(fn ($item) => empty($item['return_detail_id']));
+        foreach ($nonReturnItems as $index => $item) {
+            if (! isset($item['price_deal']) || (float) $item['price_deal'] <= 0) {
+                Flux::toast("Item #{$index}: Price deal must be greater than 0.", variant: 'danger', position: 'top-end');
+
+                return;
+            }
+        }
+
         $this->validate([
             'inputs.delivery_date' => 'required|date',
-            'items.*.price_deal' => 'required|numeric|min:0.01',
         ], [
             'inputs.delivery_date.required' => 'Delivery date is required before submitting.',
-            'items.*.price_deal.required' => 'Price deal is required for all items before submitting.',
-            'items.*.price_deal.min' => 'Price deal must be greater than 0.',
         ]);
 
         // Save first
@@ -507,6 +537,21 @@ class Edit extends Component
                 'status' => 'APPROVAL',
                 'updated_by' => Auth::id(),
             ]);
+
+            // Mark linked return items as consumed (from saved order_details)
+            $returnDetailIds = $this->order->details()
+                ->whereNotNull('return_detail_id')
+                ->pluck('return_detail_id')
+                ->toArray();
+
+            if (! empty($returnDetailIds)) {
+                ReturnDetail::whereIn('id', $returnDetailIds)
+                    ->update([
+                        'is_next_so_consumed' => true,
+                        'consumed_by_order_id' => $this->order->id,
+                        'updated_by' => Auth::id(),
+                    ]);
+            }
         });
 
         Flux::toast('Sales request submitted for approval', variant: 'success', position: 'top-end');
@@ -534,6 +579,97 @@ class Edit extends Component
         }
 
         return $warnings;
+    }
+
+    /**
+     * Load available return items matching same partner, company, item category, and tax.
+     * Only shows return details where quantity_next_so > 0 and not yet consumed.
+     */
+    public function loadReturnItems(): void
+    {
+        if (! $this->order?->partner_id) {
+            $this->returnItems = [];
+
+            return;
+        }
+
+        $order = $this->order;
+
+        $details = ReturnDetail::with(['header.orderHeader', 'item', 'itemUom.uom'])
+            ->where('quantity_next_so', '>', 0)
+            ->where('is_next_so_consumed', false)
+            ->whereNotIn('id', $this->selectedReturnItems)
+            ->whereHas('header', function ($q) use ($order) {
+                $q->where('partner_id', $order->partner_id)
+                    ->where('company_id', $order->company_id)
+                    ->where('status', 'FINISH')
+                    ->where('return_type', 'ITEM');
+            })
+            ->whereHas('header.orderHeader', function ($q) use ($order) {
+                $q->where('item_category_id', $order->item_category_id)
+                    ->where('tax_mode', $order->tax_mode ?? 'NONE');
+                if ($order->tax_mode !== 'NONE' && $order->tax_id) {
+                    $q->where('tax_id', $order->tax_id);
+                }
+            })
+            ->get();
+
+        $this->returnItems = $details->map(function ($detail) {
+            return [
+                'return_detail_id' => $detail->id,
+                'return_code' => $detail->header?->code ?? '',
+                'item_id' => $detail->item_id,
+                'item_uom_id' => $detail->item_uom_id,
+                'item_code' => $detail->item?->code ?? '',
+                'item_name' => $detail->item?->name ?? '',
+                'uom_name' => $detail->itemUom?->uom?->name ?? '',
+                'quantity_next_so' => (float) $detail->quantity_next_so,
+                'original_so_code' => $detail->header?->orderHeader?->code_order ?? '',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Toggle a return item selection. Adds/removes from items list.
+     */
+    public function toggleReturnItem(int $detailId): void
+    {
+        $returnItem = collect($this->returnItems)->firstWhere('return_detail_id', $detailId);
+        if (! $returnItem) {
+            return;
+        }
+
+        if (in_array($detailId, $this->selectedReturnItems)) {
+            // Remove
+            $this->selectedReturnItems = array_values(array_filter($this->selectedReturnItems, fn ($id) => $id !== $detailId));
+            $this->items = array_values(array_filter($this->items, fn ($item) => ($item['return_detail_id'] ?? null) !== $detailId));
+            // Re-index guardrails
+            $this->priceGuardrails = array_values($this->priceGuardrails);
+        } else {
+            // Add
+            $this->selectedReturnItems[] = $detailId;
+            $this->items[] = [
+                'id' => null,
+                'item_id' => $returnItem['item_id'],
+                'item_code' => $returnItem['item_code'],
+                'item_name' => '↩ '.$returnItem['item_name'],
+                'item_uom_id' => $returnItem['item_uom_id'],
+                'uom_name' => $returnItem['uom_name'],
+                'quantity' => number_format($returnItem['quantity_next_so'], 2, '.', ''),
+                'price_proposed' => '0.00',
+                'price_deal' => '0.00',
+                'discount' => '0.00',
+                'tax' => '0.00',
+                'total' => '0.00',
+                'return_detail_id' => $detailId,
+            ];
+            $this->priceGuardrails[] = [
+                'het_price' => 0,
+                'floor_price' => 0,
+                'resolved_price' => 0,
+                'warnings' => [],
+            ];
+        }
     }
 
     public function render()

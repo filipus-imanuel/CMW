@@ -16,6 +16,8 @@ class Show extends Component
 {
     public ?OrderHeader $order = null;
 
+    public string $cancellation_reason = '';
+
     public function mount($id): void
     {
         $this->authorize('view sales order');
@@ -25,11 +27,12 @@ class Show extends Component
             'details.item', 'details.itemUom.uom',
             'details.deliveryDetails.header',
             'createdBy', 'approvedByUser',
-            'deliveries',
+            'deliveries.returns',
+            'returns.deliveryHeader',
         ])->findOrFail($id);
 
-        // Guard: allow ORDER, DELIVERY, FINISH, or REJECTED status
-        if (! in_array($this->order->status, ['ORDER', 'DELIVERY', 'FINISH', 'REJECTED'])) {
+        // Guard: allow INIT, ORDER, DELIVERY, FINISH, REJECTED, or CANCELLED status
+        if (! in_array($this->order->status, ['INIT', 'ORDER', 'DELIVERY', 'FINISH', 'REJECTED', 'CANCELLED'])) {
             $this->redirectRoute('sales.order.index.ongoing', navigate: true);
 
             return;
@@ -37,15 +40,56 @@ class Show extends Component
     }
 
     /**
-     * Replicate a REJECTED order back to a new Sales Request (INIT).
+     * Cancel an INIT or ORDER status order that has no delivery orders.
+     */
+    public function cancelOrder(): void
+    {
+        $this->authorize('edit sales order');
+
+        if (! in_array($this->order->status, ['INIT', 'ORDER'])) {
+            Flux::toast('Only draft or ongoing orders can be cancelled.', variant: 'danger', position: 'top-end');
+
+            return;
+        }
+
+        if ($this->order->deliveries()->exists()) {
+            Flux::toast('Cannot cancel — this order has delivery orders.', variant: 'danger', position: 'top-end');
+
+            return;
+        }
+
+        $this->validate([
+            'cancellation_reason' => 'required|string|max:1024',
+        ]);
+
+        try {
+            DB::transaction(function () {
+                $this->order->update([
+                    'status' => 'CANCELLED',
+                    'rejection_reason' => $this->cancellation_reason,
+                    'updated_by' => Auth::id(),
+                ]);
+
+                $this->dispatch('shp.sales.order.refresh.cancelled');
+            });
+
+            Flux::toast("Order {$this->order->code_request} cancelled.", variant: 'success', position: 'top-end');
+            $this->redirectRoute('sales.order.index.cancelled', navigate: true);
+        } catch (\Exception $e) {
+            Flux::toast('Error: '.$e->getMessage(), variant: 'danger', position: 'top-end');
+        }
+    }
+
+    /**
+     * Replicate a REJECTED or CANCELLED order back to a new Sales Request (INIT).
      * Copies header fields and details with price_proposed from the SO's price_deal.
      */
     public function replicateToRequest(): void
     {
         $this->authorize('create sales request');
 
-        if ($this->order->status !== 'REJECTED') {
-            Flux::toast('Only rejected orders can be replicated.', variant: 'danger', position: 'top-end');
+        if (! in_array($this->order->status, ['REJECTED', 'CANCELLED'])) {
+            Flux::toast('Only rejected or cancelled orders can be replicated.', variant: 'danger', position: 'top-end');
 
             return;
         }

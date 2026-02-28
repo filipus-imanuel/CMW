@@ -2,9 +2,24 @@
 
 ## Component Philosophy
 
-**ALWAYS use Flux components** - no custom HTML/CSS unless absolutely necessary.
+**ALWAYS use Flux components** — no native HTML elements or custom CSS unless absolutely necessary.
 
 **CRITICAL**: Read `docs/flux/components/{component-name}.md` BEFORE using any component.
+
+### Flux-First Rule
+
+NEVER use native HTML form elements. Always use the Flux equivalent:
+
+| ❌ NEVER | ✅ ALWAYS |
+|----------|-----------|
+| `<input type="checkbox">` | `<flux:checkbox />` |
+| `<input type="text">` | `<flux:input />` |
+| `<input type="date">` | `<flux:date-picker />` |
+| `<textarea>` | `<flux:textarea />` |
+| `<select>` | `<flux:select />` |
+| `<button>` | `<flux:button />` |
+| `<table>` | `<flux:table>` |
+| `window.confirm()` / `wire:confirm` | `<flux:modal>` |
 
 ## Quick Reference
 
@@ -26,6 +41,41 @@
 <flux:button variant="danger">Delete</flux:button>
 <flux:button variant="ghost">Cancel</flux:button>
 <flux:button variant="outline">Edit</flux:button>
+```
+
+## Action Button Placement
+
+**Page / Card context** (outside modals):
+- Action buttons go to the **right** side of the header row.
+- When multiple buttons exist, **danger actions** (delete, cancel) go to the **very left** of the button group; other actions follow to the right.
+
+```blade
+{{-- Single action — right aligned --}}
+<div class="flex items-center justify-between">
+    <flux:heading size="lg">Section Title</flux:heading>
+    <flux:button variant="primary" size="sm">Save</flux:button>
+</div>
+
+{{-- Multiple actions — danger on the left of the group, rest follows --}}
+<div class="flex items-center justify-between">
+    <flux:heading size="lg">Section Title</flux:heading>
+    <div class="flex gap-2">
+        <flux:button variant="danger" size="sm" icon="x-circle">Cancel</flux:button>
+        <flux:button variant="outline" size="sm" icon="printer">Print</flux:button>
+        <flux:button variant="primary" size="sm" icon="check">Submit</flux:button>
+    </div>
+</div>
+```
+
+**Modal confirmation context** (inside `flux:modal`):
+- Action button stays on the **right** (standard: Back left, Confirm right).
+- This rule does NOT change for danger actions inside modals.
+
+```blade
+<div class="flex gap-2 justify-end">
+    <flux:button variant="ghost" x-on:click="$flux.modal('name').close()">Back</flux:button>
+    <flux:button variant="danger" wire:click="delete" x-on:click="$flux.modal('name').close()">Yes, Delete</flux:button>
+</div>
 ```
 
 ## Modal Pattern
@@ -94,6 +144,43 @@ Pattern: trigger button uses `x-on:click="$flux.modal('name').show()"` (no `wire
 - Back/dismiss button: `x-on:click="$flux.modal('name').close()"` only
 - Use `variant="ghost"` for Back, match the action severity for Confirm (`danger`, `primary`, etc.)
 - Use `class="max-w-sm"` for compact confirmation dialogs
+
+### Parameterized Confirmation (dynamic context)
+
+When the confirmation needs a dynamic value (e.g., which row to delete), use a Livewire property to stage the value before opening the modal:
+
+```php
+// Component
+public $pendingDeleteIndex = null;
+
+public function deletePending(): void
+{
+    if ($this->pendingDeleteIndex !== null) {
+        $this->deleteRow((int) $this->pendingDeleteIndex);
+        $this->pendingDeleteIndex = null;
+    }
+}
+```
+
+```blade
+{{-- Trigger: set property then open modal --}}
+<flux:button variant="ghost" size="xs" icon="trash"
+    x-on:click="$wire.set('pendingDeleteIndex', {{ $index }}); $flux.modal('delete-row').show()" />
+
+{{-- Modal: confirm calls the pending method --}}
+<flux:modal name="delete-row" class="max-w-sm">
+    <div class="space-y-4">
+        <div>
+            <flux:heading size="lg">Delete Row</flux:heading>
+            <flux:text class="mt-2 text-zinc-400">Are you sure?</flux:text>
+        </div>
+        <div class="flex gap-2 justify-end">
+            <flux:button variant="ghost" x-on:click="$flux.modal('delete-row').close()">Back</flux:button>
+            <flux:button variant="danger" wire:click="deletePending" x-on:click="$flux.modal('delete-row').close()">Yes, Delete</flux:button>
+        </div>
+    </div>
+</flux:modal>
+```
 
 ## Table Patterns
 

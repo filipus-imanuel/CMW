@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Helpers\CMW;
 
+use App\Models\CMW\Inventory\InventoryLedger;
+use App\Models\CMW\Inventory\ItemUom;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
 use Illuminate\Support\Facades\Auth;
@@ -131,6 +133,50 @@ class TransactionHelper
             'total' => $calc['total'],
             'updated_by' => Auth::id(),
         ]);
+    }
+
+    /**
+     * Get the current warehouse balance for an item in base UOM.
+     */
+    public static function getWarehouseBalance(int $itemId, int $warehouseId): float
+    {
+        return (float) (InventoryLedger::where('item_id', $itemId)
+            ->where('warehouse_id', $warehouseId)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->value('balance') ?? 0);
+    }
+
+    /**
+     * Get the available stock for an item in a warehouse, converted to the given UOM.
+     * Returns the balance in the line's UOM (or base UOM when itemUomId is null).
+     */
+    public static function getAvailableStock(int $itemId, int $warehouseId, ?int $itemUomId = null): float
+    {
+        $baseBalance = self::getWarehouseBalance($itemId, $warehouseId);
+
+        if ($itemUomId) {
+            $conversionRate = (float) (ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
+            if ($conversionRate > 0) {
+                return round($baseBalance / $conversionRate, 2);
+            }
+        }
+
+        return round($baseBalance, 2);
+    }
+
+    /**
+     * Convert a quantity to base UOM using the given item UOM.
+     */
+    public static function convertToBaseUom(float $quantity, ?int $itemUomId): float
+    {
+        if ($itemUomId) {
+            $conversionRate = (float) (ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
+
+            return $quantity * max($conversionRate, 1);
+        }
+
+        return $quantity;
     }
 
     /**

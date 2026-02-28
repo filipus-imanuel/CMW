@@ -97,4 +97,25 @@ class CodeGeneratorHelper
 
         return "INV/{$yearMonth}/".str_pad((string) $number, 4, '0', STR_PAD_LEFT);
     }
+
+    /**
+     * Generate return code.
+     *
+     * Format: RTN/YYMM/0001
+     *
+     * @return string The generated code
+     */
+    public static function generateReturnCode(): string
+    {
+        $yearMonth = date('ym');
+
+        $last = \App\Models\CMW\Transaction\ReturnHeader::withTrashed()
+            ->where('code', 'like', "RTN/{$yearMonth}/%")
+            ->orderByDesc('code')
+            ->first();
+
+        $number = $last ? (int) substr($last->code, -4) + 1 : 1;
+
+        return "RTN/{$yearMonth}/".str_pad((string) $number, 4, '0', STR_PAD_LEFT);
+    }
 }

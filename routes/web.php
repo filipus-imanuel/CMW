@@ -31,12 +31,22 @@ use App\Livewire\Partners\SupplierAddresses\Index as SupplierAddressIndex;
 use App\Livewire\Partners\Suppliers\Index as SupplierIndex;
 use App\Livewire\Sales\Approval\Index as SalesOrderApprovalIndex;
 use App\Livewire\Sales\Approval\Show as SalesOrderApprovalShow;
+use App\Livewire\Sales\Order\Index\Cancelled as SalesOrderCancelledIndex;
 use App\Livewire\Sales\Order\Index\Ongoing as SalesOrderOngoingIndex;
 use App\Livewire\Sales\Order\Index\Rejected as SalesOrderRejectedIndex;
 use App\Livewire\Sales\Order\Show as SalesOrderShow;
 use App\Livewire\Sales\Request\Create as SalesRequestCreate;
 use App\Livewire\Sales\Request\Edit as SalesRequestEdit;
 use App\Livewire\Sales\Request\Index\Init as SalesRequestInitIndex;
+use App\Livewire\Sales\Return\Create as SalesReturnCreate;
+use App\Livewire\Sales\Return\Edit as SalesReturnEdit;
+use App\Livewire\Sales\Return\Index\Approval as SalesReturnApprovalIndex;
+use App\Livewire\Sales\Return\Index\Cancelled as SalesReturnCancelledIndex;
+use App\Livewire\Sales\Return\Index\Draft as SalesReturnDraftIndex;
+use App\Livewire\Sales\Return\Index\Finish as SalesReturnFinishIndex;
+use App\Livewire\Sales\Return\Index\Ongoing as SalesReturnOngoingIndex;
+use App\Livewire\Sales\Return\Index\Rejected as SalesReturnRejectedIndex;
+use App\Livewire\Sales\Return\Show as SalesReturnShow;
 use App\Livewire\System\Setting\Edit as SystemSettingEdit;
 use App\Livewire\Warehouses\Delivery\Cancelled\Index as DeliveryCancelledIndex;
 use App\Livewire\Warehouses\Delivery\Cancelled\Show as DeliveryCancelledShow;
@@ -48,6 +58,8 @@ use App\Livewire\Warehouses\Delivery\Ongoing\Show as DeliveryOngoingShow;
 use App\Livewire\Warehouses\Delivery\Ongoing\So as DeliveryOngoingSo;
 use App\Livewire\Warehouses\Delivery\Upcoming\Index as DeliveryUpcomingIndex;
 use App\Livewire\Warehouses\Delivery\Upcoming\Show as DeliveryUpcomingShow;
+use App\Livewire\Warehouses\Return\Index as WarehouseReturnIndex;
+use App\Livewire\Warehouses\Return\Show as WarehouseReturnShow;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
@@ -148,6 +160,11 @@ Route::middleware(['auth'])->group(function () {
                     Route::get('/{id}', DeliveryCancelledShow::class)->name('show');
                 });
             });
+
+            Route::prefix('return')->name('return.')->group(function () {
+                Route::get('/', WarehouseReturnIndex::class)->name('index');
+                Route::get('/{id}', WarehouseReturnShow::class)->name('show');
+            });
         });
 
         Route::prefix('sales')->name('sales.')->group(function () {
@@ -160,6 +177,7 @@ Route::middleware(['auth'])->group(function () {
             Route::prefix('orders')->name('order.')->group(function () {
                 Route::get('/', SalesOrderOngoingIndex::class)->name('index.ongoing');
                 Route::get('/rejected', SalesOrderRejectedIndex::class)->name('index.rejected');
+                Route::get('/cancelled', SalesOrderCancelledIndex::class)->name('index.cancelled');
 
                 Route::prefix('approval')->name('approval.')->group(function () {
                     Route::get('/', SalesOrderApprovalIndex::class)->name('index');
@@ -167,6 +185,18 @@ Route::middleware(['auth'])->group(function () {
                 });
 
                 Route::get('/{id}', SalesOrderShow::class)->name('show');
+            });
+
+            Route::prefix('returns')->name('return.')->group(function () {
+                Route::get('/', SalesReturnDraftIndex::class)->name('index.draft');
+                Route::get('/approval', SalesReturnApprovalIndex::class)->name('index.approval');
+                Route::get('/ongoing', SalesReturnOngoingIndex::class)->name('index.ongoing');
+                Route::get('/finish', SalesReturnFinishIndex::class)->name('index.finish');
+                Route::get('/cancelled', SalesReturnCancelledIndex::class)->name('index.cancelled');
+                Route::get('/rejected', SalesReturnRejectedIndex::class)->name('index.rejected');
+                Route::get('/create/{deliveryId?}', SalesReturnCreate::class)->name('create');
+                Route::get('/{id}/edit', SalesReturnEdit::class)->name('edit');
+                Route::get('/{id}', SalesReturnShow::class)->name('show');
             });
         });
     });

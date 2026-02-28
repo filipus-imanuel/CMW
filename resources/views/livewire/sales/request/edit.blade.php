@@ -152,6 +152,44 @@
         </div>
     </flux:card>
 
+    {{-- Return Items Available --}}
+    @if(count($returnItems) > 0)
+        <flux:card class="mt-6">
+            <flux:heading size="lg" class="mb-2">Return Items Available</flux:heading>
+            <flux:subheading class="mb-4">These items are available from finished sales returns for the same customer. Check items to include them in this request (price defaults to 0).</flux:subheading>
+
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column class="w-8"></flux:table.column>
+                    <flux:table.column>Return Code</flux:table.column>
+                    <flux:table.column>Item Code</flux:table.column>
+                    <flux:table.column>Item Name</flux:table.column>
+                    <flux:table.column class="text-center">Qty Return</flux:table.column>
+                    <flux:table.column>UOM</flux:table.column>
+                    <flux:table.column>Original SO</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @foreach($returnItems as $ri)
+                        <flux:table.row>
+                            <flux:table.cell>
+                                <flux:checkbox
+                                    wire:click="toggleReturnItem({{ $ri['return_detail_id'] }})"
+                                    :checked="in_array($ri['return_detail_id'], $selectedReturnItems)"
+                                />
+                            </flux:table.cell>
+                            <flux:table.cell>{{ $ri['return_code'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $ri['item_code'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $ri['item_name'] }}</flux:table.cell>
+                            <flux:table.cell class="text-right tabular-nums">{{ number_format($ri['quantity_next_so'], 2) }}</flux:table.cell>
+                            <flux:table.cell>{{ $ri['uom_name'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $ri['original_so_code'] }}</flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
+        </flux:card>
+    @endif
+
     {{-- Items Section --}}
     <flux:card>
         <div class="flex items-center justify-between mb-4">

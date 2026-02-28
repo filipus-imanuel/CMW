@@ -8,25 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('order_headers', function (Blueprint $table) {
+        Schema::create('return_headers', function (Blueprint $table) {
             $table->id();
-            $table->string('code_request', 50)->unique();
-            $table->string('code_order', 50)->nullable()->unique();
+            $table->string('code', 50)->unique();
+            $table->string('transaction_type', 5)->default('SO')->comment('SO (sales), PO (purchasing future)');
+            $table->string('return_type', 10)->comment('ITEM, INVOICE');
             $table->date('date');
-            $table->date('delivery_date')->nullable();
-            $table->foreignId('currency_id')->default(1)->constrained('currencies');
+            $table->foreignId('order_header_id')->constrained('order_headers');
+            $table->foreignId('delivery_header_id')->constrained('delivery_headers');
+            $table->foreignId('ar_invoice_header_id')->nullable()->constrained('ar_invoice_headers');
             $table->foreignId('partner_id')->constrained('partners');
             $table->foreignId('company_id')->nullable()->constrained('companies');
-            $table->foreignId('item_category_id')->nullable()->constrained('item_categories');
-            $table->string('tax_mode', 20)->default('NONE'); // INCLUDE, EXCLUDE, NONE
-            $table->foreignId('tax_id')->nullable()->constrained('taxes');
-            $table->decimal('tax_rate', 5, 2)->default(0);
-            $table->string('status', 20)->default('INIT'); // INIT, APPROVAL, ORDER, DELIVERY, FINISH, FINAL, REJECTED, CANCELLED
+            $table->foreignId('currency_id')->default(1)->constrained('currencies');
+            $table->string('status', 20)->default('INIT')->comment('INIT, APPROVAL, PROCESSING, FINISH, CANCELLED, REJECTED');
+            $table->string('rejection_reason', 1024)->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
-            $table->string('rejection_reason', 1024)->nullable();
+            $table->foreignId('received_by')->nullable()->constrained('users');
+            $table->timestamp('received_at')->nullable();
             $table->decimal('subtotal', 13, 2)->default(0);
-            $table->decimal('discount', 13, 2)->default(0);
             $table->decimal('tax', 13, 2)->default(0);
             $table->decimal('total', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
@@ -44,6 +44,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('order_headers');
+        Schema::dropIfExists('return_headers');
     }
 };
