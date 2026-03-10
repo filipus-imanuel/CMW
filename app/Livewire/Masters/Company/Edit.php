@@ -25,15 +25,31 @@ class Edit extends Component
         'name' => '',
         'sales_limit' => 0,
         'currency_id' => 1,
+        'tax_mode' => 'NONE',
+        'tax_id' => '',
         'remarks' => '',
         'is_active' => true,
     ];
 
     public $dropdown_currency = [];
 
+    public $dropdown_taxes = [];
+
     private function handlePopulateCurrency(): void
     {
         $this->dropdown_currency = PopulateDataHelper::getCurrencies();
+    }
+
+    private function handlePopulateTaxes(): void
+    {
+        $this->dropdown_taxes = PopulateDataHelper::getTaxes();
+    }
+
+    public function updatedInputsTaxMode($value): void
+    {
+        if ($value === 'NONE') {
+            $this->inputs['tax_id'] = '';
+        }
     }
 
     public function rules(): array
@@ -43,6 +59,8 @@ class Edit extends Component
             'inputs.name' => 'required|string|max:100|unique:companies,name,'.$this->company?->id,
             'inputs.sales_limit' => CurrencyValidationHelper::amountRules(0, 999999999999),
             'inputs.currency_id' => CurrencyValidationHelper::currencyIdEditRules($this->company?->currency_id ?? 1),
+            'inputs.tax_mode' => 'required|in:INCLUDE,EXCLUDE,NONE',
+            'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
             'inputs.remarks' => 'nullable|string|max:500',
             'inputs.is_active' => 'boolean',
         ];
@@ -62,11 +80,15 @@ class Edit extends Component
             $validated = $this->validate();
 
             DB::transaction(function () use ($validated) {
+                $taxMode = $validated['inputs']['tax_mode'];
+
                 $this->company->update([
                     'code' => $validated['inputs']['code'],
                     'name' => $validated['inputs']['name'],
                     'sales_limit' => $validated['inputs']['sales_limit'],
                     'currency_id' => $validated['inputs']['currency_id'],
+                    'tax_mode' => $taxMode,
+                    'tax_id' => $taxMode !== 'NONE' ? $validated['inputs']['tax_id'] : null,
                     'remarks' => $validated['inputs']['remarks'],
                     'is_active' => $validated['inputs']['is_active'],
                     'updated_by' => Auth::id(),
@@ -94,14 +116,17 @@ class Edit extends Component
         $this->authorize('edit company');
         $this->resetValidation();
         $this->handlePopulateCurrency();
+        $this->handlePopulateTaxes();
 
-        $this->company = Company::with('currency')->findOrFail($id);
+        $this->company = Company::with(['currency', 'tax'])->findOrFail($id);
 
         $this->inputs = [
             'code' => $this->company->code,
             'name' => $this->company->name,
             'sales_limit' => $this->company->sales_limit,
             'currency_id' => $this->company->currency_id,
+            'tax_mode' => $this->company->tax_mode ?? 'NONE',
+            'tax_id' => $this->company->tax_id ?? '',
             'remarks' => $this->company->remarks,
             'is_active' => $this->company->is_active,
         ];

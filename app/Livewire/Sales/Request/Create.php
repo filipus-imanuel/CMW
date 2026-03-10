@@ -36,6 +36,11 @@ class Create extends Component
      */
     public $selectedReturnItems = [];
 
+    /**
+     * Whether the user can override the company's default tax.
+     */
+    public bool $canOverrideTax = false;
+
     public function rules(): array
     {
         return [
@@ -53,6 +58,8 @@ class Create extends Component
     {
         $this->authorize('create sales request');
 
+        $this->canOverrideTax = Auth::user()->can('override tax sales request');
+
         $this->inputs = [
             'partner_id' => '',
             'company_id' => '',
@@ -68,20 +75,7 @@ class Create extends Component
 
     public function loadDropdownData(): void
     {
-        $user = Auth::user();
-
-        // Customers: filtered by PIC (user_id) for non-super-admin
-        if ($user->hasRole('Super Admin')) {
-            $this->dropdown_data['customers'] = PopulateDataHelper::getCustomers([
-                'useCache' => false,
-            ]);
-        } else {
-            $this->dropdown_data['customers'] = PopulateDataHelper::get(Partner::class, [
-                'filters' => ['is_customer' => true, 'user_id' => $user->id],
-                'useCache' => false,
-            ]);
-        }
-
+        $this->dropdown_data['customers'] = [];
         $this->dropdown_data['companies'] = PopulateDataHelper::getCompanies();
         $this->dropdown_data['taxes'] = PopulateDataHelper::getTaxes();
     }
@@ -223,20 +217,43 @@ class Create extends Component
     public function updatedInputsCompanyId($value): void
     {
         $this->dropdown_data['item_categories'] = [];
+        $this->dropdown_data['customers'] = [];
         $this->inputs['item_category_id'] = '';
+        $this->inputs['partner_id'] = '';
 
         if ($value) {
-            $company = Company::with('itemCategories')->find($value);
+            $company = Company::with(['itemCategories', 'tax'])->find($value);
 
             if ($company) {
+                // Auto-populate tax from company defaults
+                $this->inputs['tax_mode'] = $company->tax_mode ?? 'NONE';
+                $this->inputs['tax_id'] = $company->tax_id ?? '';
+
                 $this->dropdown_data['item_categories'] = $company->itemCategories
                     ->where('is_active', true)
                     ->map(fn ($cat) => ['value' => $cat->id, 'label' => "{$cat->code} - {$cat->name}"])
                     ->values()
                     ->toArray();
             }
+
+            // Load customers linked to this company
+            $user = Auth::user();
+            $query = Partner::whereHas('companies', fn ($q) => $q->where('companies.id', $value))
+                ->where('is_customer', true)
+                ->where('is_active', true);
+
+            if (! $user->hasRole('Super Admin')) {
+                $query->where('user_id', $user->id);
+            }
+
+            $this->dropdown_data['customers'] = $query
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($p) => ['value' => $p->id, 'label' => "{$p->code} - {$p->name}"])
+                ->toArray();
         }
 
+        $this->runChecks();
         $this->loadReturnItems();
     }
 

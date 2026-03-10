@@ -1,6 +1,6 @@
 # Sales Module — Business Logic
 
-**Last Updated**: 2026-02-23
+**Last Updated**: 2026-03-10
 
 ---
 
@@ -73,8 +73,9 @@ Each `OrderDetail` has two price fields:
 1. Permission: `create sales request`
 2. Generates `code_request` via `CodeGeneratorHelper::generateOrderCode('SR')`
 3. Sets status `INIT`
-4. **Return items**: shows checklist of available return items (see §4.4). Selected items create `OrderDetail` rows directly inside the creation transaction with `return_detail_id` set, `price = 0`.
-5. Redirects to Edit
+4. **Selection order**: Company → Customer → Item Category. Selecting a company filters both the customer dropdown (only customers linked to that company via `company_partner` pivot) and the item category dropdown (only categories linked to that company via `company_item_category`). Non-Super Admin users also have the customer list filtered by `user_id` (PIC).
+5. **Return items**: shows checklist of available return items (see §4.4). Selected items create `OrderDetail` rows directly inside the creation transaction with `return_detail_id` set, `price = 0`.
+6. Redirects to Edit
 
 ### 4.2 Edit (`Sales\Request\Edit`)
 
@@ -83,8 +84,9 @@ Each `OrderDetail` has two price fields:
 3. Fields: header info + `delivery_date` + line items
 4. Items added via `SearchItem` modal (dispatches resolved price → `price_proposed`)
 5. Price override requires `override price sales request` permission
-6. Return-origin items (linked via `return_detail_id`) display with "↩" prefix
-7. Additional return items can be toggled from the "Return Items Available" card
+6. Tax override requires `override tax sales request` permission; without it tax fields are disabled
+7. Return-origin items (linked via `return_detail_id`) display with "↩" prefix
+8. Additional return items can be toggled from the "Return Items Available" card
 
 ### 4.3 Submit (INIT → APPROVAL)
 
@@ -194,9 +196,14 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
     'sales order'   => ['view', 'approve', 'reject'],
 ],
 'extra' => [
-    'sales request' => ['override price'],
+    'sales request' => ['override price', 'override tax'],
 ],
 ```
+
+| Permission | Purpose |
+|---|---|
+| `override price sales request` | Change `price_proposed` away from the resolved PriceResolutionHelper value |
+| `override tax sales request` | Change `tax_mode` / `tax_id` away from the company's default tax |
 
 ---
 

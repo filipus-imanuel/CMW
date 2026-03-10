@@ -20,6 +20,8 @@ class Edit extends Component
 
     public $dropdown_category_prices = [];
 
+    public $dropdown_companies = [];
+
     public function rules()
     {
         return [
@@ -28,6 +30,8 @@ class Edit extends Component
             'inputs.category_price_id' => 'nullable|exists:category_prices,id',
             'inputs.remarks' => 'nullable|string|max:500',
             'inputs.is_active' => 'boolean',
+            'inputs.company_ids' => 'nullable|array',
+            'inputs.company_ids.*' => 'exists:companies,id',
         ];
     }
 
@@ -43,6 +47,7 @@ class Edit extends Component
     private function loadDropdowns(): void
     {
         $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices(['labelFormat' => 'code_name']);
+        $this->dropdown_companies = PopulateDataHelper::getCompanies(['useCache' => false]);
     }
 
     #[On('cmw.partners.customers.edit.open')]
@@ -50,13 +55,14 @@ class Edit extends Component
     {
         $this->authorize('edit customer');
 
-        $this->customer = Partner::where('is_customer', true)->findOrFail($id);
+        $this->customer = Partner::where('is_customer', true)->with('companies')->findOrFail($id);
 
         $this->inputs['code'] = $this->customer->code;
         $this->inputs['name'] = $this->customer->name;
         $this->inputs['category_price_id'] = $this->customer->category_price_id;
         $this->inputs['remarks'] = $this->customer->remarks;
         $this->inputs['is_active'] = (bool) $this->customer->is_active;
+        $this->inputs['company_ids'] = $this->customer->companies->pluck('id')->toArray();
 
         $this->resetValidation();
         $this->loadDropdowns();
@@ -75,6 +81,8 @@ class Edit extends Component
                 ...$validated['inputs'],
                 'updated_by' => Auth::id(),
             ]);
+
+            $this->customer->companies()->sync($validated['inputs']['company_ids'] ?? []);
         });
 
         Flux::toast('Customer updated successfully', variant: 'success', position: 'top-end');

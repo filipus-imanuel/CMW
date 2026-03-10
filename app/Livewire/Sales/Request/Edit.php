@@ -53,6 +53,11 @@ class Edit extends Component
     public $priceGuardrails = [];
 
     /**
+     * Whether the user can override the company's default tax.
+     */
+    public bool $canOverrideTax = false;
+
+    /**
      * Get the floor percentage from system settings.
      */
     #[Computed]
@@ -64,6 +69,8 @@ class Edit extends Component
     public function mount($id): void
     {
         $this->authorize('edit sales request');
+
+        $this->canOverrideTax = Auth::user()->can('override tax sales request');
 
         $this->order = OrderHeader::with(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.itemUom.uom'])
             ->findOrFail($id);

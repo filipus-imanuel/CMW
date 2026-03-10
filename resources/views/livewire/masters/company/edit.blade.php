@@ -24,6 +24,28 @@
             </flux:select>
         </div>
 
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <flux:radio.group wire:model.live="inputs.tax_mode" label="Default Tax Mode" variant="segmented" :disabled="$company?->is_edit_locked">
+                    <flux:radio value="INCLUDE" label="Include" />
+                    <flux:radio value="EXCLUDE" label="Exclude" />
+                    <flux:radio value="NONE" label="No Tax" />
+                </flux:radio.group>
+                @error('inputs.tax_mode')
+                    <flux:text class="text-sm text-red-500 mt-1">{{ $message }}</flux:text>
+                @enderror
+            </div>
+
+            @if ($inputs['tax_mode'] !== 'NONE')
+                <flux:select wire:model="inputs.tax_id" label="Default Tax" badge="Required" :disabled="$company?->is_edit_locked">
+                    <flux:select.option value="">-- Select Tax --</flux:select.option>
+                    @foreach ($dropdown_taxes as $tax)
+                        <flux:select.option value="{{ $tax['value'] }}">{{ $tax['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            @endif
+        </div>
+
         <flux:callout color="blue" icon="information-circle" class="text-sm">
             <flux:callout.text>Currency cannot be changed after company creation.</flux:callout.text>
         </flux:callout>

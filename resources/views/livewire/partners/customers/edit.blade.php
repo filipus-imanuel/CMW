@@ -34,6 +34,20 @@
                     @endforeach
                 </flux:select>
 
+                <flux:select
+                    wire:model="inputs.company_ids"
+                    variant="listbox"
+                    label="Companies"
+                    placeholder="Select companies (optional)"
+                    searchable
+                    multiple
+                    :error="$errors->first('inputs.company_ids')"
+                >
+                    @foreach($dropdown_companies as $company)
+                        <flux:select.option value="{{ $company['value'] }}">{{ $company['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
                 <flux:textarea 
                     wire:model="inputs.remarks" 
                     label="Remarks"

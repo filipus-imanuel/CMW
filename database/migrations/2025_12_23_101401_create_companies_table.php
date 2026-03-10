@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('name', 100);
             $table->decimal('sales_limit', 13, 2)->default(0);
             $table->foreignId('currency_id')->constrained('currencies');
+            $table->string('tax_mode', 10)->default('NONE');
+            $table->foreignId('tax_id')->nullable()->constrained('taxes');
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);

@@ -125,7 +125,7 @@
 
             <div class="flex flex-col gap-4">
                 <div>
-                    <flux:radio.group wire:model.live="inputs.tax_mode" label="Tax Mode" badge="Required" variant="segmented">
+                    <flux:radio.group wire:model.live="inputs.tax_mode" label="Tax Mode" badge="Required" variant="segmented" :disabled="!$canOverrideTax">
                         <flux:radio value="INCLUDE" label="Include" />
                         <flux:radio value="EXCLUDE" label="Exclude" />
                         <flux:radio value="NONE" label="No Tax" />
@@ -133,6 +133,9 @@
                     @error('inputs.tax_mode')
                         <flux:text class="text-sm text-red-500 mt-1">{{ $message }}</flux:text>
                     @enderror
+                    @if(!$canOverrideTax)
+                        <flux:text class="text-xs text-zinc-500 mt-1">Tax is determined by the selected company.</flux:text>
+                    @endif
                 </div>
 
                 @if(($inputs['tax_mode'] ?? 'NONE') !== 'NONE')
@@ -142,6 +145,7 @@
                         badge="Required"
                         placeholder="Select tax..."
                         :error="$errors->first('inputs.tax_id')"
+                        :disabled="!$canOverrideTax"
                     >
                         @foreach($dropdown_data['taxes'] ?? [] as $tax)
                             <flux:select.option value="{{ $tax['value'] }}">{{ $tax['label'] }}</flux:select.option>

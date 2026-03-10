@@ -18,6 +18,8 @@ class Create extends Component
 
     public $dropdown_category_prices = [];
 
+    public $dropdown_companies = [];
+
     public function rules()
     {
         return [
@@ -25,6 +27,8 @@ class Create extends Component
             'inputs.name' => 'required|string|max:100',
             'inputs.category_price_id' => 'nullable|exists:category_prices,id',
             'inputs.remarks' => 'nullable|string|max:500',
+            'inputs.company_ids' => 'nullable|array',
+            'inputs.company_ids.*' => 'exists:companies,id',
         ];
     }
 
@@ -40,6 +44,7 @@ class Create extends Component
     private function loadDropdowns(): void
     {
         $this->dropdown_category_prices = PopulateDataHelper::getCategoryPrices(['labelFormat' => 'code_name']);
+        $this->dropdown_companies = PopulateDataHelper::getCompanies(['useCache' => false]);
     }
 
     #[On('cmw.partners.customers.create.open')]
@@ -48,6 +53,7 @@ class Create extends Component
         $this->authorize('create customer');
 
         $this->reset(['inputs']);
+        $this->inputs['company_ids'] = [];
         $this->resetValidation();
         $this->loadDropdowns();
 
@@ -61,13 +67,15 @@ class Create extends Component
         $validated = $this->validate();
 
         DB::transaction(function () use ($validated) {
-            Partner::create([
+            $partner = Partner::create([
                 ...$validated['inputs'],
                 'is_supplier' => false,
                 'is_customer' => true,
                 'is_active' => true,
                 'created_by' => Auth::id(),
             ]);
+
+            $partner->companies()->sync($validated['inputs']['company_ids'] ?? []);
         });
 
         Flux::toast('Customer created successfully', variant: 'success', position: 'top-end');

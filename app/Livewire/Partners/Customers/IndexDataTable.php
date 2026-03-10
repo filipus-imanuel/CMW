@@ -52,7 +52,7 @@ class IndexDataTable extends DataTableComponent
     public function builder(): Builder
     {
         return Partner::query()
-            ->with(['categoryPrice'])
+            ->with(['categoryPrice', 'companies'])
             ->where('is_customer', true);
     }
 
@@ -79,6 +79,12 @@ class IndexDataTable extends DataTableComponent
             Column::make('Category Price', 'category_price_id')
                 ->sortable()
                 ->format(fn ($value, $row) => $row->categoryPrice?->code ?? '-'),
+
+            Column::make('Companies', 'id')
+                ->format(fn ($value, $row) => $row->companies->isNotEmpty()
+                    ? $row->companies->pluck('code')->join(', ')
+                    : '-'
+                ),
 
             BooleanColumn::make('Status', 'is_active')
                 ->sortable(),

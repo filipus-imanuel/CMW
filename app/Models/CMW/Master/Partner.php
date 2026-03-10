@@ -7,6 +7,7 @@ use App\Models\CMW\Inventory\CategoryPrice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Partner extends BaseModel
@@ -45,6 +46,11 @@ class Partner extends BaseModel
     public function addresses(): HasMany
     {
         return $this->hasMany(PartnerAddress::class);
+    }
+
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'company_partner')->withTimestamps();
     }
 
     // ══════════════════════════════════════════════════════════════════════════

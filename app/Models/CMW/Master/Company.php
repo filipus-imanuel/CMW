@@ -13,6 +13,8 @@ class Company extends BaseModel
     protected $fillable = [
         'sales_limit',
         'currency_id',
+        'tax_mode',
+        'tax_id',
     ];
 
     /**
@@ -35,6 +37,14 @@ class Company extends BaseModel
         return $this->belongsTo(Currency::class);
     }
 
+    /**
+     * Get the default tax for this company.
+     */
+    public function tax(): BelongsTo
+    {
+        return $this->belongsTo(Tax::class);
+    }
+
     public function companySettings(): HasMany
     {
         return $this->hasMany(CompanySetting::class);
@@ -48,5 +58,10 @@ class Company extends BaseModel
     public function warehouses(): BelongsToMany
     {
         return $this->belongsToMany(Warehouse::class, 'company_warehouses')->withTimestamps();
+    }
+
+    public function partners(): BelongsToMany
+    {
+        return $this->belongsToMany(Partner::class, 'company_partner')->withTimestamps();
     }
 }

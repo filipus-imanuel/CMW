@@ -90,7 +90,7 @@ class PermissionHelper
             // EXTRA PERMISSIONS (non-standard actions)
             // ══════════════════════════════════════════════════════════════
             'extra' => [
-                'sales request' => ['override price'],
+                'sales request' => ['override price', 'override tax'],
             ],
         ];
     }

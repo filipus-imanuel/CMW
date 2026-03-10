@@ -23,15 +23,31 @@ class Create extends Component
         'name' => '',
         'sales_limit' => 0,
         'currency_id' => 1,
+        'tax_mode' => 'NONE',
+        'tax_id' => '',
         'remarks' => '',
         'is_active' => true,
     ];
 
     public $dropdown_currency = [];
 
+    public $dropdown_taxes = [];
+
     private function handlePopulateCurrency(): void
     {
         $this->dropdown_currency = PopulateDataHelper::getCurrencies();
+    }
+
+    private function handlePopulateTaxes(): void
+    {
+        $this->dropdown_taxes = PopulateDataHelper::getTaxes();
+    }
+
+    public function updatedInputsTaxMode($value): void
+    {
+        if ($value === 'NONE') {
+            $this->inputs['tax_id'] = '';
+        }
     }
 
     public function rules(): array
@@ -41,6 +57,8 @@ class Create extends Component
             'inputs.name' => 'required|string|max:100|unique:companies,name',
             'inputs.sales_limit' => CurrencyValidationHelper::amountRules(0, 999999999999),
             'inputs.currency_id' => CurrencyValidationHelper::currencyIdRules(),
+            'inputs.tax_mode' => 'required|in:INCLUDE,EXCLUDE,NONE',
+            'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
             'inputs.remarks' => 'nullable|string|max:500',
             'inputs.is_active' => 'boolean',
         ];
@@ -54,11 +72,15 @@ class Create extends Component
             $validated = $this->validate();
 
             DB::transaction(function () use ($validated) {
+                $taxMode = $validated['inputs']['tax_mode'];
+
                 Company::create([
                     'code' => $validated['inputs']['code'],
                     'name' => $validated['inputs']['name'],
                     'sales_limit' => $validated['inputs']['sales_limit'],
                     'currency_id' => $validated['inputs']['currency_id'],
+                    'tax_mode' => $taxMode,
+                    'tax_id' => $taxMode !== 'NONE' ? $validated['inputs']['tax_id'] : null,
                     'remarks' => $validated['inputs']['remarks'],
                     'is_active' => $validated['inputs']['is_active'],
                     'created_by' => Auth::id(),
@@ -86,11 +108,14 @@ class Create extends Component
         $this->authorize('create company');
 
         $this->handlePopulateCurrency();
+        $this->handlePopulateTaxes();
         $this->inputs = [
             'code' => '',
             'name' => '',
             'sales_limit' => 0,
             'currency_id' => 1, // Default to IDR
+            'tax_mode' => 'NONE',
+            'tax_id' => '',
             'remarks' => '',
             'is_active' => true,
         ];
