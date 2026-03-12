@@ -29,11 +29,11 @@
             };
         @endphp
         <flux:badge :color="$statusColor" size="lg">{{ $returnHeader->status }}</flux:badge>
-        <flux:badge :color="$returnHeader->return_type === 'ITEM' ? 'blue' : 'purple'" size="lg">{{ $returnHeader->return_type }}</flux:badge>
+        <flux:badge :color="\App\Models\CMW\Transaction\ReturnHeader::returnTypeBadgeColor($returnHeader->return_type)" size="lg">{{ $returnHeader->return_type }}</flux:badge>
     </div>
 
     {{-- Status Messages --}}
-    @if($returnHeader->isProcessing() && !$returnHeader->isWarehouseReceived())
+    @if($returnHeader->isProcessing() && !$returnHeader->isWarehouseReceived() && !$returnHeader->isInvoiceDiscard())
         <flux:callout color="blue" icon="information-circle" class="mb-6">
             <flux:callout.heading>Pending Warehouse Receipt</flux:callout.heading>
             <flux:callout.text>This return has been approved and is awaiting warehouse to receive the returned goods.</flux:callout.text>
@@ -51,7 +51,7 @@
     <flux:card class="mb-6">
         <div class="flex items-center justify-between mb-4">
             <flux:heading size="lg">Return Information</flux:heading>
-            @if($returnHeader->isProcessing() && !$returnHeader->isWarehouseReceived())
+            @if($returnHeader->isProcessing() && !$returnHeader->isWarehouseReceived() && !$returnHeader->isInvoiceDiscard())
                 @can('edit sales return')
                     <flux:button variant="danger" size="sm" icon="x-circle"
                         x-on:click="$flux.modal('cancel-return-confirmation').show()">
@@ -152,7 +152,7 @@
                     <flux:table.column class="text-center">Good Qty</flux:table.column>
                     <flux:table.column class="text-center">Damaged Qty</flux:table.column>
                 @endif
-                @if($returnHeader->isFinish() && $returnHeader->return_type === 'ITEM')
+                @if($returnHeader->isFinish() && $returnHeader->isItemType())
                     <flux:table.column class="text-center">Redelivery</flux:table.column>
                     <flux:table.column class="text-center">Next SO</flux:table.column>
                 @endif
@@ -172,7 +172,7 @@
                             <flux:table.cell class="text-right tabular-nums text-green-600">{{ number_format((float)$detail->quantity_received_good, 2) }}</flux:table.cell>
                             <flux:table.cell class="text-right tabular-nums text-red-600">{{ number_format((float)$detail->quantity_received_damaged, 2) }}</flux:table.cell>
                         @endif
-                        @if($returnHeader->isFinish() && $returnHeader->return_type === 'ITEM')
+                        @if($returnHeader->isFinish() && $returnHeader->isItemType())
                             <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->quantity_redelivery, 2) }}</flux:table.cell>
                             <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->quantity_next_so, 2) }}</flux:table.cell>
                         @endif
@@ -216,7 +216,7 @@
     @endif
 
     {{-- Allocation Form (PROCESSING + post-warehouse + ITEM type) --}}
-    @if($returnHeader->isProcessing() && $returnHeader->isWarehouseReceived() && $returnHeader->return_type === 'ITEM')
+    @if($returnHeader->isProcessing() && $returnHeader->isWarehouseReceived() && $returnHeader->isItemType())
         <flux:card class="mb-6">
             <flux:heading size="lg" class="mb-4">Item Allocation</flux:heading>
             <flux:subheading class="mb-4">Decide how returned items should be handled.</flux:subheading>
@@ -270,7 +270,13 @@
         <div class="space-y-4">
             <div>
                 <flux:heading size="lg">Approve Sales Return</flux:heading>
-                <flux:text class="mt-2 text-zinc-400">Approve this return? It will proceed to warehouse for receipt.</flux:text>
+                <flux:text class="mt-2 text-zinc-400">
+                    @if($returnHeader->isInvoiceDiscard())
+                        Approve this return? The invoice balance will be reduced immediately and the return will be completed. No warehouse receipt required.
+                    @else
+                        Approve this return? It will proceed to warehouse for receipt.
+                    @endif
+                </flux:text>
             </div>
             <div class="flex gap-2 justify-end">
                 <flux:button variant="ghost" x-on:click="$flux.modal('approve-confirmation').close()">Back</flux:button>

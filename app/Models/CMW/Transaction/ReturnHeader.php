@@ -27,6 +27,12 @@ class ReturnHeader extends BaseModel
 
     public const STATUS_REJECTED = 'REJECTED';
 
+    public const TYPE_ITEM = 'ITEM';
+
+    public const TYPE_INVOICE_RETURN = 'INVOICE_RETURN';
+
+    public const TYPE_INVOICE_DISCARD = 'INVOICE_DISCARD';
+
     protected $table = 'return_headers';
 
     protected $fillable = [
@@ -198,5 +204,47 @@ class ReturnHeader extends BaseModel
     public function isWarehouseReceived(): bool
     {
         return $this->received_at !== null;
+    }
+
+    public function isItemType(): bool
+    {
+        return $this->return_type === self::TYPE_ITEM;
+    }
+
+    public function isInvoiceReturn(): bool
+    {
+        return $this->return_type === self::TYPE_INVOICE_RETURN;
+    }
+
+    public function isInvoiceDiscard(): bool
+    {
+        return $this->return_type === self::TYPE_INVOICE_DISCARD;
+    }
+
+    public function isInvoiceType(): bool
+    {
+        return in_array($this->return_type, [self::TYPE_INVOICE_RETURN, self::TYPE_INVOICE_DISCARD]);
+    }
+
+    public static function returnTypeBadgeColor(string $type): string
+    {
+        return match ($type) {
+            self::TYPE_ITEM => 'blue',
+            self::TYPE_INVOICE_RETURN => 'purple',
+            self::TYPE_INVOICE_DISCARD => 'amber',
+            default => 'zinc',
+        };
+    }
+
+    public static function returnTypeHtmlBadge(string $type): string
+    {
+        $colorClass = match ($type) {
+            self::TYPE_ITEM => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+            self::TYPE_INVOICE_RETURN => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+            self::TYPE_INVOICE_DISCARD => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+            default => 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200',
+        };
+
+        return '<span class="px-2 py-1 text-xs font-medium rounded '.$colorClass.'">'.$type.'</span>';
     }
 }

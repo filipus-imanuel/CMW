@@ -27,7 +27,7 @@
             </div>
             <div>
                 <flux:text class="text-sm text-zinc-500">Return Type</flux:text>
-                <flux:badge :color="$returnHeader->return_type === 'ITEM' ? 'blue' : 'purple'" size="sm">{{ $returnHeader->return_type }}</flux:badge>
+                <flux:badge :color="\App\Models\CMW\Transaction\ReturnHeader::returnTypeBadgeColor($returnHeader->return_type)" size="sm">{{ $returnHeader->return_type }}</flux:badge>
             </div>
         </div>
 

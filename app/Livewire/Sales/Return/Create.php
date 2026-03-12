@@ -31,7 +31,7 @@ class Create extends Component
     public function rules(): array
     {
         return [
-            'inputs.return_type' => 'required|in:ITEM,INVOICE',
+            'inputs.return_type' => 'required|in:ITEM,INVOICE_RETURN,INVOICE_DISCARD',
             'inputs.date' => 'required|date',
             'inputs.remarks' => 'nullable|string|max:1024',
         ];

@@ -66,7 +66,7 @@ class DraftDataTable extends DataTableComponent
             Column::make('Type', 'return_type')
                 ->sortable()
                 ->html()
-                ->format(fn ($value) => '<span class="px-2 py-1 text-xs font-medium rounded '.($value === 'ITEM' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200').'">'.$value.'</span>'),
+                ->format(fn ($value) => ReturnHeader::returnTypeHtmlBadge($value)),
 
             Column::make('Total', 'total')
                 ->sortable()

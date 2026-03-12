@@ -200,8 +200,8 @@ class Show extends Component
                     'updated_by' => Auth::id(),
                 ]);
 
-                // For INVOICE type: reduce AR balance and set to FINISH
-                if ($this->returnHeader->return_type === 'INVOICE') {
+                // For INVOICE_RETURN type: reduce AR balance and set to FINISH
+                if ($this->returnHeader->return_type === 'INVOICE_RETURN') {
                     $this->processInvoiceReturn();
                 }
                 // For ITEM type: stays PROCESSING (sales will allocate)

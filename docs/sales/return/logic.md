@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Sales Return module handles goods returned by customers after delivery. It supports two return types with distinct processing flows, integrates with warehouse receipt, inventory tracking, and AR invoicing.
+The Sales Return module handles goods returned by customers after delivery. It supports three return types with distinct processing flows, integrates with warehouse receipt, inventory tracking, and AR invoicing.
 
 ---
 
@@ -20,21 +20,26 @@ The Sales Return module handles goods returned by customers after delivery. It s
 
 ## Return Types
 
-| Type      | Code      | Purpose                                          |
-|-----------|-----------|--------------------------------------------------|
-| ITEM      | `ITEM`    | Goods returned for redelivery or inclusion in next SO |
-| INVOICE   | `INVOICE` | AR balance reduction (credit note equivalent)    |
+| Type             | Code              | Purpose                                              |
+|------------------|-------------------|------------------------------------------------------|
+| ITEM             | `ITEM`            | Goods returned for redelivery or inclusion in next SO |
+| INVOICE RETURN   | `INVOICE_RETURN`  | AR balance reduction + goods returned to warehouse    |
+| INVOICE DISCARD  | `INVOICE_DISCARD` | AR balance reduction only, goods discarded (no warehouse) |
 
 ---
 
 ## Status Flow
 
 ```
-INIT ──► APPROVAL ──► PROCESSING ──► FINISH
-                │
-                ├──reject──► REJECTED   (imposed by approver)
-                │
-                └──cancel──► CANCELLED  (voluntary by user)
+                    ┌─ ITEM ──────────────► PROCESSING ──► WH Receipt ──► Allocation ──► FINISH
+                    │
+INIT ──► APPROVAL ──┼─ INVOICE_RETURN ────► PROCESSING ──► WH Receipt (+ potong invoice) ──► FINISH
+                    │
+                    ├─ INVOICE_DISCARD ──► potong invoice ──► FINISH  (skip warehouse)
+                    │
+                    ├──reject──► REJECTED   (imposed by approver)
+                    │
+                    └──cancel──► CANCELLED  (voluntary by user, PROCESSING pre-receipt only)
 ```
 
 | Status      | Description                                           |
@@ -71,16 +76,20 @@ INIT ──► APPROVAL ──► PROCESSING ──► FINISH
 
 ## Approval (APPROVAL Status)
 
-| Action  | Result                    | Required Permission     |
-|---------|---------------------------|-------------------------|
-| Approve | → `PROCESSING`            | `approve sales return`  |
-| Reject  | → `REJECTED` + reason     | `reject sales return`   |
+| Action  | Result (ITEM / INVOICE_RETURN)       | Result (INVOICE_DISCARD)               | Required Permission     |
+|---------|--------------------------------------|----------------------------------------|-------------------------|
+| Approve | → `PROCESSING`                       | → `FINISH` (AR balance reduced)        | `approve sales return`  |
+| Reject  | → `REJECTED` + reason                | → `REJECTED` + reason                  | `reject sales return`   |
+
+> **INVOICE_DISCARD**: On approval the AR invoice balance is reduced immediately and the return is completed. No warehouse receipt or inventory records are created.
 
 ---
 
-## Warehouse Receipt (PROCESSING Status)
+## Warehouse Receipt (PROCESSING Status – ITEM & INVOICE_RETURN Only)
 
 Handled by Warehouse module (`Warehouses\Return\Show`).
+
+> **Note**: `INVOICE_DISCARD` returns never reach PROCESSING status and are not visible to the warehouse.
 
 ### Input per Line
 | Field                     | Default       | Constraint                           |
@@ -93,7 +102,7 @@ Handled by Warehouse module (`Warehouses\Return\Show`).
 
 1. **Good stock**: `InventoryLedger` entry (credit/in) linked via morphMany.
 2. **Damaged stock**: `InventoryLedger` entry + `InventoryDamagedStock` record with morph reference to `ReturnDetail`.
-3. **INVOICE type**: Reduce AR invoice balance by return total → status → `FINISH`.
+3. **INVOICE_RETURN type**: Reduce AR invoice balance by return total → status → `FINISH`.
 4. **ITEM type**: Remains `PROCESSING` (awaiting allocation on Sales side).
 5. Sets `received_by` and `received_at` on header.
 
@@ -178,6 +187,7 @@ Pattern: `shp.{module}.{entity}.{action}`
 Examples:
 - `shp.sales.return.created`
 - `shp.sales.return.approved`
+- `shp.sales.return.finished`
 - `shp.sales.return.refresh.rejected`
 - `shp.sales.return.refresh.cancelled`
 - `shp.warehouse.return.received`

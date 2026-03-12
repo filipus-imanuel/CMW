@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('code', 50)->unique();
             $table->string('transaction_type', 5)->default('SO')->comment('SO (sales), PO (purchasing future)');
-            $table->string('return_type', 10)->comment('ITEM, INVOICE');
+            $table->string('return_type', 20)->comment('ITEM, INVOICE_RETURN, INVOICE_DISCARD');
             $table->date('date');
             $table->foreignId('order_header_id')->constrained('order_headers');
             $table->foreignId('delivery_header_id')->constrained('delivery_headers');

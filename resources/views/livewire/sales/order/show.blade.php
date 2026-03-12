@@ -294,7 +294,7 @@
                                 <flux:table.cell>{{ $return->date?->format('d M Y') }}</flux:table.cell>
                                 <flux:table.cell>{{ $return->deliveryHeader?->code ?? '-' }}</flux:table.cell>
                                 <flux:table.cell>
-                                    <flux:badge :color="$return->return_type === 'ITEM' ? 'blue' : 'purple'" size="sm">{{ $return->return_type }}</flux:badge>
+                                    <flux:badge :color="\App\Models\CMW\Transaction\ReturnHeader::returnTypeBadgeColor($return->return_type)" size="sm">{{ $return->return_type }}</flux:badge>
                                 </flux:table.cell>
                                 <flux:table.cell>
                                     @php

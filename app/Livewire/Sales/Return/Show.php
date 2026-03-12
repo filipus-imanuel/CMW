@@ -31,7 +31,7 @@ class Show extends Component
         ])->findOrFail($id);
 
         // Load allocations for PROCESSING status (post-warehouse, item type)
-        if ($this->returnHeader->isProcessing() && $this->returnHeader->isWarehouseReceived() && $this->returnHeader->return_type === 'ITEM') {
+        if ($this->returnHeader->isProcessing() && $this->returnHeader->isWarehouseReceived() && $this->returnHeader->isItemType()) {
             $this->loadAllocations();
         }
     }
@@ -69,6 +69,22 @@ class Show extends Component
 
         try {
             DB::transaction(function () {
+                // INVOICE_DISCARD: reduce AR balance and finish immediately (no warehouse step)
+                if ($this->returnHeader->isInvoiceDiscard()) {
+                    $this->returnHeader->update([
+                        'status' => ReturnHeader::STATUS_FINISH,
+                        'approved_by' => Auth::id(),
+                        'approved_at' => now(),
+                        'updated_by' => Auth::id(),
+                    ]);
+
+                    $this->processInvoiceReduction();
+
+                    $this->dispatch('shp.sales.return.finished', returnId: $this->returnHeader->id);
+
+                    return;
+                }
+
                 $this->returnHeader->update([
                     'status' => ReturnHeader::STATUS_PROCESSING,
                     'approved_by' => Auth::id(),
@@ -80,7 +96,10 @@ class Show extends Component
             });
 
             Flux::toast("Return {$this->returnHeader->code} approved.", variant: 'success', position: 'top-end');
-            $this->redirectRoute('sales.return.index.approval', navigate: true);
+            $this->redirectRoute(
+                $this->returnHeader->isFinish() ? 'sales.return.index.finish' : 'sales.return.index.approval',
+                navigate: true
+            );
         } catch (\Exception $e) {
             Flux::toast('Error: '.$e->getMessage(), variant: 'danger', position: 'top-end');
         }
@@ -266,5 +285,31 @@ class Show extends Component
     public function render()
     {
         return view('livewire.sales.return.show');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // INVOICE REDUCTION (shared by INVOICE_DISCARD approval)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    protected function processInvoiceReduction(): void
+    {
+        $arInvoice = $this->returnHeader->arInvoice;
+        if (! $arInvoice) {
+            return;
+        }
+
+        $returnTotal = (float) $this->returnHeader->total;
+
+        $newBalance = max(0, (float) $arInvoice->balance - $returnTotal);
+        $updateData = [
+            'balance' => round($newBalance, 2),
+            'updated_by' => Auth::id(),
+        ];
+
+        if ($newBalance <= 0) {
+            $updateData['status'] = 'paid';
+        }
+
+        $arInvoice->update($updateData);
     }
 }
