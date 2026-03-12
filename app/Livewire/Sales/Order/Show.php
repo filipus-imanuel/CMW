@@ -29,6 +29,7 @@ class Show extends Component
             'createdBy', 'approvedByUser',
             'deliveries.returns',
             'returns.deliveryHeader',
+            'deliverySchedules',
         ])->findOrFail($id);
 
         // Guard: allow INIT, ORDER, DELIVERY, FINISH, REJECTED, or CANCELLED status

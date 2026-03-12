@@ -107,12 +107,6 @@
                 label="Date"
                 badge="Required"
             />
-
-            <flux:date-picker
-                wire:model="inputs.delivery_date"
-                label="Delivery Date"
-                placeholder="Select delivery date..."
-            />
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -333,6 +327,19 @@
         <div class="flex gap-2 mt-6">
             <flux:spacer/>
             <flux:button :href="route('sales.request.index.init')" variant="ghost" wire:navigate>Cancel</flux:button>
+            @if(count($items) > 0)
+                <flux:button
+                    :href="route('sales.request.delivery-schedule', $order->id)"
+                    variant="filled"
+                    icon="calendar-days"
+                    wire:navigate
+                >
+                    Delivery Schedule
+                    @if($this->hasDeliverySchedules)
+                        <flux:badge color="lime" size="sm" inset="right" class="ml-1">Configured</flux:badge>
+                    @endif
+                </flux:button>
+            @endif
             <flux:button wire:click="save" variant="filled">Save Draft</flux:button>
             <flux:button wire:click="submit" variant="primary">Submit Request</flux:button>
         </div>

@@ -159,6 +159,9 @@
         @endif
     </flux:card>
 
+    {{-- Delivery Schedule (read-only) --}}
+    <x-sales.delivery-schedule-readonly :order="$order" />
+
     {{-- Approval Actions --}}
     @canany(['approve sales order', 'reject sales order'])
     <flux:card>

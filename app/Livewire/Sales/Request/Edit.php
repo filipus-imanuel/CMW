@@ -66,6 +66,15 @@ class Edit extends Component
         return (float) Setting::get('sales.request.floor_percentage_of_het', 80);
     }
 
+    /**
+     * Check if the order has any delivery schedules configured.
+     */
+    #[Computed]
+    public function hasDeliverySchedules(): bool
+    {
+        return $this->order?->deliverySchedules()->exists() ?? false;
+    }
+
     public function mount($id): void
     {
         $this->authorize('edit sales request');
@@ -97,7 +106,6 @@ class Edit extends Component
     {
         $this->inputs = [
             'date' => $this->order->date?->format('Y-m-d'),
-            'delivery_date' => $this->order->delivery_date?->format('Y-m-d') ?? '',
             'remarks' => $this->order->remarks ?? '',
             'tax_mode' => $this->order->tax_mode ?? 'NONE',
             'tax_id' => $this->order->tax_id ?? '',
@@ -396,7 +404,6 @@ class Edit extends Component
 
         $this->validate([
             'inputs.date' => 'required|date',
-            'inputs.delivery_date' => 'nullable|date',
             'inputs.remarks' => 'nullable|string|max:1024',
             'inputs.tax_mode' => 'required|in:INCLUDE,EXCLUDE,NONE',
             'inputs.tax_id' => 'nullable|required_if:inputs.tax_mode,INCLUDE,EXCLUDE|exists:taxes,id',
@@ -436,7 +443,6 @@ class Edit extends Component
             // Update header with tax settings
             $this->order->update([
                 'date' => $this->inputs['date'],
-                'delivery_date' => $this->inputs['delivery_date'] ?: null,
                 'remarks' => $this->inputs['remarks'] ?? null,
                 'tax_mode' => $taxMode,
                 'tax_id' => $taxId,
@@ -519,7 +525,6 @@ class Edit extends Component
             return;
         }
 
-        // Validate delivery_date is required on submit
         // Check non-return items have price_deal > 0
         $nonReturnItems = collect($this->items)->filter(fn ($item) => empty($item['return_detail_id']));
         foreach ($nonReturnItems as $index => $item) {
@@ -530,14 +535,25 @@ class Edit extends Component
             }
         }
 
-        $this->validate([
-            'inputs.delivery_date' => 'required|date',
-        ], [
-            'inputs.delivery_date.required' => 'Delivery date is required before submitting.',
-        ]);
-
         // Save first
         $this->save();
+
+        // Validate delivery schedule is configured and balanced for all items
+        $this->order->load('details.deliverySchedules');
+        foreach ($this->order->details as $detail) {
+            if ($detail->deliverySchedules->isEmpty()) {
+                Flux::toast("Item {$detail->item?->code}: has no delivery schedule. Please configure delivery schedule before submitting.", variant: 'danger', position: 'top-end');
+
+                return;
+            }
+            $sumQty = $detail->deliverySchedules->sum('quantity');
+            $diff = abs((float) $detail->quantity - (float) $sumQty);
+            if ($diff > 0.01) {
+                Flux::toast("Item {$detail->item?->code}: scheduled qty (".number_format($sumQty, 2).') does not match order qty ('.number_format((float) $detail->quantity, 2).').', variant: 'danger', position: 'top-end');
+
+                return;
+            }
+        }
 
         DB::transaction(function () {
             $this->order->update([

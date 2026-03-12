@@ -107,6 +107,11 @@ class OrderHeader extends BaseModel
         return $this->hasMany(ReturnHeader::class, 'order_header_id');
     }
 
+    public function deliverySchedules(): HasMany
+    {
+        return $this->hasMany(OrderDeliverySchedule::class, 'order_header_id');
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // SCOPES
     // ══════════════════════════════════════════════════════════════════════════

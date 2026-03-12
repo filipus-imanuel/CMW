@@ -68,4 +68,9 @@ class OrderDetail extends BaseModel
     {
         return $this->hasMany(DeliveryDetail::class, 'order_detail_id');
     }
+
+    public function deliverySchedules(): HasMany
+    {
+        return $this->hasMany(OrderDeliverySchedule::class, 'order_detail_id');
+    }
 }

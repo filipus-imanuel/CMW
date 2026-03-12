@@ -20,6 +20,7 @@ class Show extends Component
         $this->order = OrderHeader::with([
             'partner', 'company', 'currency', 'itemCategory',
             'details.item', 'details.itemUom.uom', 'details.deliveryDetails',
+            'details.deliverySchedules',
             'deliveries.createdBy',
             'createdBy', 'approvedByUser',
         ])->whereIn('status', ['ORDER', 'DELIVERY'])->findOrFail($id);

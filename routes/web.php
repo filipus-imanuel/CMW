@@ -43,6 +43,7 @@ use App\Livewire\Sales\Order\Index\Ongoing as SalesOrderOngoingIndex;
 use App\Livewire\Sales\Order\Index\Rejected as SalesOrderRejectedIndex;
 use App\Livewire\Sales\Order\Show as SalesOrderShow;
 use App\Livewire\Sales\Request\Create as SalesRequestCreate;
+use App\Livewire\Sales\Request\DeliverySchedule as SalesRequestDeliverySchedule;
 use App\Livewire\Sales\Request\Edit as SalesRequestEdit;
 use App\Livewire\Sales\Request\Index\Init as SalesRequestInitIndex;
 use App\Livewire\Sales\Return\Create as SalesReturnCreate;
@@ -194,6 +195,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/', SalesRequestInitIndex::class)->name('index.init');
                 Route::get('/create', SalesRequestCreate::class)->name('create');
                 Route::get('/{id}/edit', SalesRequestEdit::class)->name('edit');
+                Route::get('/{id}/delivery-schedule', SalesRequestDeliverySchedule::class)->name('delivery-schedule');
             });
 
             Route::prefix('orders')->name('order.')->group(function () {

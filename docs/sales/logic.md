@@ -1,6 +1,6 @@
 # Sales Module — Business Logic
 
-**Last Updated**: 2026-03-10
+**Last Updated**: 2026-03-12
 
 ---
 
@@ -14,6 +14,7 @@ The Sales module manages the lifecycle of sales from **request → approval → 
 |--------|-------|-------|---------|
 | Order Header | `order_headers` | `OrderHeader` | Sales request / order header |
 | Order Detail | `order_details` | `OrderDetail` | Line items with pricing |
+| Delivery Schedule | `order_delivery_schedules` | `OrderDeliverySchedule` | Partial delivery dates per line item |
 
 ### Status Flow
 
@@ -111,6 +112,42 @@ Both Create and Edit show available return items filtered by **all** of:
 - `quantity_next_so > 0`, `is_next_so_consumed = false`
 
 `order_details.return_detail_id` (nullable FK → `return_details`) tracks which order detail originated from a return.
+
+### 4.5 Partial Delivery Schedule (`Sales\Request\DeliverySchedule`)
+
+Allows salespersons to split each order detail's quantity across multiple delivery dates.
+
+#### Table: `order_delivery_schedules`
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `order_header_id` | FK → `order_headers` | Parent order |
+| `order_detail_id` | FK → `order_details` | Parent line item |
+| `delivery_date` | `date` | Scheduled delivery date for this partial |
+| `quantity` | `decimal(13,2)` | Quantity to deliver on this date |
+| `remarks` | `string(1024)` | Optional notes |
+
+#### Flow
+
+1. Permission: `edit sales request` (same as Edit)
+2. Only INIT status orders with at least 1 item
+3. Per item, user adds schedule rows specifying `delivery_date` + `quantity`
+4. Each item must have at least 1 schedule row
+5. **Validation**: total scheduled quantity per item **must equal** the order detail quantity
+6. On save, the header `delivery_date` is auto-updated to the **earliest** scheduled date
+7. On submit (from Edit), if schedules exist, validates all items have balanced schedules
+
+#### UI
+
+- Accessible from Edit page via "Delivery Schedule" button
+- Visual indicator on Edit page shows whether schedule is configured
+- Read-only display on Approval Show and Order Show pages (collapsible per item)
+- Each row shows: delivery date, quantity, percentage of total, remarks
+
+#### Pre-fill Behavior
+
+- When opening a fresh schedule (no existing rows), pre-fills 1 row per item with the header `delivery_date` and the item's full quantity
+- Subsequent visits load existing schedule rows
 
 ---
 

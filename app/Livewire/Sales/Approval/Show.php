@@ -31,6 +31,7 @@ class Show extends Component
         $this->order = OrderHeader::with([
             'partner', 'company', 'itemCategory', 'currency',
             'details.item', 'details.itemUom.uom', 'createdBy',
+            'deliverySchedules',
         ])->findOrFail($id);
 
         // Status guard — only APPROVAL status can be reviewed

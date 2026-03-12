@@ -146,6 +146,9 @@
         @endif
     </flux:card>
 
+    {{-- Delivery Schedule --}}
+    <x-sales.delivery-schedule-readonly :order="$order" />
+
     {{-- Existing Delivery Orders --}}
     @if($order->deliveries && $order->deliveries->count() > 0)
         <flux:card class="mb-6">
