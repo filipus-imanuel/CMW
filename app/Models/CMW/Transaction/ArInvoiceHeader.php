@@ -30,6 +30,7 @@ class ArInvoiceHeader extends BaseModel
         'tax',
         'total',
         'paid',
+        'return_total',
         'balance',
         'status',
     ];
@@ -43,6 +44,7 @@ class ArInvoiceHeader extends BaseModel
             'tax' => 'decimal:2',
             'total' => 'decimal:2',
             'paid' => 'decimal:2',
+            'return_total' => 'decimal:2',
             'balance' => 'decimal:2',
         ];
     }
@@ -70,6 +72,11 @@ class ArInvoiceHeader extends BaseModel
     public function paymentDetails(): HasMany
     {
         return $this->hasMany(ArPaymentDetail::class, 'ar_invoice_header_id');
+    }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(ReturnHeader::class, 'ar_invoice_header_id');
     }
 
     // ══════════════════════════════════════════════════════════════════════════

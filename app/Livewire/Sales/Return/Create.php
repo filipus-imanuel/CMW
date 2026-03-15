@@ -5,6 +5,8 @@ namespace App\Livewire\Sales\Return;
 use App\Helpers\CMW\CodeGeneratorHelper;
 use App\Helpers\CMW\PopulateDataHelper;
 use App\Helpers\CMW\TransactionHelper;
+use App\Models\CMW\Master\Partner;
+use App\Models\CMW\Transaction\ArInvoiceHeader;
 use App\Models\CMW\Transaction\DeliveryHeader;
 use App\Models\CMW\Transaction\OrderHeader;
 use App\Models\CMW\Transaction\ReturnDetail;
@@ -31,7 +33,7 @@ class Create extends Component
     public function rules(): array
     {
         return [
-            'inputs.return_type' => 'required|in:ITEM,INVOICE_RETURN,INVOICE_DISCARD',
+            'inputs.return_type' => 'required|in:ITEM,ITEM_INVOICE,INVOICE_RETURN,INVOICE_DISCARD',
             'inputs.date' => 'required|date',
             'inputs.remarks' => 'nullable|string|max:1024',
         ];
@@ -64,7 +66,7 @@ class Create extends Component
         if ($user->hasRole('Super Admin')) {
             $this->dropdown_data['customers'] = PopulateDataHelper::getCustomers(['useCache' => false]);
         } else {
-            $this->dropdown_data['customers'] = PopulateDataHelper::get(\App\Models\CMW\Master\Partner::class, [
+            $this->dropdown_data['customers'] = PopulateDataHelper::get(Partner::class, [
                 'filters' => ['is_customer' => true, 'user_id' => $user->id],
                 'useCache' => false,
             ]);
@@ -287,7 +289,7 @@ class Create extends Component
                 $order = $this->selectedOrder;
 
                 // Find AR invoice for this DO
-                $arInvoice = \App\Models\CMW\Transaction\ArInvoiceHeader::where('delivery_header_id', $this->inputs['delivery_id'])->first();
+                $arInvoice = ArInvoiceHeader::where('delivery_header_id', $this->inputs['delivery_id'])->first();
 
                 $header = ReturnHeader::create([
                     'code' => CodeGeneratorHelper::generateReturnCode(),

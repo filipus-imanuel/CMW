@@ -30,8 +30,8 @@ class Show extends Component
             'approvedByUser', 'receivedByUser',
         ])->findOrFail($id);
 
-        // Load allocations for PROCESSING status (post-warehouse, item type)
-        if ($this->returnHeader->isProcessing() && $this->returnHeader->isWarehouseReceived() && $this->returnHeader->isItemType()) {
+        // Load allocations for PROCESSING status (post-warehouse, allocation type)
+        if ($this->returnHeader->isProcessing() && $this->returnHeader->isWarehouseReceived() && $this->returnHeader->isAllocationType()) {
             $this->loadAllocations();
         }
     }
@@ -85,6 +85,23 @@ class Show extends Component
                     return;
                 }
 
+                // ITEM_INVOICE: reduce AR balance at approval, then proceed to warehouse
+                if ($this->returnHeader->isItemInvoice()) {
+                    $this->returnHeader->update([
+                        'status' => ReturnHeader::STATUS_PROCESSING,
+                        'approved_by' => Auth::id(),
+                        'approved_at' => now(),
+                        'updated_by' => Auth::id(),
+                    ]);
+
+                    $this->processInvoiceReduction();
+
+                    $this->dispatch('shp.sales.return.approved', returnId: $this->returnHeader->id);
+
+                    return;
+                }
+
+                // ITEM & INVOICE_RETURN: proceed to warehouse
                 $this->returnHeader->update([
                     'status' => ReturnHeader::STATUS_PROCESSING,
                     'approved_by' => Auth::id(),
@@ -300,16 +317,18 @@ class Show extends Component
 
         $returnTotal = (float) $this->returnHeader->total;
 
-        $newBalance = max(0, (float) $arInvoice->balance - $returnTotal);
-        $updateData = [
+        $newReturnTotal = (float) $arInvoice->return_total + $returnTotal;
+        $newBalance = max(0, (float) $arInvoice->total - (float) $arInvoice->paid - $newReturnTotal);
+
+        $newStatus = $newBalance <= 0
+            ? ArInvoiceHeader::STATUS_PAID
+            : ArInvoiceHeader::STATUS_PARTIAL;
+
+        $arInvoice->update([
+            'return_total' => round($newReturnTotal, 2),
             'balance' => round($newBalance, 2),
+            'status' => $newStatus,
             'updated_by' => Auth::id(),
-        ];
-
-        if ($newBalance <= 0) {
-            $updateData['status'] = 'paid';
-        }
-
-        $arInvoice->update($updateData);
+        ]);
     }
 }

@@ -31,7 +31,7 @@ class Create extends Component
     {
         $this->authorize('create ar payment');
 
-        $this->invoice = ArInvoiceHeader::with(['partner', 'company', 'currency', 'orderHeader'])
+        $this->invoice = ArInvoiceHeader::with(['partner', 'currency', 'orderHeader.company'])
             ->findOrFail($invoiceId);
 
         if ($this->invoice->isPaid()) {
@@ -96,7 +96,7 @@ class Create extends Component
                 ]);
 
                 $newPaid = (float) $invoice->paid + $amount;
-                $newBalance = (float) $invoice->total - $newPaid;
+                $newBalance = (float) $invoice->total - $newPaid - (float) $invoice->return_total;
                 $newStatus = $newBalance <= 0
                     ? ArInvoiceHeader::STATUS_PAID
                     : ArInvoiceHeader::STATUS_PARTIAL;

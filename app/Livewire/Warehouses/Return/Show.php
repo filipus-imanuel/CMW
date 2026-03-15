@@ -4,6 +4,10 @@ namespace App\Livewire\Warehouses\Return;
 
 use App\Models\CMW\Inventory\InventoryDamagedStock;
 use App\Models\CMW\Inventory\InventoryLedger;
+use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Master\Warehouse;
+use App\Models\CMW\Transaction\ArInvoiceHeader;
+use App\Models\CMW\Transaction\ReturnDetail;
 use App\Models\CMW\Transaction\ReturnHeader;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +48,7 @@ class Show extends Component
 
     protected function loadWarehouses(): void
     {
-        $this->dropdown_warehouses = \App\Models\CMW\Master\Warehouse::where('is_active', true)
+        $this->dropdown_warehouses = Warehouse::where('is_active', true)
             ->orderBy('name')
             ->get()
             ->map(fn ($w) => ['value' => $w->id, 'label' => $w->name])
@@ -148,7 +152,7 @@ class Show extends Component
                         $baseGoodQty = $goodQty;
                         $itemUomId = $line['item_uom_id'] ? (int) $line['item_uom_id'] : null;
                         if ($itemUomId) {
-                            $conversionRate = (float) (\App\Models\CMW\Inventory\ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
+                            $conversionRate = (float) (ItemUom::where('id', $itemUomId)->value('conversion_rate') ?? 1);
                             $baseGoodQty = $goodQty * $conversionRate;
                         }
 
@@ -184,7 +188,7 @@ class Show extends Component
                             'item_uom_id' => $line['item_uom_id'],
                             'quantity' => $damagedQty,
                             'date' => now()->toDateString(),
-                            'reference_type' => \App\Models\CMW\Transaction\ReturnDetail::class,
+                            'reference_type' => ReturnDetail::class,
                             'reference_id' => $line['id'],
                             'remarks' => "Damaged return: {$this->returnHeader->code}",
                             'created_by' => Auth::id(),
@@ -204,7 +208,7 @@ class Show extends Component
                 if ($this->returnHeader->return_type === 'INVOICE_RETURN') {
                     $this->processInvoiceReturn();
                 }
-                // For ITEM type: stays PROCESSING (sales will allocate)
+                // For ITEM / ITEM_INVOICE type: stays PROCESSING (sales will allocate)
 
                 $this->dispatch('shp.warehouse.return.received', returnId: $this->returnHeader->id);
             });
@@ -225,18 +229,19 @@ class Show extends Component
 
         $returnTotal = (float) $this->returnHeader->total;
 
-        // Reduce invoice balance
-        $newBalance = max(0, (float) $arInvoice->balance - $returnTotal);
-        $updateData = [
+        $newReturnTotal = (float) $arInvoice->return_total + $returnTotal;
+        $newBalance = max(0, (float) $arInvoice->total - (float) $arInvoice->paid - $newReturnTotal);
+
+        $newStatus = $newBalance <= 0
+            ? ArInvoiceHeader::STATUS_PAID
+            : ArInvoiceHeader::STATUS_PARTIAL;
+
+        $arInvoice->update([
+            'return_total' => round($newReturnTotal, 2),
             'balance' => round($newBalance, 2),
+            'status' => $newStatus,
             'updated_by' => Auth::id(),
-        ];
-
-        if ($newBalance <= 0) {
-            $updateData['status'] = 'paid';
-        }
-
-        $arInvoice->update($updateData);
+        ]);
 
         // Set return to FINISH
         $this->returnHeader->update([

@@ -22,6 +22,13 @@ class Edit extends Component
 
     public $pendingRemoveIndex = null;
 
+    public function rules(): array
+    {
+        return [
+            'inputs.return_type' => 'required|in:ITEM,ITEM_INVOICE,INVOICE_RETURN,INVOICE_DISCARD',
+        ];
+    }
+
     public function mount($id): void
     {
         $this->authorize('edit sales return');
@@ -41,6 +48,7 @@ class Edit extends Component
         }
 
         $this->inputs = [
+            'return_type' => $this->returnHeader->return_type,
             'remarks' => $this->returnHeader->remarks ?? '',
         ];
 
@@ -126,6 +134,7 @@ class Edit extends Component
     public function save(): void
     {
         $this->authorize('edit sales return');
+        $this->validate();
 
         $activeItems = collect($this->items)->filter(fn ($item) => (float) $item['quantity_return'] > 0);
         if ($activeItems->isEmpty()) {
@@ -156,6 +165,7 @@ class Edit extends Component
                 }
 
                 $this->returnHeader->update([
+                    'return_type' => $this->inputs['return_type'],
                     'subtotal' => round($totalSubtotal, 2),
                     'tax' => round($totalTax, 2),
                     'total' => round($grandTotal, 2),
@@ -173,6 +183,7 @@ class Edit extends Component
     public function submit(): void
     {
         $this->authorize('edit sales return');
+        $this->validate();
 
         $activeItems = collect($this->items)->filter(fn ($item) => (float) $item['quantity_return'] > 0);
         if ($activeItems->isEmpty()) {
@@ -205,6 +216,7 @@ class Edit extends Component
 
                 // Update header and submit
                 $this->returnHeader->update([
+                    'return_type' => $this->inputs['return_type'],
                     'subtotal' => round($totalSubtotal, 2),
                     'tax' => round($totalTax, 2),
                     'total' => round($grandTotal, 2),

@@ -61,10 +61,16 @@ class Show extends Component
                     $invoice = ArInvoiceHeader::lockForUpdate()->findOrFail($detail->ar_invoice_header_id);
 
                     $newPaid = max(0, (float) $invoice->paid - (float) $detail->amount);
-                    $newBalance = (float) $invoice->total - $newPaid;
-                    $newStatus = $newPaid <= 0
-                        ? ArInvoiceHeader::STATUS_UNPAID
-                        : ArInvoiceHeader::STATUS_PARTIAL;
+                    $newBalance = (float) $invoice->total - $newPaid - (float) $invoice->return_total;
+                    $newBalance = max(0, $newBalance);
+
+                    if ($newBalance <= 0) {
+                        $newStatus = ArInvoiceHeader::STATUS_PAID;
+                    } elseif ($newPaid > 0 || (float) $invoice->return_total > 0) {
+                        $newStatus = ArInvoiceHeader::STATUS_PARTIAL;
+                    } else {
+                        $newStatus = ArInvoiceHeader::STATUS_UNPAID;
+                    }
 
                     $invoice->update([
                         'paid' => $newPaid,

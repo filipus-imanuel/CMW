@@ -111,8 +111,17 @@
             </div>
         </div>
 
-        @if($invoice->hasOutstandingBalance())
+        @if((float) $invoice->return_total > 0)
             <div class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <div class="flex justify-between items-center">
+                    <flux:text class="font-semibold">Return Deduction</flux:text>
+                    <flux:text class="font-semibold tabular-nums text-orange-600 dark:text-orange-400">-{{ number_format((float) $invoice->return_total, 2) }}</flux:text>
+                </div>
+            </div>
+        @endif
+
+        @if($invoice->hasOutstandingBalance())
+            <div class="@if((float) $invoice->return_total <= 0) mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700 @else mt-2 @endif">
                 <div class="flex justify-between items-center">
                     <flux:text class="font-semibold text-lg">Outstanding Balance</flux:text>
                     <flux:text class="font-bold tabular-nums text-lg text-red-600 dark:text-red-400">{{ number_format((float) $invoice->balance, 2) }}</flux:text>
@@ -156,6 +165,77 @@
                     @endforeach
                 </flux:table.rows>
             </flux:table>
+        </flux:card>
+    @endif
+
+    {{-- Returns --}}
+    @if($invoice->returns->count() > 0)
+        <flux:card class="mb-6">
+            <flux:heading size="lg" class="mb-4">Sales Returns</flux:heading>
+
+            @foreach($invoice->returns as $return)
+                <div class="mb-6 last:mb-0" wire:key="return-{{ $return->id }}">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            @can('view sales return')
+                                <a href="{{ route('sales.return.show', $return->id) }}" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold" wire:navigate>{{ $return->code }}</a>
+                            @else
+                                <flux:text class="font-semibold">{{ $return->code }}</flux:text>
+                            @endcan
+                            {!! \App\Models\CMW\Transaction\ReturnHeader::returnTypeHtmlBadge($return->return_type) !!}
+                            @if($return->isFinish())
+                                <flux:badge color="green" size="sm">FINISH</flux:badge>
+                            @elseif($return->isProcessing())
+                                <flux:badge color="blue" size="sm">PROCESSING</flux:badge>
+                            @elseif($return->isApproval())
+                                <flux:badge color="amber" size="sm">APPROVAL</flux:badge>
+                            @elseif($return->isInit())
+                                <flux:badge color="zinc" size="sm">DRAFT</flux:badge>
+                            @elseif($return->isCancelled())
+                                <flux:badge color="red" size="sm">CANCELLED</flux:badge>
+                            @elseif($return->isRejected())
+                                <flux:badge color="red" size="sm">REJECTED</flux:badge>
+                            @endif
+                        </div>
+                        <flux:text class="text-sm text-zinc-500">{{ $return->date?->format('d M Y') }}</flux:text>
+                    </div>
+
+                    <flux:table>
+                        <flux:table.columns>
+                            <flux:table.column>#</flux:table.column>
+                            <flux:table.column>Code</flux:table.column>
+                            <flux:table.column>Item Name</flux:table.column>
+                            <flux:table.column>UOM</flux:table.column>
+                            <flux:table.column class="text-center">Qty Return</flux:table.column>
+                            <flux:table.column class="text-center">Price</flux:table.column>
+                            <flux:table.column class="text-center">Tax</flux:table.column>
+                            <flux:table.column class="text-center">Total</flux:table.column>
+                        </flux:table.columns>
+                        <flux:table.rows>
+                            @foreach($return->details as $rIdx => $detail)
+                                <flux:table.row :key="'return-detail-'.$detail->id">
+                                    <flux:table.cell>{{ $rIdx + 1 }}</flux:table.cell>
+                                    <flux:table.cell>{{ $detail->item?->code }}</flux:table.cell>
+                                    <flux:table.cell>{{ $detail->item?->name }}</flux:table.cell>
+                                    <flux:table.cell>{{ $detail->itemUom?->uom?->name }}</flux:table.cell>
+                                    <flux:table.cell class="text-right tabular-nums">{{ number_format((float) $detail->quantity_return, 2) }}</flux:table.cell>
+                                    <flux:table.cell class="text-right tabular-nums">{{ number_format((float) $detail->price, 2) }}</flux:table.cell>
+                                    <flux:table.cell class="text-right tabular-nums">{{ number_format((float) $detail->tax, 2) }}</flux:table.cell>
+                                    <flux:table.cell class="text-right tabular-nums" variant="strong">{{ number_format((float) $detail->total, 2) }}</flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        </flux:table.rows>
+                    </flux:table>
+
+                    <div class="flex justify-end mt-2">
+                        <flux:text class="font-semibold tabular-nums">Return Total: {{ number_format((float) $return->total, 2) }}</flux:text>
+                    </div>
+
+                    @if(!$loop->last)
+                        <flux:separator class="mt-4" />
+                    @endif
+                </div>
+            @endforeach
         </flux:card>
     @endif
 

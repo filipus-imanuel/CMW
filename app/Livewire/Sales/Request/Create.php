@@ -5,6 +5,7 @@ namespace App\Livewire\Sales\Request;
 use App\Helpers\CMW\CodeGeneratorHelper;
 use App\Helpers\CMW\CustomerCheckHelper;
 use App\Helpers\CMW\PopulateDataHelper;
+use App\Helpers\CMW\TransactionHelper;
 use App\Models\CMW\Master\Company;
 use App\Models\CMW\Master\Partner;
 use App\Models\CMW\Master\Tax;
@@ -159,7 +160,7 @@ class Create extends Component
                 $q->where('partner_id', $partnerId)
                     ->where('company_id', $companyId)
                     ->where('status', 'FINISH')
-                    ->where('return_type', 'ITEM');
+                    ->whereIn('return_type', ['ITEM', 'ITEM_INVOICE']);
             })
             ->whereHas('header.orderHeader', function ($q) use ($categoryId, $taxMode, $taxId) {
                 $q->where('item_category_id', $categoryId)
@@ -174,12 +175,14 @@ class Create extends Component
             return [
                 'return_detail_id' => $detail->id,
                 'return_code' => $detail->header?->code ?? '',
+                'return_type' => $detail->header?->return_type ?? 'ITEM',
                 'item_id' => $detail->item_id,
                 'item_uom_id' => $detail->item_uom_id,
                 'item_code' => $detail->item?->code ?? '',
                 'item_name' => $detail->item?->name ?? '',
                 'uom_name' => $detail->itemUom?->uom?->name ?? '',
                 'quantity_next_so' => (float) $detail->quantity_next_so,
+                'price' => (float) $detail->price,
                 'original_so_code' => $detail->header?->orderHeader?->code_order ?? '',
             ];
         })->toArray();
@@ -308,22 +311,33 @@ class Create extends Component
 
             // Create OrderDetails for selected return items directly
             if (! empty($this->selectedReturnItems)) {
-                $returnDetails = ReturnDetail::with(['item', 'itemUom'])
+                $returnDetails = ReturnDetail::with(['item', 'itemUom', 'header'])
                     ->whereIn('id', $this->selectedReturnItems)
                     ->get();
 
                 foreach ($returnDetails as $returnDetail) {
+                    $isItemInvoice = $returnDetail->header?->return_type === 'ITEM_INVOICE';
+                    $returnPrice = $isItemInvoice ? (float) $returnDetail->price : 0;
+
+                    $calc = TransactionHelper::calculateItemTax(
+                        (float) $returnDetail->quantity_next_so,
+                        $returnPrice,
+                        0,
+                        $taxMode,
+                        $taxRate
+                    );
+
                     OrderDetail::create([
                         'order_header_id' => $order->id,
                         'item_id' => $returnDetail->item_id,
                         'item_uom_id' => $returnDetail->item_uom_id,
                         'return_detail_id' => $returnDetail->id,
                         'quantity' => (float) $returnDetail->quantity_next_so,
-                        'price_proposed' => 0,
-                        'price_deal' => 0,
+                        'price_proposed' => $returnPrice,
+                        'price_deal' => $returnPrice,
                         'discount' => 0,
-                        'tax' => 0,
-                        'total' => 0,
+                        'tax' => $calc['tax'],
+                        'total' => $calc['total'],
                         'created_by' => Auth::id(),
                     ]);
                 }

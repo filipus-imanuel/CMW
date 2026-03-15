@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Sales Return module handles goods returned by customers after delivery. It supports three return types with distinct processing flows, integrates with warehouse receipt, inventory tracking, and AR invoicing.
+The Sales Return module handles goods returned by customers after delivery. It supports four return types with distinct processing flows, integrates with warehouse receipt, inventory tracking, and AR invoicing.
 
 ---
 
@@ -22,7 +22,8 @@ The Sales Return module handles goods returned by customers after delivery. It s
 
 | Type             | Code              | Purpose                                              |
 |------------------|-------------------|------------------------------------------------------|
-| ITEM             | `ITEM`            | Goods returned for redelivery or inclusion in next SO |
+| ITEM             | `ITEM`            | Goods returned for redelivery or inclusion in next SO (price 0) |
+| ITEM INVOICE     | `ITEM_INVOICE`    | AR balance reduced at approval + goods to warehouse + next SO at original SO price |
 | INVOICE RETURN   | `INVOICE_RETURN`  | AR balance reduction + goods returned to warehouse    |
 | INVOICE DISCARD  | `INVOICE_DISCARD` | AR balance reduction only, goods discarded (no warehouse) |
 
@@ -32,6 +33,8 @@ The Sales Return module handles goods returned by customers after delivery. It s
 
 ```
                     ┌─ ITEM ──────────────► PROCESSING ──► WH Receipt ──► Allocation ──► FINISH
+                    │
+                    ├─ ITEM_INVOICE ──────► potong invoice + PROCESSING ──► WH Receipt ──► Allocation ──► FINISH
                     │
 INIT ──► APPROVAL ──┼─ INVOICE_RETURN ────► PROCESSING ──► WH Receipt (+ potong invoice) ──► FINISH
                     │
@@ -76,16 +79,18 @@ INIT ──► APPROVAL ──┼─ INVOICE_RETURN ────► PROCESSING �
 
 ## Approval (APPROVAL Status)
 
-| Action  | Result (ITEM / INVOICE_RETURN)       | Result (INVOICE_DISCARD)               | Required Permission     |
-|---------|--------------------------------------|----------------------------------------|-------------------------|
-| Approve | → `PROCESSING`                       | → `FINISH` (AR balance reduced)        | `approve sales return`  |
-| Reject  | → `REJECTED` + reason                | → `REJECTED` + reason                  | `reject sales return`   |
+| Action  | Result (ITEM)                  | Result (ITEM_INVOICE)                          | Result (INVOICE_RETURN)              | Result (INVOICE_DISCARD)               | Required Permission     |
+|---------|--------------------------------|------------------------------------------------|--------------------------------------|----------------------------------------|-------------------------|
+| Approve | → `PROCESSING`                 | → `PROCESSING` (AR balance reduced at approval)| → `PROCESSING`                       | → `FINISH` (AR balance reduced)        | `approve sales return`  |
+| Reject  | → `REJECTED` + reason          | → `REJECTED` + reason                          | → `REJECTED` + reason                | → `REJECTED` + reason                  | `reject sales return`   |
 
 > **INVOICE_DISCARD**: On approval the AR invoice balance is reduced immediately and the return is completed. No warehouse receipt or inventory records are created.
 
+> **ITEM_INVOICE**: On approval the AR invoice balance is reduced, then the return proceeds to warehouse for receipt and allocation (same flow as ITEM).
+
 ---
 
-## Warehouse Receipt (PROCESSING Status – ITEM & INVOICE_RETURN Only)
+## Warehouse Receipt (PROCESSING Status – ITEM, ITEM_INVOICE & INVOICE_RETURN Only)
 
 Handled by Warehouse module (`Warehouses\Return\Show`).
 
@@ -103,12 +108,12 @@ Handled by Warehouse module (`Warehouses\Return\Show`).
 1. **Good stock**: `InventoryLedger` entry (credit/in) linked via morphMany.
 2. **Damaged stock**: `InventoryLedger` entry + `InventoryDamagedStock` record with morph reference to `ReturnDetail`.
 3. **INVOICE_RETURN type**: Reduce AR invoice balance by return total → status → `FINISH`.
-4. **ITEM type**: Remains `PROCESSING` (awaiting allocation on Sales side).
+4. **ITEM / ITEM_INVOICE type**: Remains `PROCESSING` (awaiting allocation on Sales side).
 5. Sets `received_by` and `received_at` on header.
 
 ---
 
-## Item Allocation (PROCESSING + Post-Receipt, ITEM Type Only)
+## Item Allocation (PROCESSING + Post-Receipt, ITEM & ITEM_INVOICE Types)
 
 Handled by Sales Return Show page.
 
@@ -134,11 +139,15 @@ Available on both Create and Edit pages. Return items are filtered at query leve
 - Same `company_id` (on `return_headers`)
 - Same `item_category_id` (on original SO)
 - Same `tax_mode` + `tax_id` (on original SO)
-- Return status = `FINISH`, type = `ITEM`
+- Return status = `FINISH`, type = `ITEM` or `ITEM_INVOICE`
 - `quantity_next_so > 0`, `is_next_so_consumed = false`
 
+### Price Behavior
+- **ITEM** type: `price = 0` (free replacement)
+- **ITEM_INVOICE** type: `price = original SO price` (from `return_details.price`)
+
 ### On Create
-Selected return items create `OrderDetail` rows directly in the DB transaction with `return_detail_id` FK set, price = 0.
+Selected return items create `OrderDetail` rows directly in the DB transaction with `return_detail_id` FK set. Price is set based on return type (0 for ITEM, original SO price for ITEM_INVOICE).
 
 ### On Edit
 Existing return-origin items loaded from `order_details.return_detail_id`. Additional items can be toggled. Return-origin items display with "↩" prefix.

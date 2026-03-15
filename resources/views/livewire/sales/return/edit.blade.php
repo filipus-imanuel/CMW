@@ -26,8 +26,12 @@
                 <flux:text class="font-medium">{{ $returnHeader->deliveryHeader?->code }}</flux:text>
             </div>
             <div>
-                <flux:text class="text-sm text-zinc-500">Return Type</flux:text>
-                <flux:badge :color="\App\Models\CMW\Transaction\ReturnHeader::returnTypeBadgeColor($returnHeader->return_type)" size="sm">{{ $returnHeader->return_type }}</flux:badge>
+                <flux:select wire:model="inputs.return_type" label="Return Type">
+                    <option value="ITEM">Item (Re-delivery / Next SO)</option>
+                    <option value="ITEM_INVOICE">Item (Invoice / Next SO)</option>
+                    <option value="INVOICE_RETURN">Invoice (Goods Returned)</option>
+                    <option value="INVOICE_DISCARD">Invoice (Goods Discarded)</option>
+                </flux:select>
             </div>
         </div>
 

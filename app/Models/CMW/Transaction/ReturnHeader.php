@@ -33,6 +33,8 @@ class ReturnHeader extends BaseModel
 
     public const TYPE_INVOICE_DISCARD = 'INVOICE_DISCARD';
 
+    public const TYPE_ITEM_INVOICE = 'ITEM_INVOICE';
+
     protected $table = 'return_headers';
 
     protected $fillable = [
@@ -221,15 +223,26 @@ class ReturnHeader extends BaseModel
         return $this->return_type === self::TYPE_INVOICE_DISCARD;
     }
 
+    public function isItemInvoice(): bool
+    {
+        return $this->return_type === self::TYPE_ITEM_INVOICE;
+    }
+
     public function isInvoiceType(): bool
     {
         return in_array($this->return_type, [self::TYPE_INVOICE_RETURN, self::TYPE_INVOICE_DISCARD]);
+    }
+
+    public function isAllocationType(): bool
+    {
+        return in_array($this->return_type, [self::TYPE_ITEM, self::TYPE_ITEM_INVOICE]);
     }
 
     public static function returnTypeBadgeColor(string $type): string
     {
         return match ($type) {
             self::TYPE_ITEM => 'blue',
+            self::TYPE_ITEM_INVOICE => 'teal',
             self::TYPE_INVOICE_RETURN => 'purple',
             self::TYPE_INVOICE_DISCARD => 'amber',
             default => 'zinc',
@@ -240,6 +253,7 @@ class ReturnHeader extends BaseModel
     {
         $colorClass = match ($type) {
             self::TYPE_ITEM => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+            self::TYPE_ITEM_INVOICE => 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
             self::TYPE_INVOICE_RETURN => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
             self::TYPE_INVOICE_DISCARD => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
             default => 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200',

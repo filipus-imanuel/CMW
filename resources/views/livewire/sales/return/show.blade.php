@@ -152,7 +152,7 @@
                     <flux:table.column class="text-center">Good Qty</flux:table.column>
                     <flux:table.column class="text-center">Damaged Qty</flux:table.column>
                 @endif
-                @if($returnHeader->isFinish() && $returnHeader->isItemType())
+                @if($returnHeader->isFinish() && $returnHeader->isAllocationType())
                     <flux:table.column class="text-center">Redelivery</flux:table.column>
                     <flux:table.column class="text-center">Next SO</flux:table.column>
                 @endif
@@ -172,7 +172,7 @@
                             <flux:table.cell class="text-right tabular-nums text-green-600">{{ number_format((float)$detail->quantity_received_good, 2) }}</flux:table.cell>
                             <flux:table.cell class="text-right tabular-nums text-red-600">{{ number_format((float)$detail->quantity_received_damaged, 2) }}</flux:table.cell>
                         @endif
-                        @if($returnHeader->isFinish() && $returnHeader->isItemType())
+                        @if($returnHeader->isFinish() && $returnHeader->isAllocationType())
                             <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->quantity_redelivery, 2) }}</flux:table.cell>
                             <flux:table.cell class="text-right tabular-nums">{{ number_format((float)$detail->quantity_next_so, 2) }}</flux:table.cell>
                         @endif
@@ -215,8 +215,8 @@
         </flux:card>
     @endif
 
-    {{-- Allocation Form (PROCESSING + post-warehouse + ITEM type) --}}
-    @if($returnHeader->isProcessing() && $returnHeader->isWarehouseReceived() && $returnHeader->isItemType())
+    {{-- Allocation Form (PROCESSING + post-warehouse + allocation type) --}}
+    @if($returnHeader->isProcessing() && $returnHeader->isWarehouseReceived() && $returnHeader->isAllocationType())
         <flux:card class="mb-6">
             <flux:heading size="lg" class="mb-4">Item Allocation</flux:heading>
             <flux:subheading class="mb-4">Decide how returned items should be handled.</flux:subheading>
@@ -273,6 +273,8 @@
                 <flux:text class="mt-2 text-zinc-400">
                     @if($returnHeader->isInvoiceDiscard())
                         Approve this return? The invoice balance will be reduced immediately and the return will be completed. No warehouse receipt required.
+                    @elseif($returnHeader->isItemInvoice())
+                        Approve this return? The invoice balance will be reduced and the return will proceed to warehouse for receipt.
                     @else
                         Approve this return? It will proceed to warehouse for receipt.
                     @endif

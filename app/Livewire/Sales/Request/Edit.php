@@ -80,7 +80,7 @@ class Edit extends Component
 
         $this->canOverrideTax = Auth::user()->can('override tax sales request');
 
-        $this->order = OrderHeader::with(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.itemUom.uom'])
+        $this->order = OrderHeader::with(['partner', 'company', 'itemCategory', 'currency', 'details.item', 'details.itemUom.uom', 'details.returnDetail.header'])
             ->findOrFail($id);
 
         // Status guard - only INIT can be edited
@@ -119,15 +119,26 @@ class Edit extends Component
         $floorPct = $this->floorPercentage;
 
         $this->items = $this->order->details->map(function ($detail) use ($taxMode, $taxRate) {
+            $isReturn = ! empty($detail->return_detail_id);
+
+            $priceProposed = (float) $detail->price_proposed;
+            $priceDeal = (float) ($detail->price_deal ?: $detail->price_proposed);
+
+            if ($isReturn && $detail->returnDetail?->header?->return_type === 'ITEM_INVOICE') {
+                $soPrice = (float) $detail->returnDetail->price;
+                if ($priceProposed == 0 && $soPrice > 0) {
+                    $priceProposed = $soPrice;
+                    $priceDeal = $soPrice;
+                }
+            }
+
             $calc = TransactionHelper::calculateItemTax(
                 (float) $detail->quantity,
-                (float) $detail->price_proposed,
+                $priceProposed,
                 (float) $detail->discount,
                 $taxMode,
                 $taxRate
             );
-
-            $isReturn = ! empty($detail->return_detail_id);
 
             return [
                 'id' => $detail->id,
@@ -137,8 +148,8 @@ class Edit extends Component
                 'item_uom_id' => $detail->item_uom_id,
                 'uom_name' => $detail->itemUom?->uom?->name ?? '',
                 'quantity' => number_format((float) $detail->quantity, 2, '.', ''),
-                'price_proposed' => number_format((float) $detail->price_proposed, 2, '.', ''),
-                'price_deal' => number_format((float) ($detail->price_deal ?: $detail->price_proposed), 2, '.', ''),
+                'price_proposed' => number_format($priceProposed, 2, '.', ''),
+                'price_deal' => number_format($priceDeal, 2, '.', ''),
                 'discount' => number_format((float) $detail->discount, 2, '.', ''),
                 'tax' => number_format($calc['tax'], 2, '.', ''),
                 'total' => number_format($calc['total'], 2, '.', ''),
@@ -580,7 +591,7 @@ class Edit extends Component
                 $q->where('partner_id', $order->partner_id)
                     ->where('company_id', $order->company_id)
                     ->where('status', 'FINISH')
-                    ->where('return_type', 'ITEM');
+                    ->whereIn('return_type', ['ITEM', 'ITEM_INVOICE']);
             })
             ->whereHas('header.orderHeader', function ($q) use ($order) {
                 $q->where('item_category_id', $order->item_category_id)
@@ -595,12 +606,14 @@ class Edit extends Component
             return [
                 'return_detail_id' => $detail->id,
                 'return_code' => $detail->header?->code ?? '',
+                'return_type' => $detail->header?->return_type ?? 'ITEM',
                 'item_id' => $detail->item_id,
                 'item_uom_id' => $detail->item_uom_id,
                 'item_code' => $detail->item?->code ?? '',
                 'item_name' => $detail->item?->name ?? '',
                 'uom_name' => $detail->itemUom?->uom?->name ?? '',
                 'quantity_next_so' => (float) $detail->quantity_next_so,
+                'price' => (float) $detail->price,
                 'original_so_code' => $detail->header?->orderHeader?->code_order ?? '',
             ];
         })->toArray();
@@ -625,6 +638,20 @@ class Edit extends Component
         } else {
             // Add
             $this->selectedReturnItems[] = $detailId;
+
+            $isItemInvoice = ($returnItem['return_type'] ?? 'ITEM') === 'ITEM_INVOICE';
+            $returnPrice = $isItemInvoice ? (float) ($returnItem['price'] ?? 0) : 0;
+
+            $taxMode = $this->inputs['tax_mode'] ?? 'NONE';
+            $taxRate = $this->getCurrentTaxRate();
+            $calc = TransactionHelper::calculateItemTax(
+                (float) $returnItem['quantity_next_so'],
+                $returnPrice,
+                0,
+                $taxMode,
+                $taxRate
+            );
+
             $this->items[] = [
                 'id' => null,
                 'item_id' => $returnItem['item_id'],
@@ -633,11 +660,11 @@ class Edit extends Component
                 'item_uom_id' => $returnItem['item_uom_id'],
                 'uom_name' => $returnItem['uom_name'],
                 'quantity' => number_format($returnItem['quantity_next_so'], 2, '.', ''),
-                'price_proposed' => '0.00',
-                'price_deal' => '0.00',
+                'price_proposed' => number_format($returnPrice, 2, '.', ''),
+                'price_deal' => number_format($returnPrice, 2, '.', ''),
                 'discount' => '0.00',
-                'tax' => '0.00',
-                'total' => '0.00',
+                'tax' => number_format($calc['tax'], 2, '.', ''),
+                'total' => number_format($calc['total'], 2, '.', ''),
                 'return_detail_id' => $detailId,
             ];
             $this->priceGuardrails[] = [

@@ -22,6 +22,8 @@ class Show extends Component
             'deliveryHeader.details.item',
             'deliveryHeader.details.itemUom.uom',
             'paymentDetails.header.paymentMethod',
+            'returns.details.item',
+            'returns.details.itemUom.uom',
             'createdBy',
         ])->findOrFail($id);
     }

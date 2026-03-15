@@ -76,6 +76,7 @@
                 <div>
                     <flux:select wire:model.live="inputs.return_type" label="Return Type">
                         <option value="ITEM">Item (Re-delivery / Next SO)</option>
+                        <option value="ITEM_INVOICE">Item (Invoice / Next SO)</option>
                         <option value="INVOICE_RETURN">Invoice (Goods Returned)</option>
                         <option value="INVOICE_DISCARD">Invoice (Goods Discarded)</option>
                     </flux:select>
