@@ -11,6 +11,18 @@
 
         @if($header->isOngoing())
             <div class="flex gap-2">
+                @can('view delivery order')
+                <flux:button
+                    variant="primary"
+                    size="sm"
+                    icon="arrow-down-tray"
+                    href="{{ route('warehouses.delivery.pdf', $header->id) }}"
+                    target="_blank"
+                >
+                    Download PDF
+                </flux:button>
+                @endcan
+
                 @can('confirm delivery order')
                 <flux:button
                     variant="primary"

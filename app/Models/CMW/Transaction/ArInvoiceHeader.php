@@ -5,11 +5,18 @@ namespace App\Models\CMW\Transaction;
 use App\Models\CMW\BaseModel;
 use App\Models\CMW\Master\Currency;
 use App\Models\CMW\Master\Partner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ArInvoiceHeader extends BaseModel
 {
+    public const STATUS_UNPAID = 'unpaid';
+
+    public const STATUS_PARTIAL = 'partial';
+
+    public const STATUS_PAID = 'paid';
+
     protected $table = 'ar_invoice_headers';
 
     protected $fillable = [
@@ -63,5 +70,43 @@ class ArInvoiceHeader extends BaseModel
     public function paymentDetails(): HasMany
     {
         return $this->hasMany(ArPaymentDetail::class, 'ar_invoice_header_id');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SCOPES
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function scopeUnpaid(Builder $query): Builder
+    {
+        return $query->whereIn('status', [self::STATUS_UNPAID, self::STATUS_PARTIAL]);
+    }
+
+    public function scopePaid(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PAID);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // HELPERS
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function isUnpaid(): bool
+    {
+        return $this->status === self::STATUS_UNPAID;
+    }
+
+    public function isPartial(): bool
+    {
+        return $this->status === self::STATUS_PARTIAL;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === self::STATUS_PAID;
+    }
+
+    public function hasOutstandingBalance(): bool
+    {
+        return ! $this->isPaid();
     }
 }

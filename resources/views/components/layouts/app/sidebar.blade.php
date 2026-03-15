@@ -24,6 +24,7 @@
                     <flux:navlist.item icon="briefcase" :href="route('masters.departments.index')" :current="request()->routeIs('masters.departments.*')" wire:navigate>{{ __('Departments') }}</flux:navlist.item>
                     <flux:navlist.item icon="users" :href="route('masters.employees.index')" :current="request()->routeIs('masters.employees.*')" wire:navigate>{{ __('Employees') }}</flux:navlist.item>
                     <flux:navlist.item icon="arrow-path" :href="route('masters.exchange-rates.index')" :current="request()->routeIs('masters.exchange-rates.*')" wire:navigate>{{ __('Exchange Rates') }}</flux:navlist.item>
+                    <flux:navlist.item icon="banknotes" :href="route('masters.payment-methods.index')" :current="request()->routeIs('masters.payment-methods.*')" wire:navigate>{{ __('Payment Methods') }}</flux:navlist.item>
                     <flux:navlist.item icon="calculator" :href="route('masters.taxes.index')" :current="request()->routeIs('masters.taxes.*')" wire:navigate>{{ __('Taxes') }}</flux:navlist.item>
                     <flux:navlist.item icon="arrows-right-left" :href="route('masters.uom-conversions.index')" :current="request()->routeIs('masters.uom-conversions.*')" wire:navigate>{{ __('UOM Conversions') }}</flux:navlist.item>
                     <flux:navlist.item icon="cube" :href="route('masters.uoms.index')" :current="request()->routeIs('masters.uoms.*')" wire:navigate>{{ __('UOMs') }}</flux:navlist.item>
@@ -69,6 +70,18 @@
                     <flux:navlist.item icon="truck" :href="route('sales.order.index.ongoing')" :current="request()->routeIs('sales.order.index.ongoing') || request()->routeIs('sales.order.show')" wire:navigate>{{ __('Ongoing Orders') }}</flux:navlist.item>
                     <flux:navlist.item icon="x-circle" :href="route('sales.order.index.rejected')" :current="request()->routeIs('sales.order.index.rejected')" wire:navigate>{{ __('Rejected Orders') }}</flux:navlist.item>
                     <flux:navlist.item icon="no-symbol" :href="route('sales.order.index.cancelled')" :current="request()->routeIs('sales.order.index.cancelled')" wire:navigate>{{ __('Cancelled Orders') }}</flux:navlist.item>
+                    @endcan
+                    @can('view ar invoice')
+                    <flux:navlist.group heading="Invoice" expandable :expanded="request()->routeIs('sales.invoice.*')" class="grid">
+                        <flux:navlist.item icon="document-currency-dollar" :href="route('sales.invoice.index.unpaid')" :current="request()->routeIs('sales.invoice.index.unpaid')" wire:navigate>{{ __('Unpaid') }}</flux:navlist.item>
+                        <flux:navlist.item icon="check-circle" :href="route('sales.invoice.index.paid')" :current="request()->routeIs('sales.invoice.index.paid')" wire:navigate>{{ __('Paid') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                    @endcan
+                    @can('view ar payment')
+                    <flux:navlist.group heading="Payment" expandable :expanded="request()->routeIs('sales.payment.*')" class="grid">
+                        <flux:navlist.item icon="banknotes" :href="route('sales.payment.index.active')" :current="request()->routeIs('sales.payment.index.active') || request()->routeIs('sales.payment.create') || request()->routeIs('sales.payment.show')" wire:navigate>{{ __('Active') }}</flux:navlist.item>
+                        <flux:navlist.item icon="no-symbol" :href="route('sales.payment.index.cancelled')" :current="request()->routeIs('sales.payment.index.cancelled')" wire:navigate>{{ __('Cancelled') }}</flux:navlist.item>
+                    </flux:navlist.group>
                     @endcan
                     @can('view sales return')
                     <flux:navlist.group heading="Return" expandable :expanded="request()->routeIs('sales.return.*')" class="grid">

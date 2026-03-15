@@ -20,13 +20,24 @@
     </div>
 
     <flux:heading size="xl" class="mb-2">Sales Order Detail</flux:heading>
-    <flux:subheading class="mb-6">
+    <div class="flex items-center justify-between mb-6">
+        <flux:subheading>
+            @if($order->code_order)
+                {{ $order->code_order }} ({{ $order->code_request }})
+            @else
+                {{ $order->code_request }}
+            @endif
+        </flux:subheading>
+
         @if($order->code_order)
-            {{ $order->code_order }} ({{ $order->code_request }})
-        @else
-            {{ $order->code_request }}
+            @can('view sales order')
+                <flux:button variant="primary" size="sm" icon="arrow-down-tray"
+                    href="{{ route('sales.order.pdf', $order->id) }}" target="_blank">
+                    Download PDF
+                </flux:button>
+            @endcan
         @endif
-    </flux:subheading>
+    </div>
 
     {{-- Order Information --}}
     <flux:card class="mb-6">

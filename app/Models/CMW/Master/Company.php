@@ -12,6 +12,10 @@ class Company extends BaseModel
 {
     protected $fillable = [
         'sales_limit',
+        'payment_code',
+        'bank_name',
+        'bank_account_name',
+        'bank_account_number',
         'currency_id',
         'tax_mode',
         'tax_id',

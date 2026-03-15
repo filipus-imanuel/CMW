@@ -6,7 +6,16 @@
         </flux:button>
     </div>
 
-    <flux:heading size="xl" class="mb-2">Finished Delivery Detail</flux:heading>
+    <div class="flex items-center justify-between mb-2">
+        <flux:heading size="xl">Finished Delivery Detail</flux:heading>
+
+        @can('view delivery order')
+            <flux:button variant="primary" size="sm" icon="arrow-down-tray"
+                href="{{ route('warehouses.delivery.pdf', $header->id) }}" target="_blank">
+                Download PDF
+            </flux:button>
+        @endcan
+    </div>
     <flux:subheading class="mb-6">{{ $header->code }}</flux:subheading>
 
     {{-- Header Information --}}

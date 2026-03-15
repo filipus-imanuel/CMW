@@ -69,6 +69,9 @@ class PermissionHelper
                 'sales order' => ['view', 'approve', 'reject'],
                 'delivery order' => ['view', 'create', 'confirm', 'cancel', 'force finish'],
                 'sales return' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
+                'ar invoice' => ['view'],
+                'ar payment' => ['view', 'create', 'cancel'],
+                'payment method' => ['view', 'create', 'edit', 'delete'],
             ],
 
             // ══════════════════════════════════════════════════════════════
@@ -183,12 +186,16 @@ class PermissionHelper
             })),
             'Finance' => array_values(array_filter($allPermissions, function ($permission) {
                 // Finance gets full CRUD on financial master data + full approval permissions
+                // Plus full ar invoice, ar payment, and payment method permissions
                 return str_contains($permission, 'tax')
                     || str_contains($permission, 'currency')
                     || str_contains($permission, 'exchange rate')
                     || str_contains($permission, 'credit term')
                     || str_contains($permission, 'company')
-                    || str_contains($permission, 'item price approval');
+                    || str_contains($permission, 'item price approval')
+                    || str_contains($permission, 'ar invoice')
+                    || str_contains($permission, 'ar payment')
+                    || str_contains($permission, 'payment method');
             })),
             'Sales' => array_values(array_filter($allPermissions, function ($permission) {
                 // Sales gets full CRUD on customers/addresses, view on financial master data and items
@@ -196,7 +203,8 @@ class PermissionHelper
                 $isSalesResource = str_contains($permission, 'customer') || str_contains($permission, 'partner address');
                 $isSalesTransaction = str_contains($permission, 'sales request')
                     || ($permission === 'view sales order')
-                    || str_contains($permission, 'sales return');
+                    || str_contains($permission, 'sales return')
+                    || ($permission === 'view ar invoice');
                 $isViewOnly = str_contains($permission, 'view') && (
                     str_contains($permission, 'currency')
                     || str_contains($permission, 'tax')

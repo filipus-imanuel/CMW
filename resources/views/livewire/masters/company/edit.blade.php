@@ -16,6 +16,18 @@
 
         <div class="grid grid-cols-2 gap-4">
             <flux:input wire:model="inputs.sales_limit" label="Sales Limit" type="number" step="1" min="0" max="999999999999" :disabled="$company?->is_edit_locked" />
+            <flux:input wire:model="inputs.payment_code" label="Payment Code" placeholder="e.g. 01" maxlength="2" description="2-digit code used in payment number generation" :disabled="$company?->is_edit_locked" />
+        </div>
+
+        <flux:separator text="Bank Information" />
+
+        <div class="grid grid-cols-3 gap-4">
+            <flux:input wire:model="inputs.bank_name" label="Bank Name" placeholder="e.g. BCA" maxlength="100" :disabled="$company?->is_edit_locked" />
+            <flux:input wire:model="inputs.bank_account_name" label="Account Name" placeholder="e.g. PT INDONUSA" maxlength="100" :disabled="$company?->is_edit_locked" />
+            <flux:input wire:model="inputs.bank_account_number" label="Account Number" placeholder="e.g. 555059018" maxlength="50" :disabled="$company?->is_edit_locked" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
             <flux:select wire:model="inputs.currency_id" label="Currency" badge="Required" disabled>
                 <flux:select.option value="">-- Select Currency --</flux:select.option>
                 @foreach ($dropdown_currency as $currency)

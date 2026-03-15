@@ -1,6 +1,6 @@
 # Sales Module — Business Logic
 
-**Last Updated**: 2026-03-12
+**Last Updated**: 2026-03-13
 
 ---
 
@@ -15,6 +15,10 @@ The Sales module manages the lifecycle of sales from **request → approval → 
 | Order Header | `order_headers` | `OrderHeader` | Sales request / order header |
 | Order Detail | `order_details` | `OrderDetail` | Line items with pricing |
 | Delivery Schedule | `order_delivery_schedules` | `OrderDeliverySchedule` | Partial delivery dates per line item |
+| AR Invoice Header | `ar_invoice_headers` | `ArInvoiceHeader` | Invoice generated per delivery order |
+| AR Payment Header | `ar_payment_headers` | `ArPaymentHeader` | Customer payment record |
+| AR Payment Detail | `ar_payment_details` | `ArPaymentDetail` | Payment-to-invoice allocation |
+| Payment Method | `payment_methods` | `PaymentMethod` | Master: payment method types |
 
 ### Status Flow
 
@@ -35,7 +39,9 @@ INIT ──submit──▶ APPROVAL ──approve──▶ ORDER ──▶ DELIV
 | `ORDER` | Approved, ongoing | No | `scopeOngoing` |
 | `REJECTED` | Rejected by approver (imposed) | No | `scopeRejected` |
 | `CANCELLED` | Cancelled by user (voluntary) | No | `scopeCancelled` |
-| `DELIVERY`+ | Future statuses | No | `scopeOrders` |
+| `DELIVERY`+ | Delivery in progress | No | `scopeOrders` |
+| `FINISH` | All deliveries completed | No | `scopeOrders` |
+| `FINAL` | All invoices fully paid | No | `scopeOrders` |
 
 ---
 
@@ -229,8 +235,13 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 
 ```php
 'sales' => [
-    'sales request' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
-    'sales order'   => ['view', 'approve', 'reject'],
+    'sales request'  => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
+    'sales order'    => ['view', 'approve', 'reject'],
+    'delivery order'  => ['view', 'create', 'confirm', 'cancel', 'force finish'],
+    'sales return'    => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
+    'ar invoice'      => ['view'],
+    'ar payment'      => ['view', 'create', 'cancel'],
+    'payment method'  => ['view', 'create', 'edit', 'delete'],
 ],
 'extra' => [
     'sales request' => ['override price', 'override tax'],
@@ -241,6 +252,24 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 |---|---|
 | `override price sales request` | Change `price_proposed` away from the resolved PriceResolutionHelper value |
 | `override tax sales request` | Change `tax_mode` / `tax_id` away from the company's default tax |
+| `view ar invoice` | View unpaid/paid invoice lists and invoice detail |
+| `view ar payment` | View active/cancelled payment lists and payment detail |
+| `create ar payment` | Record a new payment from invoice detail |
+| `cancel ar payment` | Cancel an active payment (reverses invoice balance) |
+| `view payment method` | View payment methods master list |
+| `create payment method` | Create a new payment method |
+| `edit payment method` | Edit an existing payment method |
+| `delete payment method` | Soft-delete a payment method |
+
+### Role Assignments
+
+| Role | AR Invoice | AR Payment | Payment Method |
+|------|------------|------------|----------------|
+| Super Admin | All | All | All |
+| Management | view | view | view |
+| Finance | view | view, create, cancel | view, create, edit, delete |
+| Sales | view | — | — |
+| Admin | — | — | — |
 
 ---
 
@@ -256,8 +285,14 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `sales.order.index.ongoing` | `/cmw/sales/orders` | `Sales\Order\Index\Ongoing` |
 | `sales.order.index.rejected` | `/cmw/sales/orders/rejected` | `Sales\Order\Index\Rejected` |
 | `sales.order.index.cancelled` | `/cmw/sales/orders/cancelled` | `Sales\Order\Index\Cancelled` |
-| `sales.order.show` | `/cmw/sales/orders/{id}` | `Sales\Order\Show` |
-
+| `sales.order.show` | `/cmw/sales/orders/{id}` | `Sales\Order\Show` || `sales.invoice.index.unpaid` | `/cmw/sales/invoices` | `Sales\Invoice\Index\Unpaid` |
+| `sales.invoice.index.paid` | `/cmw/sales/invoices/paid` | `Sales\Invoice\Index\Paid` |
+| `sales.invoice.show` | `/cmw/sales/invoices/{id}` | `Sales\Invoice\Show` |
+| `sales.payment.index.active` | `/cmw/sales/payments` | `Sales\Payment\Index\Active` |
+| `sales.payment.index.cancelled` | `/cmw/sales/payments/cancelled` | `Sales\Payment\Index\Cancelled` |
+| `sales.payment.create` | `/cmw/sales/payments/create/{invoiceId}` | `Sales\Payment\Create` |
+| `sales.payment.show` | `/cmw/sales/payments/{id}` | `Sales\Payment\Show` |
+| `masters.payment-methods.index` | `/cmw/masters/payment-methods` | `Masters\PaymentMethod\Index` |
 ---
 
 ## 10. Sidebar Menus
@@ -269,6 +304,13 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | Ongoing Orders | `truck` | `view sales order` | `sales.order.index.ongoing` |
 | Rejected Orders | `x-circle` | `view sales order` | `sales.order.index.rejected` |
 | Cancelled Orders | `no-symbol` | `view sales order` | `sales.order.index.cancelled` |
+| **Invoice** (group) | | `view ar invoice` | |
+|   Unpaid | `document-currency-dollar` | `view ar invoice` | `sales.invoice.index.unpaid` |
+|   Paid | `check-circle` | `view ar invoice` | `sales.invoice.index.paid` |
+| **Payment** (group) | | `view ar payment` | |
+|   Active | `banknotes` | `view ar payment` | `sales.payment.index.active` |
+|   Cancelled | `no-symbol` | `view ar payment` | `sales.payment.index.cancelled` |
+| Payment Methods | `banknotes` | (Master group) | `masters.payment-methods.index` |
 
 ---
 
@@ -280,8 +322,12 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `shp.sales.order.refresh.approval` | SR submitted, approval action taken |
 | `shp.sales.order.refresh.ongoing` | Order approved |
 | `shp.sales.order.refresh.rejected` | Order rejected |
-| `shp.sales.order.refresh.cancelled` | Order cancelled |
-
+| `shp.sales.order.refresh.cancelled` | Order cancelled || `shp.sales.invoice.refresh.unpaid` | Payment created or cancelled |
+| `shp.sales.invoice.refresh.paid` | Payment created or cancelled |
+| `shp.sales.payment.created` | New payment recorded |
+| `shp.sales.payment.refresh.active` | Payment cancelled |
+| `shp.sales.payment.refresh.cancelled` | Payment cancelled |
+| `cmw.master.payment-method.refresh` | Payment method CRUD action |
 ---
 
 ## 12. Related Files
@@ -289,9 +335,196 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | Area | Path |
 |------|------|
 | Models | `app/Models/CMW/Transaction/OrderHeader.php`, `OrderDetail.php`, `ReturnDetail.php` |
+| Models (AR) | `ArInvoiceHeader.php`, `ArPaymentHeader.php`, `ArPaymentDetail.php` |
+| Models (Master) | `app/Models/CMW/Master/PaymentMethod.php` |
 | SR Components | `app/Livewire/Sales/Request/` |
 | SO Approval | `app/Livewire/Sales/Approval/` |
 | SO Views | `app/Livewire/Sales/Order/` |
+| Invoice Views | `app/Livewire/Sales/Invoice/` |
+| Payment Views | `app/Livewire/Sales/Payment/` |
+| Payment Method | `app/Livewire/Masters/PaymentMethod/` |
 | Helpers | `CodeGeneratorHelper`, `TransactionHelper`, `CustomerCheckHelper`, `PriceResolutionHelper` |
-| Migrations | `2025_12_23_102400_*`, `2025_12_23_103800_*` |
+| Migrations | `2025_12_23_102400_*`, `2025_12_23_102900_*`, `2025_12_23_103100_*`, `2025_12_23_103800_*`, `2025_12_23_104300_*`, `2026_03_13_000100_*` |
 | Permissions | `app/Helpers/CMW/PermissionHelper.php` |
+
+---
+
+## 13. AR Invoice
+
+### 13.1 Domain
+
+One AR Invoice is generated per Delivery Order. The invoice tracks the total amount, how much has been paid, and the outstanding balance.
+
+### 13.2 Invoice Status Flow
+
+```
+unpaid ──partial payment──▶ partial ──full payment──▶ paid
+                                                       │
+paid ◀──payment cancelled──── partial ◀──payment cancelled──┘
+```
+
+| Status | Meaning | Scope |
+|--------|---------|-------|
+| `unpaid` | No payments received | `scopeUnpaid` |
+| `partial` | Some payments received, balance > 0 | `scopeUnpaid` |
+| `paid` | Fully paid (balance = 0) | `scopePaid` |
+
+### 13.3 Key Columns
+
+| Column | Type | Purpose |
+|--------|------|----------|
+| `code` | `string(50)` | Unique invoice code (`INV/YYMM/0001`) |
+| `date` | `date` | Invoice date |
+| `due_date` | `date` | Payment due date |
+| `order_header_id` | FK → `order_headers` | Linked SO |
+| `delivery_header_id` | FK → `delivery_headers` | Linked DO (1:1 invoice per DO) |
+| `subtotal` | `decimal(13,2)` | Pre-tax subtotal |
+| `tax` | `decimal(13,2)` | Tax amount |
+| `total` | `decimal(13,2)` | Grand total |
+| `paid` | `decimal(13,2)` | Total payments received |
+| `balance` | `decimal(13,2)` | Outstanding = total − paid |
+| `status` | `string(20)` | `unpaid`, `partial`, `paid` |
+
+### 13.4 Invoice Show Page (`Sales\Invoice\Show`)
+
+- Permission: `view ar invoice`
+- Displays: invoice info card, financial summary (subtotal/tax/total/paid/balance), delivery items table, payment history table
+- **"Record Payment" button**: visible when `hasOutstandingBalance()` is true and user has `create ar payment` — links to Payment Create page
+- Payment history shows each payment with code (linked), date, method, amount, status
+
+### 13.5 Invoice Index Pages
+
+| Page | Scope | Columns |
+|------|-------|---------|
+| Unpaid | `unpaid` (unpaid + partial) | Actions, Code, Date, Due Date, Customer, DO Code, SO Code, Total, Paid, Balance, Status |
+| Paid | `paid` | Actions, Code, Date, Customer, DO Code, SO Code, Total, Paid, Status |
+
+---
+
+## 14. AR Payment
+
+### 14.1 Domain
+
+One payment record per invoice. Payment records the amount applied, and updates the invoice's `paid`, `balance`, and `status` fields accordingly. Payments can be cancelled with a reason, which reverses the invoice balance.
+
+### 14.2 Payment Status
+
+| Status | Meaning |
+|--------|----------|
+| `active` | Valid payment |
+| `cancelled` | Reversed with reason |
+
+### 14.3 Payment Code Format
+
+```
+FK/{company.payment_code}/YYMM/00001
+```
+
+- `FK` = fixed prefix
+- `{company.payment_code}` = 2-digit code from `companies.payment_code` column
+- `YYMM` = year-month
+- `00001` = 5-digit sequential number
+
+Generated by `CodeGeneratorHelper::generatePaymentCode($companyId)`.
+
+### 14.4 Key Columns (`ar_payment_headers`)
+
+| Column | Type | Purpose |
+|--------|------|----------|
+| `code` | `string(50)` | Unique payment code |
+| `date` | `date` | Payment date |
+| `currency_id` | FK → `currencies` | Copied from invoice |
+| `partner_id` | FK → `partners` | Copied from invoice |
+| `company_id` | FK → `companies` | From invoice's SO |
+| `amount` | `decimal(13,2)` | Total payment amount |
+| `payment_method_id` | FK → `payment_methods` | Selected payment method |
+| `reference` | `string(255)` | Transfer ref, cheque no, etc. |
+| `status` | `string(20)` | `active`, `cancelled` |
+| `cancel_reason` | `string(1024)` | Reason (when cancelled) |
+
+### 14.5 Payment Detail (`ar_payment_details`)
+
+| Column | Type | Purpose |
+|--------|------|----------|
+| `ar_payment_header_id` | FK → `ar_payment_headers` | Parent payment |
+| `ar_invoice_header_id` | FK → `ar_invoice_headers` | Target invoice |
+| `amount` | `decimal(13,2)` | Amount applied to this invoice |
+
+### 14.6 Recording a Payment (`Sales\Payment\Create`)
+
+1. Permission: `create ar payment`
+2. Accessed from Invoice Show page via "Record Payment" button
+3. Mount loads the invoice; rejects if already `paid`
+4. Form fields: date, amount (max = balance), payment_method_id, reference, remarks
+5. On store (inside `DB::transaction` with `lockForUpdate`):
+   - Validates amount ≤ invoice balance
+   - Determines `company_id` from `invoice.orderHeader.company_id`
+   - Generates payment code via `CodeGeneratorHelper::generatePaymentCode($companyId)`
+   - Creates `ArPaymentHeader` + `ArPaymentDetail`
+   - Updates invoice: `paid += amount`, `balance = total − paid`, status → `partial` or `paid`
+   - Calls `TransactionHelper::checkAndUpdateOrderFinalStatus()` — if all SO invoices are paid → SO status = `FINAL`
+   - Redirects to Payment Show
+
+### 14.7 Cancelling a Payment (`Sales\Payment\Show`)
+
+1. Permission: `cancel ar payment`
+2. Cancel button visible only on `active` payments
+3. Opens modal requiring cancellation reason
+4. On cancel (inside `DB::transaction` with `lockForUpdate`):
+   - Sets payment status → `cancelled`, stores `cancel_reason`
+   - For each payment detail: reverses invoice balance (`paid -= amount`, recalculates `balance` and `status`)
+   - Calls `TransactionHelper::checkAndUpdateOrderFinalStatus()` — if SO was `FINAL`, reverts to `FINISH`
+   - Redirects to Cancelled Payments index
+
+### 14.8 Payment Show Page
+
+- Permission: `view ar payment`
+- Displays: payment info card (code, date, status, customer, company, method, amount, reference, created by)
+- Cancellation callout (red) shown if cancelled
+- Applied Invoices table: invoice code (linked), SO code, DO code, invoice total, payment amount
+- Cancel button with reason modal
+
+### 14.9 Payment Index Pages
+
+| Page | Scope | Columns |
+|------|-------|---------|
+| Active | `activePayments` | Actions, Code, Date, Customer, Company, Method, Amount, Reference, Status |
+| Cancelled | `cancelled` | Actions, Code, Date, Customer, Company, Method, Amount, Cancel Reason, Status |
+
+---
+
+## 15. SO → FINAL Auto-Transition
+
+`TransactionHelper::checkAndUpdateOrderFinalStatus($orderHeaderId)` handles automatic status transitions:
+
+| Condition | Current Status | New Status |
+|-----------|---------------|------------|
+| All SO invoices are `paid` | `FINISH` | `FINAL` |
+| Any SO invoice is not `paid` (e.g. payment cancelled) | `FINAL` | `FINISH` |
+| SO status not `FINISH` or `FINAL` | — | No change |
+| No invoices exist for SO | — | No change |
+
+Called from:
+- `Sales\Payment\Create::store()` — after recording payment
+- `Sales\Payment\Show::cancelPayment()` — after reversing payment
+
+---
+
+## 16. Payment Method (Master)
+
+Standard master CRUD (modal-based) under `Masters\PaymentMethod`.
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `code` | `string(50)` | Required, unique |
+| `name` | `string(100)` | Required |
+| `remarks` | `string(1024)` | Optional |
+| `is_active` | `boolean` | Default true |
+
+Components: `Index`, `IndexDataTable`, `Create`, `Edit`.
+
+Event: `cmw.master.payment-method.refresh`.
+
+### Company Payment Code
+
+`companies.payment_code` (`string(2)`, nullable) — 2-digit code used in payment number generation format `FK/{payment_code}/YYMM/00001`. Configured in Company Create/Edit forms.

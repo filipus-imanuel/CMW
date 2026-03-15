@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Helpers\CMW;
 
+use App\Models\CMW\Master\Company;
+use App\Models\CMW\Transaction\ArPaymentHeader;
 use App\Models\CMW\Transaction\DeliveryHeader;
 use App\Models\CMW\Transaction\OrderHeader;
 use App\Models\CMW\Transaction\StockAdjustmentHeader;
@@ -117,5 +119,30 @@ class CodeGeneratorHelper
         $number = $last ? (int) substr($last->code, -4) + 1 : 1;
 
         return "RTN/{$yearMonth}/".str_pad((string) $number, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Generate AR payment code.
+     *
+     * Format: FK/{company.payment_code}/YYMM/00001
+     *
+     * @param  int  $companyId  The company ID to fetch the 2-digit payment_code
+     * @return string The generated payment code
+     */
+    public static function generatePaymentCode(int $companyId): string
+    {
+        $company = Company::findOrFail($companyId);
+        $paymentCode = $company->payment_code ?? '00';
+        $yearMonth = date('ym');
+        $prefix = "FK/{$paymentCode}/{$yearMonth}";
+
+        $last = ArPaymentHeader::withTrashed()
+            ->where('code', 'like', "{$prefix}/%")
+            ->orderByDesc('code')
+            ->first();
+
+        $number = $last ? (int) substr($last->code, -5) + 1 : 1;
+
+        return "{$prefix}/".str_pad((string) $number, 5, '0', STR_PAD_LEFT);
     }
 }

@@ -6,6 +6,7 @@ namespace App\Helpers\CMW;
 
 use App\Models\CMW\Inventory\InventoryLedger;
 use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Transaction\ArInvoiceHeader;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
 use Illuminate\Support\Facades\Auth;
@@ -199,6 +200,39 @@ class TransactionHelper
             $detail->update([
                 'tax' => $calc['tax'],
                 'total' => $calc['total'],
+                'updated_by' => Auth::id(),
+            ]);
+        }
+    }
+
+    /**
+     * Check if all AR invoices for a given SO are paid, and if so mark the SO as FINAL.
+     * If any invoice becomes unpaid again (e.g. payment cancelled), revert FINAL to FINISH.
+     */
+    public static function checkAndUpdateOrderFinalStatus(int $orderHeaderId): void
+    {
+        $order = OrderHeader::lockForUpdate()->find($orderHeaderId);
+
+        if (! $order || ! in_array($order->status, ['FINISH', 'FINAL'])) {
+            return;
+        }
+
+        $invoices = ArInvoiceHeader::where('order_header_id', $orderHeaderId)->get();
+
+        if ($invoices->isEmpty()) {
+            return;
+        }
+
+        $allPaid = $invoices->every(fn ($inv) => $inv->status === ArInvoiceHeader::STATUS_PAID);
+
+        if ($allPaid && $order->status === 'FINISH') {
+            $order->update([
+                'status' => 'FINAL',
+                'updated_by' => Auth::id(),
+            ]);
+        } elseif (! $allPaid && $order->status === 'FINAL') {
+            $order->update([
+                'status' => 'FINISH',
                 'updated_by' => Auth::id(),
             ]);
         }

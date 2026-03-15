@@ -8,18 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('ar_payment_headers', function (Blueprint $table) {
+        Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
-            $table->date('date');
-            $table->foreignId('currency_id')->default(1)->constrained('currencies');
-            $table->foreignId('partner_id')->constrained('partners');
-            $table->foreignId('company_id')->nullable()->constrained('companies');
-            $table->decimal('amount', 13, 2)->default(0);
-            $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods');
-            $table->string('reference', 100)->nullable();
-            $table->string('status', 20)->default('active');
-            $table->string('cancel_reason', 1024)->nullable();
+            $table->string('name', 100);
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
@@ -35,6 +27,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('ar_payment_headers');
+        Schema::dropIfExists('payment_methods');
     }
 };

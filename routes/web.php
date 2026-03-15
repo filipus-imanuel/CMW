@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PdfController;
 use App\Livewire\Employees\Role\Create as EmployeeRoleCreate;
 use App\Livewire\Employees\Role\Edit as EmployeeRoleEdit;
 use App\Livewire\Employees\Role\Index as EmployeeRoleIndex;
@@ -27,6 +28,7 @@ use App\Livewire\Masters\Currency\Index as CurrencyIndex;
 use App\Livewire\Masters\Department\Index as DepartmentIndex;
 use App\Livewire\Masters\Employee\Index as EmployeeIndex;
 use App\Livewire\Masters\ExchangeRate\Index as ExchangeRateIndex;
+use App\Livewire\Masters\PaymentMethod\Index as PaymentMethodIndex;
 use App\Livewire\Masters\Tax\Index as TaxIndex;
 use App\Livewire\Masters\Uom\Index as UomIndex;
 use App\Livewire\Masters\UomConversion\Index as UomConversionIndex;
@@ -38,10 +40,17 @@ use App\Livewire\Partners\SupplierAddresses\Index as SupplierAddressIndex;
 use App\Livewire\Partners\Suppliers\Index as SupplierIndex;
 use App\Livewire\Sales\Approval\Index as SalesOrderApprovalIndex;
 use App\Livewire\Sales\Approval\Show as SalesOrderApprovalShow;
+use App\Livewire\Sales\Invoice\Index\Paid as InvoicePaidIndex;
+use App\Livewire\Sales\Invoice\Index\Unpaid as InvoiceUnpaidIndex;
+use App\Livewire\Sales\Invoice\Show as InvoiceShow;
 use App\Livewire\Sales\Order\Index\Cancelled as SalesOrderCancelledIndex;
 use App\Livewire\Sales\Order\Index\Ongoing as SalesOrderOngoingIndex;
 use App\Livewire\Sales\Order\Index\Rejected as SalesOrderRejectedIndex;
 use App\Livewire\Sales\Order\Show as SalesOrderShow;
+use App\Livewire\Sales\Payment\Create as PaymentCreate;
+use App\Livewire\Sales\Payment\Index\Active as PaymentActiveIndex;
+use App\Livewire\Sales\Payment\Index\Cancelled as PaymentCancelledIndex;
+use App\Livewire\Sales\Payment\Show as PaymentShow;
 use App\Livewire\Sales\Request\Create as SalesRequestCreate;
 use App\Livewire\Sales\Request\DeliverySchedule as SalesRequestDeliverySchedule;
 use App\Livewire\Sales\Request\Edit as SalesRequestEdit;
@@ -107,6 +116,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('employees', EmployeeIndex::class)->name('employees.index');
             Route::get('exchange-rates', ExchangeRateIndex::class)->name('exchange-rates.index');
             Route::get('departments', DepartmentIndex::class)->name('departments.index');
+            Route::get('payment-methods', PaymentMethodIndex::class)->name('payment-methods.index');
             Route::get('taxes', TaxIndex::class)->name('taxes.index');
             Route::get('uom-conversions', UomConversionIndex::class)->name('uom-conversions.index');
             Route::get('uoms', UomIndex::class)->name('uoms.index');
@@ -151,6 +161,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/upcoming', DeliveryUpcomingIndex::class)->name('upcoming');
                 Route::get('/upcoming/{id}', DeliveryUpcomingShow::class)->name('upcoming.show');
                 Route::get('/create/{orderId}', DeliveryCreate::class)->name('create');
+                Route::get('/{id}/pdf', [PdfController::class, 'deliveryOrder'])->name('pdf');
 
                 Route::prefix('ongoing')->name('ongoing.')->group(function () {
                     Route::get('/', DeliveryOngoingIndex::class)->name('index');
@@ -209,6 +220,7 @@ Route::middleware(['auth'])->group(function () {
                 });
 
                 Route::get('/{id}', SalesOrderShow::class)->name('show');
+                Route::get('/{id}/pdf', [PdfController::class, 'salesOrder'])->name('pdf');
             });
 
             Route::prefix('returns')->name('return.')->group(function () {
@@ -221,6 +233,19 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/create/{deliveryId?}', SalesReturnCreate::class)->name('create');
                 Route::get('/{id}/edit', SalesReturnEdit::class)->name('edit');
                 Route::get('/{id}', SalesReturnShow::class)->name('show');
+            });
+
+            Route::prefix('invoices')->name('invoice.')->group(function () {
+                Route::get('/', InvoiceUnpaidIndex::class)->name('index.unpaid');
+                Route::get('/paid', InvoicePaidIndex::class)->name('index.paid');
+                Route::get('/{id}', InvoiceShow::class)->name('show');
+            });
+
+            Route::prefix('payments')->name('payment.')->group(function () {
+                Route::get('/', PaymentActiveIndex::class)->name('index.active');
+                Route::get('/cancelled', PaymentCancelledIndex::class)->name('index.cancelled');
+                Route::get('/create/{invoiceId}', PaymentCreate::class)->name('create');
+                Route::get('/{id}', PaymentShow::class)->name('show');
             });
         });
     });

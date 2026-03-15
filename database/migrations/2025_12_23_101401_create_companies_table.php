@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('code', 50)->unique();
             $table->string('name', 100);
             $table->decimal('sales_limit', 13, 2)->default(0);
+            $table->string('payment_code', 2)->nullable();
+            $table->string('bank_name', 100)->nullable();
+            $table->string('bank_account_name', 100)->nullable();
+            $table->string('bank_account_number', 50)->nullable();
             $table->foreignId('currency_id')->constrained('currencies');
             $table->string('tax_mode', 10)->default('NONE');
             $table->foreignId('tax_id')->nullable()->constrained('taxes');
