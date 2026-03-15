@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Inventories\Adjustment;
 
+use App\Helpers\CMW\TransactionHelper;
 use App\Models\CMW\Inventory\InventoryLedger;
 use App\Models\CMW\Inventory\Item;
 use App\Models\CMW\Transaction\StockAdjustmentHeader;
@@ -50,16 +51,19 @@ class Show extends Component
                     }
 
                     $difference = (float) $detail->quantity_difference;
-                    $isPositive = $difference > 0;
 
-                    // Get current balance from inventory ledger
+                    // Convert difference from selected UOM to base UOM
+                    $baseDifference = TransactionHelper::convertToBaseUom($difference, $detail->item_uom_id);
+                    $isPositive = $baseDifference > 0;
+
+                    // Get current balance from inventory ledger (always in base UOM)
                     $currentBalance = InventoryLedger::where('item_id', $detail->item_id)
                         ->where('warehouse_id', $this->header->warehouse_id)
                         ->orderByDesc('date')
                         ->orderByDesc('id')
                         ->value('balance') ?? 0;
 
-                    $newBalance = (float) $currentBalance + $difference;
+                    $newBalance = (float) $currentBalance + $baseDifference;
 
                     // Get unit cost from item
                     $unitCost = Item::where('id', $detail->item_id)->value('cost_price') ?? 0;
@@ -71,8 +75,8 @@ class Show extends Component
                         'type' => 'adjustment',
                         'reference_type' => StockAdjustmentHeader::class,
                         'reference_id' => $this->header->id,
-                        'quantity_in' => $isPositive ? abs($difference) : 0,
-                        'quantity_out' => $isPositive ? 0 : abs($difference),
+                        'quantity_in' => $isPositive ? abs($baseDifference) : 0,
+                        'quantity_out' => $isPositive ? 0 : abs($baseDifference),
                         'balance' => $newBalance,
                         'unit_cost' => $unitCost,
                         'remarks' => 'Stock Adjustment: '.$this->header->code.($detail->remarks ? ' - '.$detail->remarks : ''),
@@ -130,9 +134,12 @@ class Show extends Component
                         }
 
                         $difference = (float) $detail->quantity_difference;
-                        $isPositive = $difference > 0;
 
-                        // Get current balance
+                        // Convert difference from selected UOM to base UOM
+                        $baseDifference = TransactionHelper::convertToBaseUom($difference, $detail->item_uom_id);
+                        $isPositive = $baseDifference > 0;
+
+                        // Get current balance (always in base UOM)
                         $currentBalance = InventoryLedger::where('item_id', $detail->item_id)
                             ->where('warehouse_id', $this->header->warehouse_id)
                             ->orderByDesc('date')
@@ -140,7 +147,7 @@ class Show extends Component
                             ->value('balance') ?? 0;
 
                         // Reverse: subtract what was added, add what was subtracted
-                        $newBalance = (float) $currentBalance - $difference;
+                        $newBalance = (float) $currentBalance - $baseDifference;
 
                         $unitCost = Item::where('id', $detail->item_id)->value('cost_price') ?? 0;
 
@@ -151,8 +158,8 @@ class Show extends Component
                             'type' => 'adjustment',
                             'reference_type' => StockAdjustmentHeader::class,
                             'reference_id' => $this->header->id,
-                            'quantity_in' => $isPositive ? 0 : abs($difference),
-                            'quantity_out' => $isPositive ? abs($difference) : 0,
+                            'quantity_in' => $isPositive ? 0 : abs($baseDifference),
+                            'quantity_out' => $isPositive ? abs($baseDifference) : 0,
                             'balance' => $newBalance,
                             'unit_cost' => $unitCost,
                             'remarks' => 'REVERSAL - Stock Adjustment: '.$this->header->code,

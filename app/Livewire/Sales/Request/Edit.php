@@ -16,7 +16,6 @@ use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -194,51 +193,6 @@ class Edit extends Component
             (float) $this->order->total,
             $this->order->id
         );
-    }
-
-    /**
-     * Handle item selected from SearchItem modal.
-     */
-    #[On('sales.request.item-selected')]
-    public function addItem(int $itemId, string $itemCode, string $itemName, int $itemUomId, string $uomName, float $sellPrice, float $hetPrice): void
-    {
-        // Check if same item+UOM combination already exists in the list
-        foreach ($this->items as $item) {
-            if ($item['item_uom_id'] === $itemUomId) {
-                Flux::toast('Item already added to the list', variant: 'warning', position: 'top-end');
-
-                return;
-            }
-        }
-
-        $this->items[] = [
-            'id' => null,
-            'item_id' => $itemId,
-            'item_code' => $itemCode,
-            'item_name' => $itemName,
-            'item_uom_id' => $itemUomId,
-            'uom_name' => $uomName,
-            'quantity' => '1.00',
-            'price_proposed' => number_format($sellPrice, 2, '.', ''),
-            'price_deal' => number_format($sellPrice, 2, '.', ''),
-            'discount' => '0.00',
-            'tax' => '0.00',
-            'total' => number_format($sellPrice, 2, '.', ''),
-        ];
-
-        $newIndex = count($this->items) - 1;
-
-        // Build guardrail for the new item
-        $floorPct = $this->floorPercentage;
-        $floorPrice = $hetPrice * ($floorPct / 100);
-        $this->priceGuardrails[$newIndex] = [
-            'het_price' => $hetPrice,
-            'floor_price' => round($floorPrice, 2),
-            'resolved_price' => $sellPrice,
-            'warnings' => $this->computePriceWarnings($sellPrice, $hetPrice, $floorPrice),
-        ];
-
-        $this->recalculateItemTotal($newIndex);
     }
 
     /**

@@ -89,11 +89,27 @@ Each `OrderDetail` has two price fields:
 1. Permission: `edit sales request`
 2. Only `INIT` status orders are editable
 3. Fields: header info + `delivery_date` + line items
-4. Items added via `SearchItem` modal (dispatches resolved price → `price_proposed`)
+4. Items added via dedicated **Search page** (`Sales\Request\Search`) — navigated from "Add Item" button
 5. Price override requires `override price sales request` permission
 6. Tax override requires `override tax sales request` permission; without it tax fields are disabled
 7. Return-origin items (linked via `return_detail_id`) display with "↩" prefix
 8. Additional return items can be toggled from the "Return Items Available" card
+
+### 4.2a Search & Add Items (`Sales\Request\Search`)
+
+Full-page component for browsing and adding items to an existing INIT order.
+
+1. Permission: `edit sales request` (adding items); `edit item price` (editing master prices)
+2. Route: `/cmw/sales/requests/{id}/search`
+3. Shows **all items** for the order's item category, paginated at 100 per page
+4. Filters: search by code/name (live debounce), item type dropdown
+5. Each row shows: code, name, type, UOM (with base indicator), category price code, HET price, resolved price (via `PriceResolutionHelper`)
+6. **Add item**: single-click creates `OrderDetail` directly in DB (qty=1, price=resolved, tax calculated via `TransactionHelper`). Already-added items show "Added" badge.
+7. **Edit master price**: opens modal to edit the `ItemPrice` for the customer's category price tier. Uses same threshold/approval logic as `Inventories\ItemPrice\Edit`:
+   - Change % ≤ threshold → direct update + `HistoryItemPrice`
+   - Change % > threshold → creates `PendingItemPrice` (pending approval)
+   - Auto-rejects any existing pending approval for the same item price
+8. Back button returns to Edit page; items appear immediately since Edit loads from DB on mount
 
 ### 4.3 Submit (INIT → APPROVAL)
 
@@ -252,6 +268,7 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 |---|---|
 | `override price sales request` | Change `price_proposed` away from the resolved PriceResolutionHelper value |
 | `override tax sales request` | Change `tax_mode` / `tax_id` away from the company's default tax |
+| `edit item price` | Edit master item prices from the Sales Request Search page (uses Inventory threshold/approval workflow) |
 | `view ar invoice` | View unpaid/paid invoice lists and invoice detail |
 | `view ar payment` | View active/cancelled payment lists and payment detail |
 | `create ar payment` | Record a new payment from invoice detail |
@@ -280,6 +297,7 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `sales.request.index.init` | `/cmw/sales/requests` | `Sales\Request\Index\Init` |
 | `sales.request.create` | `/cmw/sales/requests/create` | `Sales\Request\Create` |
 | `sales.request.edit` | `/cmw/sales/requests/{id}/edit` | `Sales\Request\Edit` |
+| `sales.request.search` | `/cmw/sales/requests/{id}/search` | `Sales\Request\Search` |
 | `sales.order.approval.index` | `/cmw/sales/orders/approval` | `Sales\Approval\Index` |
 | `sales.order.approval.show` | `/cmw/sales/orders/approval/{id}` | `Sales\Approval\Show` |
 | `sales.order.index.ongoing` | `/cmw/sales/orders` | `Sales\Order\Index\Ongoing` |

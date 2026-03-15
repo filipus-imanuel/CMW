@@ -128,4 +128,52 @@ class PdfController extends Controller
 
         return $pdf->download($filename);
     }
+
+    /**
+     * Generate Surat Jalan PDF for a Delivery Order.
+     */
+    public function suratJalan(int $id): Response
+    {
+        Gate::authorize('view delivery order');
+
+        $header = DeliveryHeader::with([
+            'orderHeader.company', 'partner', 'currency',
+            'details.item', 'details.itemUom.uom', 'details.warehouse',
+            'createdBy',
+        ])->findOrFail($id);
+
+        if (! in_array($header->status, ['ongoing', 'finished'])) {
+            abort(403, 'Surat Jalan only available for ongoing or finished deliveries.');
+        }
+
+        $company = $header->orderHeader?->company;
+
+        $items = $header->details->map(fn ($d) => [
+            'name' => $d->item?->name,
+            'code' => $d->item?->code,
+            'quantity' => $d->quantity_sent,
+            'uom' => $d->itemUom?->uom?->name ?? '',
+            'warehouse' => $d->warehouse?->name ?? '',
+        ]);
+
+        $data = [
+            'companyName' => $company?->name ?? '-',
+            'companyAddress' => $company?->address ?? '',
+            'documentCode' => $header->code,
+            'date' => $header->date?->format('d/m/Y'),
+            'orderCode' => $header->orderHeader?->code_order ?? $header->orderHeader?->code_request ?? '-',
+            'vehicleNumber' => $header->vehicle_number ?? '',
+            'customerName' => $header->partner?->name ?? '-',
+            'deliveryAddress' => $header->delivery_address ?? '',
+            'items' => $items,
+        ];
+
+        $pdf = Pdf::loadView('pdf.surat-jalan', $data);
+        $pdf->setPaper('a5', 'portrait');
+
+        $filename = 'SuratJalan-'.$header->code.'.pdf';
+        $filename = str_replace('/', '-', $filename);
+
+        return $pdf->download($filename);
+    }
 }

@@ -4,7 +4,7 @@
             <flux:heading size="lg">Edit Item Price</flux:heading>
 
             @if($this->threshold > 0)
-                <flux:callout icon="exclamation-triangle" variant="warning">
+                <flux:callout icon="information-circle" color="blue">
                     <flux:callout.heading>Approval Required</flux:callout.heading>
                     <flux:callout.text>
                         Price changes exceeding {{ number_format($this->threshold, 2) }}% will be submitted for manager approval.

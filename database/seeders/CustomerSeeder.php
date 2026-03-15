@@ -2,11 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Models\CMW\Inventory\CategoryPrice;
+use App\Models\CMW\Master\Company;
+use App\Models\CMW\Master\Partner;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class PartnerAddressesSeeder extends Seeder
+class CustomerSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,81 +18,102 @@ class PartnerAddressesSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        // Ambil partner ID berdasarkan code (aman untuk ERP)
-        $partners = DB::table('partners')
-            ->whereIn('code', [
-                'SUP-001',
-                'SUP-002',
-                'SUP-003',
-                'CUS-001',
-                'CUS-002',
-                'CUS-003',
-                'CUS-004',
-                'CUS-005',
-            ])
+        $categoryPrices = CategoryPrice::pluck('id', 'code');
+
+        DB::table('partners')->insert([
+            [
+                'code' => 'CUS-001',
+                'name' => 'PT Maju Jaya Packaging',
+                'is_supplier' => false,
+                'is_customer' => true,
+                'category_price_id' => $categoryPrices['GEN'],
+                'remarks' => 'Customer industri kemasan makanan',
+                'is_edit_locked' => false,
+                'is_delete_locked' => false,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'CUS-002',
+                'name' => 'CV Sinar Plastik',
+                'is_supplier' => false,
+                'is_customer' => true,
+                'category_price_id' => $categoryPrices['VIP'],
+                'remarks' => 'Customer trading plastik, VIP pricing',
+                'is_edit_locked' => false,
+                'is_delete_locked' => false,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'CUS-003',
+                'name' => 'PT Berkah Mandiri',
+                'is_supplier' => false,
+                'is_customer' => true,
+                'category_price_id' => $categoryPrices['GEN'],
+                'remarks' => 'Customer distributor sedotan & cup',
+                'is_edit_locked' => false,
+                'is_delete_locked' => false,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'CUS-004',
+                'name' => 'PT Sentosa Plastindo',
+                'is_supplier' => false,
+                'is_customer' => true,
+                'category_price_id' => $categoryPrices['VIP'],
+                'remarks' => 'Customer kantong plastik, VIP pricing',
+                'is_edit_locked' => false,
+                'is_delete_locked' => false,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'CUS-005',
+                'name' => 'PT Global Polymer',
+                'is_supplier' => true,
+                'is_customer' => true,
+                'category_price_id' => $categoryPrices['GEN'],
+                'remarks' => 'Partner dua arah (jual & beli resin)',
+                'is_edit_locked' => false,
+                'is_delete_locked' => false,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ]);
+
+        $companyCustomers = [
+            'COM-001' => ['CUS-001', 'CUS-002', 'CUS-005'],
+            'COM-002' => ['CUS-003', 'CUS-004'],
+            'COM-003' => ['CUS-001', 'CUS-003', 'CUS-005'],
+        ];
+
+        foreach ($companyCustomers as $companyCode => $customerCodes) {
+            $company = Company::where('code', $companyCode)->first();
+            $partnerIds = Partner::whereIn('code', $customerCodes)->pluck('id');
+            $company->partners()->syncWithoutDetaching($partnerIds);
+        }
+
+        $partners = Partner::whereIn('code', ['CUS-001', 'CUS-002', 'CUS-003', 'CUS-004', 'CUS-005'])
             ->pluck('id', 'code');
 
         DB::table('partner_addresses')->insert([
-            // ======================
-            // SUP-001
-            // ======================
-            [
-                'partner_id' => $partners['SUP-001'],
-                'label' => 'Head Office',
-                'address' => 'Jl. Industri Raya No. 15, Kawasan Industri Pulogadung',
-                'city' => 'Jakarta Timur',
-                'phone' => '+62 21 460 8899',
-                'contact_person' => 'Purchasing Dept.',
-                'remarks' => 'Alamat utama penagihan & pengiriman',
-                'is_default' => true,
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-
-            // ======================
-            // SUP-002
-            // ======================
-            [
-                'partner_id' => $partners['SUP-002'],
-                'label' => 'Overseas Office',
-                'address' => '99 ถนนสุขุมวิท แขวงคลองเตย แขวงคลองตัน เขตวัฒนา',
-                'city' => 'Bangkok',
-                'phone' => '+66 2 123 4567',
-                'contact_person' => 'Export Sales Team',
-                'remarks' => 'Supplier resin import Thailand',
-                'is_default' => true,
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-
-            // ======================
-            // SUP-003
-            // ======================
-            [
-                'partner_id' => $partners['SUP-003'],
-                'label' => 'Head Office',
-                'address' => 'Wisma Barito Pacific Tower A, Jl. Letjen S. Parman Kav. 62-63',
-                'city' => 'Jakarta Barat',
-                'phone' => '+62 21 530 7950',
-                'contact_person' => 'Sales Dept.',
-                'remarks' => 'Kantor pusat Chandra Asri',
-                'is_default' => true,
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-
-            // ======================
-            // CUS-001
-            // ======================
             [
                 'partner_id' => $partners['CUS-001'],
                 'label' => 'Factory',
@@ -105,10 +129,6 @@ class PartnerAddressesSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-
-            // ======================
-            // CUS-002
-            // ======================
             [
                 'partner_id' => $partners['CUS-002'],
                 'label' => 'Office & Warehouse',
@@ -124,10 +144,6 @@ class PartnerAddressesSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-
-            // ======================
-            // CUS-003
-            // ======================
             [
                 'partner_id' => $partners['CUS-003'],
                 'label' => 'Head Office',
@@ -143,10 +159,6 @@ class PartnerAddressesSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-
-            // ======================
-            // CUS-004
-            // ======================
             [
                 'partner_id' => $partners['CUS-004'],
                 'label' => 'Factory',
@@ -162,10 +174,6 @@ class PartnerAddressesSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-
-            // ======================
-            // CUS-005 (Supplier + Customer, Multi Address)
-            // ======================
             [
                 'partner_id' => $partners['CUS-005'],
                 'label' => 'Head Office',

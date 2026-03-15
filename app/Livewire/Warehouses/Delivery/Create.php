@@ -40,6 +40,7 @@ class Create extends Component
             'inputs.date' => 'required|date',
             'inputs.remarks' => 'nullable|string|max:1024',
             'inputs.delivery_address' => 'nullable|string|max:1024',
+            'inputs.vehicle_number' => 'nullable|string|max:50',
         ];
 
         // Only validate enabled lines (those with remaining qty)
@@ -123,6 +124,7 @@ class Create extends Component
             'remarks' => '',
             'selected_address_id' => $selectedAddressId,
             'delivery_address' => $deliveryAddress,
+            'vehicle_number' => '',
             'partner_name' => $this->order->partner?->name ?? '-',
             'company_name' => $this->order->company?->name ?? '-',
             'currency_code' => $this->order->currency?->code ?? '-',
@@ -373,6 +375,7 @@ class Create extends Component
                     'total' => round($grandTotal, 2),
                     'remarks' => $this->inputs['remarks'] ?? null,
                     'delivery_address' => $this->inputs['delivery_address'] ?? null,
+                    'vehicle_number' => $this->inputs['vehicle_number'] ?? null,
                     'created_by' => Auth::id(),
                 ]);
 
@@ -438,7 +441,6 @@ class Create extends Component
             throw $e;
         } catch (Exception $e) {
             Flux::toast($e->getMessage(), variant: 'danger', position: 'top right');
-            throw $e;
         }
     }
 

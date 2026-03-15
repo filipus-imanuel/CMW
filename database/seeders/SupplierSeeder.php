@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class PartnersSeeder extends Seeder
+class SupplierSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,11 +16,8 @@ class PartnersSeeder extends Seeder
         $now = Carbon::now();
 
         DB::table('partners')->insert([
-            // ======================
-            // SUPPLIERS
-            // ======================
             [
-                'code' => 'SUP-RESIN-001',
+                'code' => 'SUP-001',
                 'name' => 'PT Polychem Indonesia',
                 'is_supplier' => true,
                 'is_customer' => false,
@@ -34,7 +31,7 @@ class PartnersSeeder extends Seeder
                 'updated_at' => $now,
             ],
             [
-                'code' => 'SUP-IMPORT-002',
+                'code' => 'SUP-002',
                 'name' => 'Thai Plastic Resin Co., Ltd',
                 'is_supplier' => true,
                 'is_customer' => false,
@@ -47,49 +44,66 @@ class PartnersSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-
-            // ======================
-            // CUSTOMERS
-            // ======================
             [
-                'code' => 'CUS-IND-001',
-                'name' => 'PT Maju Jaya Packaging',
-                'is_supplier' => false,
-                'is_customer' => true,
-                'remarks' => 'Customer industri kemasan',
-                'is_edit_locked' => false,
-                'is_delete_locked' => false,
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'code' => 'CUS-TRD-002',
-                'name' => 'CV Sinar Plastik',
-                'is_supplier' => false,
-                'is_customer' => true,
-                'remarks' => 'Customer trading biji plastik',
-                'is_edit_locked' => false,
-                'is_delete_locked' => false,
-                'is_active' => true,
-                'version_number' => 1,
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            // ======================
-            // SUPPLIER + CUSTOMER
-            // ======================
-            [
-                'code' => 'BOTH-001',
-                'name' => 'PT Global Polymer',
+                'code' => 'SUP-003',
+                'name' => 'PT Chandra Asri Petrochemical',
                 'is_supplier' => true,
-                'is_customer' => true,
-                'remarks' => 'Partner dua arah (jual & beli resin)',
+                'is_customer' => false,
+                'remarks' => 'Supplier resin PE & PP domestik',
                 'is_edit_locked' => false,
                 'is_delete_locked' => false,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ]);
+
+        $partners = DB::table('partners')
+            ->whereIn('code', ['SUP-001', 'SUP-002', 'SUP-003'])
+            ->pluck('id', 'code');
+
+        DB::table('partner_addresses')->insert([
+            [
+                'partner_id' => $partners['SUP-001'],
+                'label' => 'Head Office',
+                'address' => 'Jl. Industri Raya No. 15, Kawasan Industri Pulogadung',
+                'city' => 'Jakarta Timur',
+                'phone' => '+62 21 460 8899',
+                'contact_person' => 'Purchasing Dept.',
+                'remarks' => 'Alamat utama penagihan & pengiriman',
+                'is_default' => true,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'partner_id' => $partners['SUP-002'],
+                'label' => 'Overseas Office',
+                'address' => '99 Sukhumvit Road, Klongtoey, Wattana',
+                'city' => 'Bangkok',
+                'phone' => '+66 2 123 4567',
+                'contact_person' => 'Export Sales Team',
+                'remarks' => 'Supplier resin import Thailand',
+                'is_default' => true,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'partner_id' => $partners['SUP-003'],
+                'label' => 'Head Office',
+                'address' => 'Wisma Barito Pacific Tower A, Jl. Letjen S. Parman Kav. 62-63',
+                'city' => 'Jakarta Barat',
+                'phone' => '+62 21 530 7950',
+                'contact_person' => 'Sales Dept.',
+                'remarks' => 'Kantor pusat Chandra Asri',
+                'is_default' => true,
                 'is_active' => true,
                 'version_number' => 1,
                 'created_by' => 1,

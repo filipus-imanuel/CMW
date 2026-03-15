@@ -558,7 +558,12 @@ class Edit extends Component
         });
 
         if ($pendingCount > 0) {
-            Flux::toast("Item updated. {$pendingCount} price change(s) submitted for approval.", variant: 'info', position: 'top right');
+            Flux::toast(
+                heading: 'Pending Approval',
+                text: "Item updated. {$pendingCount} price change(s) submitted for approval. Changes will take effect after manager review.",
+                variant: 'warning',
+                position: 'top right',
+            );
         } else {
             Flux::toast('Item updated successfully', variant: 'success', position: 'top right');
         }

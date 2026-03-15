@@ -90,7 +90,12 @@ class Edit extends Component
                     ]);
                 });
 
-                Flux::toast('Price change submitted for approval', variant: 'info', position: 'top right');
+                Flux::toast(
+                    heading: 'Pending Approval',
+                    text: 'Price change submitted for approval. It will take effect after manager review.',
+                    variant: 'warning',
+                    position: 'top right',
+                );
                 $this->dispatch('item-price-approval.badge-refresh');
                 $this->dispatch('cmw.inventories.item-price.refresh');
                 $this->modal('edit-item-price')->close();
@@ -142,25 +147,20 @@ class Edit extends Component
 
         $this->itemPrice = ItemPrice::with(['itemUom.item', 'itemUom.uom', 'categoryPrice'])->findOrFail($id);
 
-        // Auto-reject any existing pending approval for this item price
+        // Block editing if there's a pending approval
         $existingPending = PendingItemPrice::where('item_price_id', $id)
             ->where('status', 'pending')
             ->first();
 
         if ($existingPending) {
-            DB::transaction(function () use ($existingPending) {
-                $existingPending->update([
-                    'status' => 'rejected',
-                    'approved_by' => Auth::id(),
-                    'reviewed_at' => now(),
-                    'processed_at' => now(),
-                    'approval_notes' => 'Auto-rejected: New price change submitted',
-                    'updated_by' => Auth::id(),
-                ]);
-            });
+            Flux::toast(
+                heading: 'Edit Blocked',
+                text: 'This price has a pending approval. Please approve or reject it first before making new changes.',
+                variant: 'warning',
+                position: 'top right',
+            );
 
-            Flux::toast('Previous pending approval was automatically rejected', variant: 'warning', position: 'top right');
-            $this->dispatch('item-price-approval.badge-refresh');
+            return;
         }
 
         $this->inputs = [

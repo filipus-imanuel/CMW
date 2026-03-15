@@ -61,6 +61,15 @@
                 />
             </div>
 
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <flux:input
+                    wire:model="inputs.vehicle_number"
+                    label="Vehicle Number"
+                    placeholder="e.g. W 1234 XYZ"
+                    maxlength="50"
+                />
+            </div>
+
             <div class="mt-4">
                 <flux:textarea
                     wire:model="inputs.remarks"

@@ -12,7 +12,7 @@
         @can('view delivery order')
             <flux:button variant="primary" size="sm" icon="arrow-down-tray"
                 href="{{ route('warehouses.delivery.pdf', $header->id) }}" target="_blank">
-                Download PDF
+                Download Faktur
             </flux:button>
         @endcan
     </div>
@@ -55,6 +55,12 @@
                 <flux:text class="text-sm text-zinc-500">Currency</flux:text>
                 <flux:text class="font-medium">{{ $header->currency?->code ?? '-' }}</flux:text>
             </div>
+            @if($header->vehicle_number)
+                <div>
+                    <flux:text class="text-sm text-zinc-500">Vehicle Number</flux:text>
+                    <flux:text class="font-medium">{{ $header->vehicle_number }}</flux:text>
+                </div>
+            @endif
             <div>
                 <flux:text class="text-sm text-zinc-500">Created By</flux:text>
                 <flux:text class="font-medium">{{ $header->createdBy?->name ?? '-' }}</flux:text>

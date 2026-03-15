@@ -220,6 +220,9 @@
                                             />
                                         </flux:table.cell>
                                         <flux:table.cell>
+                                            @php
+                                                $selectedUomIds = collect($uoms)->pluck('uom_id')->filter()->all();
+                                            @endphp
                                             <flux:select
                                                 wire:model.live="uoms.{{ $u }}.uom_id"
                                                 placeholder="Select UOM"
@@ -227,7 +230,10 @@
                                                 searchable
                                             >
                                                 @foreach($dropdown_uom as $uom)
-                                                    <flux:select.option value="{{ $uom['value'] }}">{{ $uom['label'] }}</flux:select.option>
+                                                    <flux:select.option
+                                                        value="{{ $uom['value'] }}"
+                                                        :disabled="in_array($uom['value'], $selectedUomIds) && $uom['value'] != ($uomRow['uom_id'] ?? '')"
+                                                    >{{ $uom['label'] }}</flux:select.option>
                                                 @endforeach
                                             </flux:select>
                                             @error("uoms.{$u}.uom_id")

@@ -193,10 +193,11 @@
         <div class="flex items-center justify-between mb-4">
             <flux:heading size="lg">Items</flux:heading>
             <flux:button
-                wire:click="$dispatch('sales.request.search-item.open', { itemCategoryId: {{ $order->item_category_id }}, partnerId: {{ $order->partner_id }} })"
+                :href="route('sales.request.search', $order->id)"
                 variant="primary"
                 icon="plus"
                 size="sm"
+                wire:navigate
             >
                 Add Item
             </flux:button>
@@ -344,9 +345,6 @@
             <flux:button wire:click="submit" variant="primary">Submit Request</flux:button>
         </div>
     </flux:card>
-
-    {{-- Search Item Modal --}}
-    <livewire:sales.request.search-item />
 
     {{-- Delete Item Confirmation Modal --}}
     <flux:modal name="delete-item-confirmation">

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->decimal('total', 13, 2)->default(0);
             $table->string('remarks', 1024)->nullable();
             $table->string('delivery_address', 1024)->nullable();
+            $table->string('vehicle_number', 50)->nullable();
             $table->boolean('is_edit_locked')->default(false);
             $table->boolean('is_delete_locked')->default(false);
             $table->boolean('is_active')->default(true);

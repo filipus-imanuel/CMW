@@ -37,6 +37,7 @@ class DeliveryHeader extends BaseModel
         'tax',
         'total',
         'delivery_address',
+        'vehicle_number',
     ];
 
     protected function casts(): array

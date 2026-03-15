@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\CMW\Inventory\ItemCategory;
+use App\Models\CMW\Master\Company;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -72,5 +74,19 @@ class CompanySeeder extends Seeder
                 'updated_at' => $now,
             ],
         ]);
+
+        $categories = ItemCategory::pluck('id', 'code');
+
+        $companyCategories = [
+            'COM-001' => ['STRAW', 'CUP', 'RM', 'SCRAP'],
+            'COM-002' => ['BAG', 'SHEET', 'RM', 'SCRAP'],
+            'COM-003' => ['STRAW', 'CONTAINER', 'RM', 'SCRAP'],
+        ];
+
+        foreach ($companyCategories as $companyCode => $categoryCodes) {
+            $company = Company::where('code', $companyCode)->first();
+            $categoryIds = collect($categoryCodes)->map(fn ($code) => $categories[$code]);
+            $company->itemCategories()->sync($categoryIds);
+        }
     }
 }

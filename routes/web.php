@@ -55,6 +55,7 @@ use App\Livewire\Sales\Request\Create as SalesRequestCreate;
 use App\Livewire\Sales\Request\DeliverySchedule as SalesRequestDeliverySchedule;
 use App\Livewire\Sales\Request\Edit as SalesRequestEdit;
 use App\Livewire\Sales\Request\Index\Init as SalesRequestInitIndex;
+use App\Livewire\Sales\Request\Search as SalesRequestSearch;
 use App\Livewire\Sales\Return\Create as SalesReturnCreate;
 use App\Livewire\Sales\Return\Edit as SalesReturnEdit;
 use App\Livewire\Sales\Return\Index\Approval as SalesReturnApprovalIndex;
@@ -162,6 +163,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/upcoming/{id}', DeliveryUpcomingShow::class)->name('upcoming.show');
                 Route::get('/create/{orderId}', DeliveryCreate::class)->name('create');
                 Route::get('/{id}/pdf', [PdfController::class, 'deliveryOrder'])->name('pdf');
+                Route::get('/{id}/surat-jalan', [PdfController::class, 'suratJalan'])->name('surat-jalan');
 
                 Route::prefix('ongoing')->name('ongoing.')->group(function () {
                     Route::get('/', DeliveryOngoingIndex::class)->name('index');
@@ -206,6 +208,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/', SalesRequestInitIndex::class)->name('index.init');
                 Route::get('/create', SalesRequestCreate::class)->name('create');
                 Route::get('/{id}/edit', SalesRequestEdit::class)->name('edit');
+                Route::get('/{id}/search', SalesRequestSearch::class)->name('search');
                 Route::get('/{id}/delivery-schedule', SalesRequestDeliverySchedule::class)->name('delivery-schedule');
             });
 

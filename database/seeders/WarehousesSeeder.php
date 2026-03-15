@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\CMW\Inventory\Item;
+use App\Models\CMW\Master\Company;
+use App\Models\CMW\Master\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -61,5 +64,40 @@ class WarehousesSeeder extends Seeder
                 'updated_at' => $now,
             ],
         ]);
+
+        // Assign items to warehouses:
+        // Finished goods (FINISHED_GOOD) → WH-FG-01
+        // Raw materials (RAW_MATERIAL)   → WH-RM-01
+        $whFg = Warehouse::where('code', 'WH-FG-01')->value('id');
+        $whRm = Warehouse::where('code', 'WH-RM-01')->value('id');
+
+        $itemWarehouseRows = [];
+        $items = Item::select('id', 'type')->get();
+        foreach ($items as $item) {
+            $warehouseId = $item->type === 'RAW_MATERIAL' ? $whRm : $whFg;
+            $itemWarehouseRows[] = [
+                'item_id' => $item->id,
+                'warehouse_id' => $warehouseId,
+                'is_active' => true,
+                'version_number' => 1,
+                'created_by' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+        DB::table('item_warehouses')->insert($itemWarehouseRows);
+
+        // Assign FG warehouse to all companies
+        $companyWarehouseRows = [];
+        $companies = Company::pluck('id');
+        foreach ($companies as $companyId) {
+            $companyWarehouseRows[] = [
+                'company_id' => $companyId,
+                'warehouse_id' => $whFg,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+        DB::table('company_warehouses')->insert($companyWarehouseRows);
     }
 }

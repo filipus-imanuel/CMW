@@ -16,34 +16,39 @@ class ItemCategorySeeder extends Seeder
     {
         $data = [
             [
-                'code' => 'OTHER',
-                'name' => 'Other',
-                'remarks' => 'Kategori lain-lain',
+                'code' => 'STRAW',
+                'name' => 'Straw',
+                'remarks' => 'Sedotan plastik berbagai ukuran dan jenis',
+            ],
+            [
+                'code' => 'CUP',
+                'name' => 'Cup',
+                'remarks' => 'Gelas plastik untuk minuman',
+            ],
+            [
+                'code' => 'BAG',
+                'name' => 'Bag',
+                'remarks' => 'Kantong plastik berbagai ukuran',
+            ],
+            [
+                'code' => 'CONTAINER',
+                'name' => 'Container',
+                'remarks' => 'Wadah plastik untuk makanan dan penyimpanan',
+            ],
+            [
+                'code' => 'SHEET',
+                'name' => 'Sheet & Film',
+                'remarks' => 'Lembaran dan film plastik PP/PE',
             ],
             [
                 'code' => 'RM',
                 'name' => 'Raw Material',
-                'remarks' => 'Bahan baku utama seperti PP, PE, dan resin lainnya',
-            ],
-            [
-                'code' => 'FG',
-                'name' => 'Finished Goods',
-                'remarks' => 'Barang jadi siap dijual ke customer',
-            ],
-            [
-                'code' => 'SF',
-                'name' => 'Semi Finished Goods',
-                'remarks' => 'Barang setengah jadi hasil proses produksi',
-            ],
-            [
-                'code' => 'PACK',
-                'name' => 'Packing Material',
-                'remarks' => 'Material pendukung kemasan seperti plastik wrap, karton, dll',
+                'remarks' => 'Bahan baku seperti biji plastik PP, PE, dan resin',
             ],
             [
                 'code' => 'SCRAP',
                 'name' => 'Scrap & Waste',
-                'remarks' => 'Sisa produksi, barang rusak, atau waste',
+                'remarks' => 'Sisa produksi, barang reject, atau waste plastik',
             ],
         ];
 

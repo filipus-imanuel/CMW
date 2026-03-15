@@ -25,8 +25,7 @@ class DatabaseSeeder extends Seeder
         // Currency must be seeded before Company (FK dependency)
         $this->call(CurrencySeeder::class);
 
-        $this->call(PartnersSeeder::class);
-        $this->call(PartnerAddressesSeeder::class);
+        $this->call(SupplierSeeder::class);
         $this->call(CreditTermsSeeder::class);
         $this->call(UomsSeeder::class);
         $this->call(ItemCategorySeeder::class);
@@ -35,6 +34,7 @@ class DatabaseSeeder extends Seeder
         $this->call(DepartmentsSeeder::class);
         $this->call(EmployeesSeeder::class);
         $this->call(CompanySeeder::class);
+        $this->call(CustomerSeeder::class);
         $this->call(CompanySettingSeeder::class);
         $this->call(UomConversionsSeeder::class);
         $this->call(WarehousesSeeder::class);

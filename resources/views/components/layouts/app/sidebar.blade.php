@@ -61,7 +61,7 @@
 
                 <flux:navlist.group :heading="__('Sales')" expandable :expanded="request()->routeIs('sales.*')" class="grid">
                     @can('view sales request')
-                    <flux:navlist.item icon="document-text" :href="route('sales.request.index.init')" :current="request()->routeIs('sales.request.index.init') || request()->routeIs('sales.request.create') || request()->routeIs('sales.request.edit')" wire:navigate>{{ __('Sales Requests') }}</flux:navlist.item>
+                    <flux:navlist.item icon="document-text" :href="route('sales.request.index.init')" :current="request()->routeIs('sales.request.index.init') || request()->routeIs('sales.request.create') || request()->routeIs('sales.request.edit') || request()->routeIs('sales.request.search')" wire:navigate>{{ __('Sales Requests') }}</flux:navlist.item>
                     @endcan
                     @canany(['view sales order', 'approve sales order'])
                     <flux:navlist.item icon="shield-check" :href="route('sales.order.approval.index')" :current="request()->routeIs('sales.order.approval.*')" wire:navigate>{{ __('SO Approval') }}</flux:navlist.item>
