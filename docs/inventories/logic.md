@@ -1,6 +1,6 @@
 # Inventory Module — Business Logic
 
-**Last Updated**: 2026-02-25
+**Last Updated**: 2026-04-01
 
 ---
 
@@ -247,9 +247,9 @@ UOM selection for the transferred quantity is **not bound to a specific warehous
 
 ---
 
-## 9. Inventory Ledger & Stock Tracking (Future Phase)
+## 9. Inventory Ledger & Stock Tracking
 
-The `InventoryLedger` model and `inventory_ledgers` table are **structurally ready** but not yet actively posted to by transactions. The design supports:
+The `InventoryLedger` model and `inventory_ledgers` table are actively used by Stock Adjustment (see [adjustment_logic.md](adjustment_logic.md)) and Warehouse Return modules. The design supports:
 
 - **Polymorphic references** (`reference_type` / `reference_id`) to link back to source documents (GR, Sales Delivery, Transfer, Adjustment, Production, etc.)
 - **Per-warehouse running balance** via `balance` column (always in **base UOM**)
@@ -349,7 +349,7 @@ When the posting service is built, all stock-affecting transactions must write l
 
 ## 11. Known Limitations & Future Considerations
 
-1. **Ledger not active** — stock quantities are not journaled yet; activation requires an `InventoryService` (or Observer) that writes ledger entries within every stock-affecting transaction's DB transaction scope
+1. **Ledger partially active** — Stock Adjustment and Warehouse Return write ledger entries; other stock-affecting transactions (Sales Delivery, Purchase GR, Transfer) do not yet write ledger entries
 2. **item_warehouse_stocks not yet built** — current stock must be queried by aggregating `inventory_ledgers`; the cache table is deferred until the posting service is implemented (see §9.4)
 3. **Default warehouse soft constraint** — `items.default_warehouse_id` is enforced at Livewire layer only (must be in `item_warehouses` whitelist); there is intentionally no DB-level check to avoid constraint complexity on soft-deleted rows
 4. **Transfer warehouse validation** — item whitelist check on both `warehouse_from_id` and `warehouse_to_id` is deferred to transaction form validation; not enforced at DB level
@@ -361,7 +361,49 @@ When the posting service is built, all stock-affecting transactions must write l
 
 ---
 
-## 12. Related Files
+## 12. Permission Matrix
+
+| Permission | Actions |
+|------------|----------|
+| `category price` | `view`, `create`, `edit`, `delete` |
+| `item` | `view`, `create`, `edit`, `delete` |
+| `item category` | `view`, `create`, `edit`, `delete` |
+| `item price` | `view`, `create`, `edit`, `delete` |
+| `item price approval` | `view`, `approve`, `reject` |
+| `item price history` | `view` |
+| `stock adjustment` | `view`, `create`, `edit`, `confirm`, `cancel` |
+
+---
+
+## 13. Routes
+
+| Route Name | URL | Component |
+|------------|-----|----------|
+| `inventories.category-prices.index` | `/cmw/inventories/category-prices` | `Inventories\CategoryPrice\Index` |
+| `inventories.item-categories.index` | `/cmw/inventories/item-categories` | `Inventories\ItemCategory\Index` |
+| `inventories.item-price-approval-history.index` | `/cmw/inventories/item-price-approval-history` | `Inventories\ItemPrice\ApprovalHistory` |
+| `inventories.item-price-approvals.index` | `/cmw/inventories/item-price-approvals` | `Inventories\ItemPrice\Approval` |
+| `inventories.item-price-history.index` | `/cmw/inventories/item-price-history` | `Inventories\HistoryItemPrice\Index` |
+| `inventories.item-prices.index` | `/cmw/inventories/item-prices` | `Inventories\ItemPrice\Index` |
+| `inventories.items.index` | `/cmw/inventories/items` | `Inventories\Item\Index` |
+| `inventories.items.create` | `/cmw/inventories/items/create` | `Inventories\Item\Create` |
+| `inventories.items.edit` | `/cmw/inventories/items/{id}/edit` | `Inventories\Item\Edit` |
+| `inventories.stock-adjustments.index` | `/cmw/inventories/stock-adjustments` | `Inventories\Adjustment\Index` |
+| `inventories.stock-adjustments.create` | `/cmw/inventories/stock-adjustments/create` | `Inventories\Adjustment\Create` |
+| `inventories.stock-adjustments.edit` | `/cmw/inventories/stock-adjustments/{id}/edit` | `Inventories\Adjustment\Edit` |
+| `inventories.stock-adjustments.show` | `/cmw/inventories/stock-adjustments/{id}` | `Inventories\Adjustment\Show` |
+
+---
+
+## 14. Sub-Modules
+
+| Sub-Module | Docs | Description |
+|------------|------|-------------|
+| Stock Adjustment | [adjustment_logic.md](adjustment_logic.md) | Reconcile physical vs system stock, creates/reverses InventoryLedger entries |
+
+---
+
+## 15. Related Files
 
 | Area | Path |
 |------|------|
@@ -379,7 +421,7 @@ When the posting service is built, all stock-affecting transactions must write l
 | Adjustment Livewire | `app/Livewire/Inventories/Adjustment/` |
 | ItemPrice Livewire | `app/Livewire/Inventories/ItemPrice/` |
 | CategoryPrice Livewire | `app/Livewire/Inventories/CategoryPrice/` |
-| Sales Search Item | `app/Livewire/Sales/Request/SearchItem.php` |
+| Sales Search Item | `app/Livewire/Sales/Request/Search.php` |
 | Cleanup Command | `app/Console/Commands/CleanupItemPriceHistory.php` |
 | Migration: items | `database/migrations/2025_12_23_101400_create_items_table.php` |
 | Migration: item_warehouses | `database/migrations/2025_12_23_101451_create_item_warehouses_table.php` |

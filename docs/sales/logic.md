@@ -1,12 +1,26 @@
 # Sales Module — Business Logic
 
-**Last Updated**: 2026-03-13
+**Last Updated**: 2026-04-01
 
 ---
 
 ## 1. Domain Overview
 
-The Sales module manages the lifecycle of sales from **request → approval → order**. A single `OrderHeader` record progresses through statuses; no parent-child duplication.
+The Sales module manages the lifecycle of sales from **request → approval → order → delivery → invoice → payment**. A single `OrderHeader` record progresses through statuses; no parent-child duplication.
+
+### Sub-Modules
+
+| Sub-Module | Folder | Purpose |
+|------------|--------|---------|
+| Request | `Sales\Request\` | Sales Request (SR) create/edit/search/schedule |
+| Approval | `Sales\Approval\` | SO approval workflow |
+| Order | `Sales\Order\` | SO view (ongoing/rejected/cancelled/show) |
+| Invoice | `Sales\Invoice\` | AR Invoice view (unpaid/paid) |
+| Payment | `Sales\Payment\` | AR Payment create/show/cancel |
+| Return | `Sales\Return\` | Sales Return (RTN) create/edit/show/approval |
+
+> Detailed return logic: [Sales Return Logic](return/logic.md)
+> Warehouse-side return receipt: [Warehouse Return Logic](../warehouses/return/logic.md)
 
 ### Key Entities
 
@@ -36,12 +50,14 @@ INIT ──submit──▶ APPROVAL ──approve──▶ ORDER ──▶ DELIV
 |--------|---------|----------|-------|
 | `INIT` | Draft request | Yes | `scopeInit` |
 | `APPROVAL` | Pending approval | No | `scopePendingApproval` |
-| `ORDER` | Approved, ongoing | No | `scopeOngoing` |
+| `ORDER` | Approved, ongoing | No | `scopeOngoing`, `scopeOrders` |
 | `REJECTED` | Rejected by approver (imposed) | No | `scopeRejected` |
 | `CANCELLED` | Cancelled by user (voluntary) | No | `scopeCancelled` |
-| `DELIVERY`+ | Delivery in progress | No | `scopeOrders` |
+| `DELIVERY` | Delivery in progress | No | `scopeOngoing`, `scopeOrders` |
 | `FINISH` | All deliveries completed | No | `scopeOrders` |
 | `FINAL` | All invoices fully paid | No | `scopeOrders` |
+
+> **Note**: `scopeOngoing` includes both `ORDER` and `DELIVERY` statuses. `scopeOrders` includes `ORDER`, `DELIVERY`, `FINISH`, and `FINAL`.
 
 ---
 
@@ -101,27 +117,41 @@ Full-page component for browsing and adding items to an existing INIT order.
 
 1. Permission: `edit sales request` (adding items); `edit item price` (editing master prices)
 2. Route: `/cmw/sales/requests/{id}/search`
-3. Shows **all items** for the order's item category, paginated at 100 per page
-4. Filters: search by code/name (live debounce), item type dropdown
+3. Queries **ItemUom** records (not Item), so each row is an item-UOM combination. Shows all UOM variants for items in the order's item category, paginated at 100 per page.
+4. Filters: search by code/name (live debounce), item type dropdown, **UOM filter** dropdown
 5. Each row shows: code, name, type, UOM (with base indicator), category price code, HET price, resolved price (via `PriceResolutionHelper`)
-6. **Add item**: single-click creates `OrderDetail` directly in DB (qty=1, price=resolved, tax calculated via `TransactionHelper`). Already-added items show "Added" badge.
+6. **Add item**: single-click creates `OrderDetail` directly in DB (qty=1, price=resolved, tax calculated via `TransactionHelper`). Tracks `addedUomIds` (item_uom_id) — already-added item-UOM combinations show "Added" badge. The same item can be added with different UOMs as separate lines.
 7. **Edit master price**: opens modal to edit the `ItemPrice` for the customer's category price tier. Uses same threshold/approval logic as `Inventories\ItemPrice\Edit`:
    - Change % ≤ threshold → direct update + `HistoryItemPrice`
    - Change % > threshold → creates `PendingItemPrice` (pending approval)
    - Auto-rejects any existing pending approval for the same item price
 8. Back button returns to Edit page; items appear immediately since Edit loads from DB on mount
 
+### 4.2b Price Guardrails
+
+The Edit page computes **price guardrails** for each item row to warn about aggressive pricing:
+
+- **HET Price**: Resolved price for `null` partner (general/highest category) — serves as the reference ceiling
+- **Resolved Price**: Resolved price for the actual customer's category price tier
+- **Floor Price**: `HET × floor_percentage / 100` (configurable via `sales.request.floor_percentage_of_het` system setting, default 80%)
+- **Warnings**: Auto-computed when `price_proposed` is below floor or above HET
+
+Guardrails are informational only — they do not block submission.
+
 ### 4.3 Submit (INIT → APPROVAL)
 
 Validation before submit:
 - At least 1 detail item
-- `delivery_date` required
 - Non-return items must have `price_deal > 0` (return items allowed at 0)
+- **Delivery schedule** must be configured and balanced for **all** items:
+  - Every order detail must have at least 1 delivery schedule row
+  - Total scheduled quantity per item must equal the order detail quantity (tolerance: 0.01)
 
 On submit:
+- Saves current edits first (calls `save()` internally)
 - Status → `APPROVAL`
 - Return consumption: `ReturnDetail` rows linked via `order_details.return_detail_id` are marked `is_next_so_consumed = true`, `consumed_by_order_id` = this order
-- Dispatches `shp.sales.order.refresh.approval`
+- Dispatches `sales.request.refresh.init` + `shp.sales.order.refresh.approval`
 
 ### 4.4 Return Items Integration
 
@@ -130,7 +160,7 @@ Both Create and Edit show available return items filtered by **all** of:
 - Same `company_id` (on `return_headers`)
 - Same `item_category_id` (on original SO `order_headers`)
 - Same `tax_mode` + `tax_id` (on original SO `order_headers`)
-- Return status = `FINISH`, type = `ITEM`
+- Return status = `FINISH`, type = `ITEM` or `ITEM_INVOICE`
 - `quantity_next_so > 0`, `is_next_so_consumed = false`
 
 `order_details.return_detail_id` (nullable FK → `return_details`) tracks which order detail originated from a return.
@@ -185,13 +215,14 @@ Allows salespersons to split each order detail's quantity across multiple delive
 
 | Action | Permission | Result | Events |
 |--------|-----------|--------|--------|
-| **Restore** | `approve sales order` | → `INIT` | refresh approval + init |
-| **Reject** | `reject sales order` | → `REJECTED` (reason required) | refresh approval + rejected |
-| **Approve** | `approve sales order` | → `ORDER` + generate `code_order` | refresh approval + ongoing |
+| **Restore** | `approve sales order` | → `INIT` | `shp.sales.order.refresh.approval` + `sales.request.refresh.init` |
+| **Reject** | `reject sales order` | → `REJECTED` (reason required) | `shp.sales.order.refresh.approval` + `shp.sales.order.refresh.rejected` |
+| **Approve** | `approve sales order` | → `ORDER` + generate `code_order` | `shp.sales.order.refresh.approval` + `shp.sales.order.refresh.ongoing` |
 
 - `CustomerCheckHelper` info cards shown (credit limit, pending deliveries, company sales limit)
 - Approve generates `code_order` via `CodeGeneratorHelper::generateOrderCode('SO')`
 - Approve records `approved_by`, `approved_at`, clears `rejection_reason`
+- **Approval Notes** (`$approvalNotes`): optional text appended to order remarks on approval (prefixed with `[Approval Notes]`)
 
 ---
 
@@ -211,7 +242,8 @@ Allows salespersons to split each order detail's quantity across multiple delive
 
 ### 6.3 Show (Detail View)
 
-- Read-only detail for all non-INIT statuses (ORDER, DELIVERY, FINISH, FINAL, REJECTED, CANCELLED)
+- Read-only detail for statuses: INIT, ORDER, DELIVERY, FINISH, REJECTED, CANCELLED
+- **Note**: `FINAL` status is NOT in the allowed list — FINAL orders redirect to ongoing index
 - Back navigation: INIT → SR init index, REJECTED → rejected index, CANCELLED → cancelled index, else → ongoing index
 - Shows both codes, approval info
 - **Rejection callout** (REJECTED): displays `rejection_reason` with `x-circle` icon
@@ -264,6 +296,8 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 ],
 ```
 
+> **Note**: `payment method` permissions are in the `sales` group in `PermissionHelper`, even though the Livewire component and route are under `Masters/`.
+
 | Permission | Purpose |
 |---|---|
 | `override price sales request` | Change `price_proposed` away from the resolved PriceResolutionHelper value |
@@ -273,20 +307,16 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `view ar payment` | View active/cancelled payment lists and payment detail |
 | `create ar payment` | Record a new payment from invoice detail |
 | `cancel ar payment` | Cancel an active payment (reverses invoice balance) |
-| `view payment method` | View payment methods master list |
-| `create payment method` | Create a new payment method |
-| `edit payment method` | Edit an existing payment method |
-| `delete payment method` | Soft-delete a payment method |
 
 ### Role Assignments
 
-| Role | AR Invoice | AR Payment | Payment Method |
-|------|------------|------------|----------------|
-| Super Admin | All | All | All |
-| Management | view | view | view |
-| Finance | view | view, create, cancel | view, create, edit, delete |
-| Sales | view | — | — |
-| Admin | — | — | — |
+| Role | AR Invoice | AR Payment |
+|------|------------|------------|
+| Super Admin | All | All |
+| Management | view | view |
+| Finance | view | view, create, cancel |
+| Sales | view | — |
+| Admin | — | — |
 
 ---
 
@@ -298,19 +328,30 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | `sales.request.create` | `/cmw/sales/requests/create` | `Sales\Request\Create` |
 | `sales.request.edit` | `/cmw/sales/requests/{id}/edit` | `Sales\Request\Edit` |
 | `sales.request.search` | `/cmw/sales/requests/{id}/search` | `Sales\Request\Search` |
+| `sales.request.delivery-schedule` | `/cmw/sales/requests/{id}/delivery-schedule` | `Sales\Request\DeliverySchedule` |
 | `sales.order.approval.index` | `/cmw/sales/orders/approval` | `Sales\Approval\Index` |
 | `sales.order.approval.show` | `/cmw/sales/orders/approval/{id}` | `Sales\Approval\Show` |
 | `sales.order.index.ongoing` | `/cmw/sales/orders` | `Sales\Order\Index\Ongoing` |
 | `sales.order.index.rejected` | `/cmw/sales/orders/rejected` | `Sales\Order\Index\Rejected` |
 | `sales.order.index.cancelled` | `/cmw/sales/orders/cancelled` | `Sales\Order\Index\Cancelled` |
-| `sales.order.show` | `/cmw/sales/orders/{id}` | `Sales\Order\Show` || `sales.invoice.index.unpaid` | `/cmw/sales/invoices` | `Sales\Invoice\Index\Unpaid` |
+| `sales.order.show` | `/cmw/sales/orders/{id}` | `Sales\Order\Show` |
+| `sales.order.pdf` | `/cmw/sales/orders/{id}/pdf` | PDF Controller |
+| `sales.return.index.draft` | `/cmw/sales/returns` | `Sales\Return\Index\Draft` |
+| `sales.return.index.approval` | `/cmw/sales/returns/approval` | `Sales\Return\Index\Approval` |
+| `sales.return.index.ongoing` | `/cmw/sales/returns/ongoing` | `Sales\Return\Index\Ongoing` |
+| `sales.return.index.finish` | `/cmw/sales/returns/finish` | `Sales\Return\Index\Finish` |
+| `sales.return.index.cancelled` | `/cmw/sales/returns/cancelled` | `Sales\Return\Index\Cancelled` |
+| `sales.return.index.rejected` | `/cmw/sales/returns/rejected` | `Sales\Return\Index\Rejected` |
+| `sales.return.create` | `/cmw/sales/returns/create/{deliveryId?}` | `Sales\Return\Create` |
+| `sales.return.edit` | `/cmw/sales/returns/{id}/edit` | `Sales\Return\Edit` |
+| `sales.return.show` | `/cmw/sales/returns/{id}` | `Sales\Return\Show` |
+| `sales.invoice.index.unpaid` | `/cmw/sales/invoices` | `Sales\Invoice\Index\Unpaid` |
 | `sales.invoice.index.paid` | `/cmw/sales/invoices/paid` | `Sales\Invoice\Index\Paid` |
 | `sales.invoice.show` | `/cmw/sales/invoices/{id}` | `Sales\Invoice\Show` |
 | `sales.payment.index.active` | `/cmw/sales/payments` | `Sales\Payment\Index\Active` |
 | `sales.payment.index.cancelled` | `/cmw/sales/payments/cancelled` | `Sales\Payment\Index\Cancelled` |
 | `sales.payment.create` | `/cmw/sales/payments/create/{invoiceId}` | `Sales\Payment\Create` |
 | `sales.payment.show` | `/cmw/sales/payments/{id}` | `Sales\Payment\Show` |
-| `masters.payment-methods.index` | `/cmw/masters/payment-methods` | `Masters\PaymentMethod\Index` |
 ---
 
 ## 10. Sidebar Menus
@@ -328,7 +369,6 @@ Pending order statuses considered: `APPROVAL`, `ORDER`, `DELIVERY`.
 | **Payment** (group) | | `view ar payment` | |
 |   Active | `banknotes` | `view ar payment` | `sales.payment.index.active` |
 |   Cancelled | `no-symbol` | `view ar payment` | `sales.payment.index.cancelled` |
-| Payment Methods | `banknotes` | (Master group) | `masters.payment-methods.index` |
 
 ---
 
@@ -377,8 +417,10 @@ One AR Invoice is generated per Delivery Order. The invoice tracks the total amo
 
 ```
 unpaid ──partial payment──▶ partial ──full payment──▶ paid
-                                                       │
-paid ◀──payment cancelled──── partial ◀──payment cancelled──┘
+  │                                                    │
+  │                          paid ◀──payment cancelled──┘
+  │                           ▲
+  └──return reduces balance───┘  (INVOICE_RETURN / INVOICE_DISCARD / ITEM_INVOICE)
 ```
 
 | Status | Meaning | Scope |
@@ -400,7 +442,8 @@ paid ◀──payment cancelled──── partial ◀──payment cancelled�
 | `tax` | `decimal(13,2)` | Tax amount |
 | `total` | `decimal(13,2)` | Grand total |
 | `paid` | `decimal(13,2)` | Total payments received |
-| `balance` | `decimal(13,2)` | Outstanding = total − paid |
+| `return_total` | `decimal(13,2)` | Total amount reduced by sales returns |
+| `balance` | `decimal(13,2)` | Outstanding = total − paid − return_total |
 | `status` | `string(20)` | `unpaid`, `partial`, `paid` |
 
 ### 13.4 Invoice Show Page (`Sales\Invoice\Show`)
@@ -530,19 +573,7 @@ Called from:
 
 ## 16. Payment Method (Master)
 
-Standard master CRUD (modal-based) under `Masters\PaymentMethod`.
+> Payment Method master data has been moved to **Masters module** documentation.
+> See [Masters Logic — §3.4 Payment Method](../masters/logic.md).
 
-| Field | Type | Rules |
-|-------|------|-------|
-| `code` | `string(50)` | Required, unique |
-| `name` | `string(100)` | Required |
-| `remarks` | `string(1024)` | Optional |
-| `is_active` | `boolean` | Default true |
-
-Components: `Index`, `IndexDataTable`, `Create`, `Edit`.
-
-Event: `cmw.master.payment-method.refresh`.
-
-### Company Payment Code
-
-`companies.payment_code` (`string(2)`, nullable) — 2-digit code used in payment number generation format `FK/{payment_code}/YYMM/00001`. Configured in Company Create/Edit forms.
+Payment code format used by AR Payment: `FK/{company.payment_code}/YYMM/00001` — where `payment_code` is a 2-digit code on the `companies` table.

@@ -3,6 +3,7 @@
 namespace App\Livewire\Sales\Return;
 
 use App\Helpers\CMW\TransactionHelper;
+use App\Models\CMW\Transaction\ArInvoiceHeader;
 use App\Models\CMW\Transaction\ReturnHeader;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;

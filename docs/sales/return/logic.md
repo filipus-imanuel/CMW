@@ -1,8 +1,12 @@
 # Sales Return Module – Business Logic
 
+**Last Updated**: 2026-04-01
+
 ## Overview
 
 The Sales Return module handles goods returned by customers after delivery. It supports four return types with distinct processing flows, integrates with warehouse receipt, inventory tracking, and AR invoicing.
+
+> **Warehouse-side return receipt logic**: see [Warehouse Return Logic](../../warehouses/return/logic.md)
 
 ---
 
@@ -92,24 +96,11 @@ INIT ──► APPROVAL ──┼─ INVOICE_RETURN ────► PROCESSING �
 
 ## Warehouse Receipt (PROCESSING Status – ITEM, ITEM_INVOICE & INVOICE_RETURN Only)
 
-Handled by Warehouse module (`Warehouses\Return\Show`).
+Handled by Warehouse module (`Warehouses\Return\Show`). See [Warehouse Return Logic](../../warehouses/return/logic.md) for full receipt details.
 
 > **Note**: `INVOICE_DISCARD` returns never reach PROCESSING status and are not visible to the warehouse.
 
-### Input per Line
-| Field                     | Default       | Constraint                           |
-|---------------------------|---------------|--------------------------------------|
-| `quantity_received_good`  | qty_return    | ≥ 0                                  |
-| `quantity_received_damaged`| 0            | ≥ 0                                  |
-| **Sum**                   |               | Must equal `quantity_return`          |
-
-### On Confirm Receipt
-
-1. **Good stock**: `InventoryLedger` entry (credit/in) linked via morphMany.
-2. **Damaged stock**: `InventoryLedger` entry + `InventoryDamagedStock` record with morph reference to `ReturnDetail`.
-3. **INVOICE_RETURN type**: Reduce AR invoice balance by return total → status → `FINISH`.
-4. **ITEM / ITEM_INVOICE type**: Remains `PROCESSING` (awaiting allocation on Sales side).
-5. Sets `received_by` and `received_at` on header.
+**Summary**: Warehouse splits returned goods into good/damaged per line, selects receiving warehouse, and confirms receipt. Good stock creates `InventoryLedger` entries; damaged stock creates `InventoryDamagedStock` records. For `INVOICE_RETURN`, AR balance is reduced and return status → `FINISH`. For `ITEM` and `ITEM_INVOICE`, return stays `PROCESSING` awaiting allocation.
 
 ---
 
@@ -122,13 +113,30 @@ Handled by Sales Return Show page.
 |---------------------|-----------------------------------------------------|
 | `quantity_redelivery` | ≥ 0                                               |
 | `quantity_next_so`    | ≥ 0                                               |
-| **Sum**             | Must equal `quantity_received_good`                 |
+| **Sum**             | Must not exceed `quantity_return`                   |
 
 ### On Process Allocation
 
-1. **Redelivery > 0**: Reverts linked SO status to `PROCESSING` so a new DO can be created.
-2. **Next SO > 0**: Items become available for consumption in a future Sales Request.
-3. Status → `FINISH`.
+**Validation**:
+1. `quantity_redelivery + quantity_next_so ≤ quantity_return` per line
+2. No negative quantities
+3. Redelivery: warehouse stock check — `TransactionHelper::getWarehouseBalance()` must have sufficient base-UOM stock for redelivery quantity
+
+**Processing** (inside `DB::transaction`):
+1. Updates each `ReturnDetail` with `quantity_redelivery`, `quantity_next_so`
+2. **Redelivery > 0**: Reverts linked SO status from `FINISH` to `DELIVERY` so a new DO can be created
+3. **Next SO > 0**: Items become available for consumption in a future Sales Request
+4. Status → `FINISH`
+5. Dispatches `shp.sales.return.finished`
+6. **Redirect**: `sales.return.index.ongoing`
+
+### Cancel (PROCESSING pre-receipt)
+
+- Permission: `edit sales return`
+- Only allowed when `isProcessing() && !isWarehouseReceived()`
+- Sets status → `CANCELLED`
+- Dispatches `shp.sales.return.cancelled`
+- **Redirect**: `sales.return.index.ongoing`
 
 ---
 
@@ -171,11 +179,7 @@ Existing return-origin items loaded from `order_details.return_detail_id`. Addit
 | `approve sales return`| Sales, Admin   |
 | `reject sales return` | Sales, Admin   |
 
-### Warehouse Group
-| Permission              | Roles              |
-|--------------------------|-------------------|
-| `view warehouse return`  | Warehouse, Admin  |
-| `receive warehouse return`| Warehouse, Admin |
+> Warehouse-side permissions: see [Warehouse Return Logic](../../warehouses/return/logic.md).
 
 ---
 
@@ -193,13 +197,27 @@ Format: `RTN/YYMM/NNNN`
 
 Pattern: `shp.{module}.{entity}.{action}`
 
-Examples:
-- `shp.sales.return.created`
-- `shp.sales.return.approved`
-- `shp.sales.return.finished`
-- `shp.sales.return.refresh.rejected`
-- `shp.sales.return.refresh.cancelled`
-- `shp.warehouse.return.received`
+| Event | Dispatched When |
+|-------|----------------|
+| `sales.return.refresh.draft` | Return created (Create.php) |
+| `shp.sales.return.submitted` | Return submitted for approval (Edit.php) |
+| `shp.sales.return.approved` | Return approved → PROCESSING (Show.php, ITEM/ITEM_INVOICE/INVOICE_RETURN) |
+| `shp.sales.return.finished` | Return completed → FINISH (Show.php, INVOICE_DISCARD at approval or allocation complete) |
+| `shp.sales.return.refresh.rejected` | Return rejected (Show.php) |
+| `shp.sales.return.cancelled` | Return cancelled from PROCESSING (Show.php) |
+
+### DataTable Listeners
+
+| Listener | DataTable | Notes |
+|----------|-----------|-------|
+| `sales.return.refresh.draft` | DraftDataTable | Matched by Create.php |
+| `sales.return.refresh.approval` | ApprovalDataTable | No dispatch currently matches |
+| `sales.return.refresh.ongoing` | OngoingDataTable | No dispatch currently matches |
+| `sales.return.refresh.finish` | FinishDataTable | No dispatch currently matches |
+| `shp.sales.return.refresh.rejected` | RejectedDataTable | Matched by Show.php reject |
+| `sales.return.refresh.cancelled` | CancelledDataTable | No dispatch currently matches |
+| `shp.sales.return.cancelled` | — | Dispatched but no DataTable listener |
+| `shp.warehouse.return.received` | — | Dispatched by Warehouse Return Show |
 
 ---
 

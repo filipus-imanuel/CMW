@@ -152,17 +152,20 @@ All actions use the **double gate** pattern: `@can()` in Blade + `$this->authori
 
 ## Routes
 
-| Route Name                             | URL                                    | Component                |
-|---------------------------------------|----------------------------------------|--------------------------|
-| warehouses.delivery.upcoming          | /cmw/warehouses/delivery/upcoming      | Upcoming\Index           |
-| warehouses.delivery.create            | /cmw/warehouses/delivery/create/{orderId} | Create                |
-| warehouses.delivery.ongoing.index     | /cmw/warehouses/delivery/ongoing       | Ongoing\Index            |
-| warehouses.delivery.ongoing.so        | /cmw/warehouses/delivery/ongoing/so    | Ongoing\So               |
-| warehouses.delivery.ongoing.show      | /cmw/warehouses/delivery/ongoing/{id}  | Ongoing\Show             |
-| warehouses.delivery.finish.index      | /cmw/warehouses/delivery/finish        | Finish\Index             |
-| warehouses.delivery.finish.show       | /cmw/warehouses/delivery/finish/{id}   | Finish\Show              |
-| warehouses.delivery.cancelled.index   | /cmw/warehouses/delivery/cancelled     | Cancelled\Index          |
-| warehouses.delivery.cancelled.show    | /cmw/warehouses/delivery/cancelled/{id}| Cancelled\Show           |
+| Route Name                             | URL                                       | Component                |
+|---------------------------------------|-------------------------------------------|--------------------------|
+| warehouses.delivery.upcoming          | /cmw/warehouses/delivery/upcoming         | Upcoming\Index           |
+| warehouses.delivery.upcoming.show     | /cmw/warehouses/delivery/upcoming/{id}    | Upcoming\Show            |
+| warehouses.delivery.create            | /cmw/warehouses/delivery/create/{orderId} | Create                   |
+| warehouses.delivery.pdf               | /cmw/warehouses/delivery/{id}/pdf         | PdfController@deliveryOrder |
+| warehouses.delivery.surat-jalan       | /cmw/warehouses/delivery/{id}/surat-jalan | PdfController@suratJalan |
+| warehouses.delivery.ongoing.index     | /cmw/warehouses/delivery/ongoing          | Ongoing\Index            |
+| warehouses.delivery.ongoing.so        | /cmw/warehouses/delivery/ongoing/so       | Ongoing\So               |
+| warehouses.delivery.ongoing.show      | /cmw/warehouses/delivery/ongoing/{id}     | Ongoing\Show             |
+| warehouses.delivery.finish.index      | /cmw/warehouses/delivery/finish           | Finish\Index             |
+| warehouses.delivery.finish.show       | /cmw/warehouses/delivery/finish/{id}      | Finish\Show              |
+| warehouses.delivery.cancelled.index   | /cmw/warehouses/delivery/cancelled        | Cancelled\Index          |
+| warehouses.delivery.cancelled.show    | /cmw/warehouses/delivery/cancelled/{id}   | Cancelled\Show           |
 
 ---
 
