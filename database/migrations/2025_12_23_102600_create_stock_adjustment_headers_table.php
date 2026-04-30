@@ -14,6 +14,9 @@ return new class extends Migration
             $table->date('date');
             $table->foreignId('currency_id')->default(1)->constrained('currencies');
             $table->foreignId('warehouse_id')->constrained('warehouses');
+            $table->foreignId('order_header_id')->nullable()->constrained('order_headers');
+            $table->string('work_order_auto', 50)->nullable();
+            $table->string('work_order_manual', 100)->nullable();
             $table->string('status', 20)->default('draft');
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);

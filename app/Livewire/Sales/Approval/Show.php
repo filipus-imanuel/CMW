@@ -140,6 +140,7 @@ class Show extends Component
             $updateData = [
                 'status' => 'ORDER',
                 'code_order' => CodeGeneratorHelper::generateOrderCode('SO'),
+                'work_order_auto' => CodeGeneratorHelper::generateWorkOrderCode(),
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
                 'rejection_reason' => null,

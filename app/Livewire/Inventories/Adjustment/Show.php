@@ -23,7 +23,7 @@ class Show extends Component
         $this->authorize('view stock adjustment');
 
         $this->header = StockAdjustmentHeader::with([
-            'warehouse', 'details.item', 'details.itemUom.uom',
+            'warehouse', 'orderHeader', 'details.item', 'details.itemUom.uom',
             'createdBy', 'updatedBy', 'inventoryLedgers',
         ])->findOrFail($id);
     }

@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('status', 20)->default('INIT'); // INIT, APPROVAL, ORDER, DELIVERY, FINISH, FINAL, REJECTED, CANCELLED
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
+            $table->string('work_order_auto', 50)->nullable()->unique();
+            $table->string('work_order_manual', 100)->nullable();
             $table->string('rejection_reason', 1024)->nullable();
             $table->decimal('subtotal', 13, 2)->default(0);
             $table->decimal('discount', 13, 2)->default(0);
@@ -39,6 +41,8 @@ return new class extends Migration
             $table->foreignId('deleted_by')->nullable()->constrained('users');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['status', 'date'], 'order_headers_status_date_idx');
         });
     }
 

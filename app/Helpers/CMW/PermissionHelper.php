@@ -66,7 +66,7 @@ class PermissionHelper
             // ══════════════════════════════════════════════════════════════
             'sales' => [
                 'sales request' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
-                'sales order' => ['view', 'approve', 'reject'],
+                'sales order' => ['view', 'edit', 'approve', 'reject'],
                 'delivery order' => ['view', 'create', 'confirm', 'cancel', 'force finish'],
                 'sales return' => ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
                 'ar invoice' => ['view'],
@@ -203,6 +203,7 @@ class PermissionHelper
                 $isSalesResource = str_contains($permission, 'customer') || str_contains($permission, 'partner address');
                 $isSalesTransaction = str_contains($permission, 'sales request')
                     || ($permission === 'view sales order')
+                    || ($permission === 'edit sales order')
                     || str_contains($permission, 'sales return')
                     || ($permission === 'view ar invoice');
                 $isViewOnly = str_contains($permission, 'view') && (

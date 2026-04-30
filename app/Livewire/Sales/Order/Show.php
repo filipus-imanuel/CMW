@@ -5,6 +5,7 @@ namespace App\Livewire\Sales\Order;
 use App\Helpers\CMW\CodeGeneratorHelper;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
+use App\Models\CMW\Transaction\StockAdjustmentHeader;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ class Show extends Component
     public ?OrderHeader $order = null;
 
     public string $cancellation_reason = '';
+
+    public ?string $work_order_manual = null;
 
     public function mount($id): void
     {
@@ -38,6 +41,46 @@ class Show extends Component
 
             return;
         }
+
+        $this->work_order_manual = $this->order->work_order_manual;
+    }
+
+    /**
+     * Save the manually-entered Work Order number on an ongoing SO.
+     * Editable only while status is ORDER or DELIVERY.
+     */
+    public function saveWorkOrderManual(): void
+    {
+        $this->authorize('edit sales order');
+
+        if (! in_array($this->order->status, ['ORDER', 'DELIVERY'])) {
+            Flux::toast('Work Order can only be edited while status is ORDER or DELIVERY.', variant: 'danger', position: 'top-end');
+
+            return;
+        }
+
+        $this->validate([
+            'work_order_manual' => 'nullable|string|max:100',
+        ]);
+
+        DB::transaction(function () {
+            $this->order->update([
+                'work_order_manual' => $this->work_order_manual,
+                'updated_by' => Auth::id(),
+            ]);
+
+            // Cascade to linked stock adjustments so they reflect the latest WO manual.
+            StockAdjustmentHeader::where('order_header_id', $this->order->id)
+                ->update([
+                    'work_order_manual' => $this->work_order_manual,
+                    'updated_by' => Auth::id(),
+                ]);
+        });
+
+        $this->order->refresh();
+
+        Flux::toast('Work Order updated.', variant: 'success', position: 'top-end');
+        $this->dispatch('shp.sales.order.refresh');
     }
 
     /**

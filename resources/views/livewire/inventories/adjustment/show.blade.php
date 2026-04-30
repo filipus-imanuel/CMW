@@ -129,6 +129,18 @@
                 <flux:text class="font-medium">{{ $header->warehouse?->name ?? '-' }}</flux:text>
             </div>
             <div>
+                <flux:text class="text-sm text-zinc-500">Sales Order</flux:text>
+                <flux:text class="font-medium">{{ $header->orderHeader?->code_order ?? $header->orderHeader?->code_request ?? '-' }}</flux:text>
+            </div>
+            <div>
+                <flux:text class="text-sm text-zinc-500">WO Auto</flux:text>
+                <flux:text class="font-medium">{{ $header->work_order_auto ?? '-' }}</flux:text>
+            </div>
+            <div>
+                <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
+                <flux:text class="font-medium">{{ $header->work_order_manual ?? '-' }}</flux:text>
+            </div>
+            <div>
                 <flux:text class="text-sm text-zinc-500">Created By</flux:text>
                 <flux:text class="font-medium">{{ $header->createdBy?->name ?? '-' }}</flux:text>
             </div>

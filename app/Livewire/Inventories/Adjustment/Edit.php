@@ -5,14 +5,17 @@ namespace App\Livewire\Inventories\Adjustment;
 use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Inventory\InventoryLedger;
 use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Transaction\OrderHeader;
 use App\Models\CMW\Transaction\StockAdjustmentDetail;
 use App\Models\CMW\Transaction\StockAdjustmentHeader;
 use Exception;
 use Flux\Flux;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -29,11 +32,22 @@ class Edit extends Component
 
     public $dropdown_items = [];
 
+    public string $soFilter = 'has_wo';
+
+    public string $soSearch = '';
+
+    public string $soDateFrom = '';
+
+    public string $soDateTo = '';
+
     public function rules(): array
     {
         return [
             'inputs.date' => 'required|date',
             'inputs.warehouse_id' => 'required|exists:warehouses,id',
+            'inputs.order_header_id' => 'nullable|exists:order_headers,id',
+            'inputs.work_order_auto' => 'nullable|string|max:50',
+            'inputs.work_order_manual' => 'nullable|string|max:100',
             'inputs.remarks' => 'nullable|string|max:1024',
             'lines' => 'required|array|min:1',
             'lines.*.item_id' => 'required|exists:items,id',
@@ -86,6 +100,9 @@ class Edit extends Component
 
         $this->populateInputs();
         $this->loadDropdowns();
+
+        $this->soDateFrom = now()->subDays(30)->format('Y-m-d');
+        $this->soDateTo = now()->format('Y-m-d');
     }
 
     private function populateInputs(): void
@@ -93,6 +110,9 @@ class Edit extends Component
         $this->inputs = [
             'date' => $this->header->date->format('Y-m-d'),
             'warehouse_id' => $this->header->warehouse_id,
+            'order_header_id' => $this->header->order_header_id ?? '',
+            'work_order_auto' => $this->header->work_order_auto ?? '',
+            'work_order_manual' => $this->header->work_order_manual ?? '',
             'remarks' => $this->header->remarks,
         ];
 
@@ -123,6 +143,107 @@ class Edit extends Component
         } else {
             $this->dropdown_items = PopulateDataHelper::getItems(['useCache' => false]);
         }
+    }
+
+    /**
+     * Server-side, debounced query for the SO combobox.
+     * Limited to 20 results plus the currently selected SO (and originally
+     * linked SO), so the picker stays light even with thousands of orders.
+     *
+     * @return Collection<int, array{id:int,label:string,work_order_auto:?string,work_order_manual:?string}>
+     */
+    #[Computed]
+    public function orderOptions(): Collection
+    {
+        $query = OrderHeader::query()
+            ->whereIn('status', ['ORDER', 'DELIVERY', 'FINISH', 'FINAL']);
+
+        if ($this->soFilter === 'has_wo') {
+            $query->whereNotNull('work_order_auto');
+        } elseif ($this->soFilter === 'no_wo') {
+            $query->whereNull('work_order_auto');
+        }
+
+        if ($this->soDateFrom !== '') {
+            $query->whereDate('date', '>=', $this->soDateFrom);
+        }
+        if ($this->soDateTo !== '') {
+            $query->whereDate('date', '<=', $this->soDateTo);
+        }
+
+        $search = trim($this->soSearch);
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function ($q) use ($like) {
+                $q->where('code_order', 'like', $like)
+                    ->orWhere('code_request', 'like', $like)
+                    ->orWhere('work_order_auto', 'like', $like)
+                    ->orWhere('work_order_manual', 'like', $like);
+            });
+        }
+
+        $rows = $query
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get(['id', 'code_order', 'code_request', 'date', 'work_order_auto', 'work_order_manual']);
+
+        // Always include currently selected + originally linked SO so labels persist
+        $pinIds = array_filter([
+            (int) ($this->inputs['order_header_id'] ?? 0),
+            (int) ($this->header?->order_header_id ?? 0),
+        ]);
+        foreach ($pinIds as $pinId) {
+            if (! $rows->contains('id', $pinId)) {
+                $pinned = OrderHeader::find($pinId, ['id', 'code_order', 'code_request', 'date', 'work_order_auto', 'work_order_manual']);
+                if ($pinned) {
+                    $rows->prepend($pinned);
+                }
+            }
+        }
+
+        return $rows->map(fn ($o) => [
+            'id' => $o->id,
+            'label' => trim(($o->code_order ?? $o->code_request).($o->work_order_auto ? ' — '.$o->work_order_auto : '')),
+            'work_order_auto' => $o->work_order_auto,
+            'work_order_manual' => $o->work_order_manual,
+        ]);
+    }
+
+    public function updatedSoFilter(): void
+    {
+        $this->inputs['order_header_id'] = '';
+        $this->inputs['work_order_auto'] = '';
+        $this->inputs['work_order_manual'] = '';
+        unset($this->orderOptions);
+    }
+
+    public function updatedSoSearch(): void
+    {
+        unset($this->orderOptions);
+    }
+
+    public function updatedSoDateFrom(): void
+    {
+        unset($this->orderOptions);
+    }
+
+    public function updatedSoDateTo(): void
+    {
+        unset($this->orderOptions);
+    }
+
+    public function updatedInputsOrderHeaderId($value): void
+    {
+        if (! $value) {
+            $this->inputs['work_order_auto'] = '';
+            $this->inputs['work_order_manual'] = '';
+
+            return;
+        }
+
+        $order = OrderHeader::find($value);
+        $this->inputs['work_order_auto'] = $order?->work_order_auto ?? '';
+        $this->inputs['work_order_manual'] = $order?->work_order_manual ?? '';
     }
 
     public function addLine(): void
@@ -264,6 +385,9 @@ class Edit extends Component
                 $this->header->update([
                     'date' => $validated['inputs']['date'],
                     'warehouse_id' => $validated['inputs']['warehouse_id'],
+                    'order_header_id' => $validated['inputs']['order_header_id'] ?: null,
+                    'work_order_auto' => $validated['inputs']['work_order_auto'] ?: null,
+                    'work_order_manual' => $validated['inputs']['work_order_manual'] ?: null,
                     'remarks' => $validated['inputs']['remarks'] ?? null,
                     'updated_by' => Auth::id(),
                 ]);

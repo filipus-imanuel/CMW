@@ -45,6 +45,68 @@
             </div>
         </flux:card>
 
+        {{-- Work Order Link --}}
+        <flux:card class="mb-6">
+            <flux:heading size="lg" class="mb-4">Work Order (optional)</flux:heading>
+
+            <div class="space-y-4">
+                <flux:radio.group wire:model.live="soFilter" label="Filter SO" variant="segmented">
+                    <flux:radio value="has_wo" label="Has WO" />
+                    <flux:radio value="no_wo" label="No WO" />
+                    <flux:radio value="all" label="All" />
+                </flux:radio.group>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <flux:date-picker
+                        wire:model.live="soDateFrom"
+                        label="SO Date From"
+                    />
+                    <flux:date-picker
+                        wire:model.live="soDateTo"
+                        label="SO Date To"
+                    />
+                </div>
+
+                <flux:select
+                    wire:model.live="inputs.order_header_id"
+                    variant="combobox"
+                    :filter="false"
+                    label="Sales Order"
+                    placeholder="Search SO code or WO number..."
+                    clearable
+                >
+                    <x-slot name="input">
+                        <flux:select.input
+                            wire:model.live.debounce.300ms="soSearch"
+                            placeholder="Type SO/WO to search (server-side)..."
+                        />
+                    </x-slot>
+
+                    @foreach($this->orderOptions as $order)
+                        <flux:select.option value="{{ $order['id'] }}" wire:key="so-{{ $order['id'] }}">
+                            {{ $order['label'] }}
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <flux:input
+                        wire:model="inputs.work_order_auto"
+                        label="WO Auto"
+                        placeholder="Auto-generated from SO"
+                        readonly
+                        disabled
+                    />
+                    <flux:input
+                        wire:model="inputs.work_order_manual"
+                        label="WO Manual"
+                        placeholder="Manual work order number"
+                        maxlength="100"
+                    />
+                </div>
+            </div>
+        </flux:card>
+
         {{-- Line Items --}}
         <flux:card class="mb-6">
             <div class="flex items-center justify-between mb-4">

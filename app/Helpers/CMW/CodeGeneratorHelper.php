@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Helpers\CMW;
 
 use App\Models\CMW\Master\Company;
+use App\Models\CMW\Transaction\ArInvoiceHeader;
 use App\Models\CMW\Transaction\ArPaymentHeader;
 use App\Models\CMW\Transaction\DeliveryHeader;
 use App\Models\CMW\Transaction\OrderHeader;
+use App\Models\CMW\Transaction\ReturnHeader;
 use App\Models\CMW\Transaction\StockAdjustmentHeader;
 
 class CodeGeneratorHelper
@@ -35,6 +37,27 @@ class CodeGeneratorHelper
         $number = $last ? (int) substr($last->{$column}, -4) + 1 : 1;
 
         return "{$prefix}/{$yearMonth}/".str_pad((string) $number, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Generate work order auto code.
+     *
+     * Format: WO/YYMM/0001
+     *
+     * @return string The generated code
+     */
+    public static function generateWorkOrderCode(): string
+    {
+        $yearMonth = date('ym');
+
+        $last = OrderHeader::withTrashed()
+            ->where('work_order_auto', 'like', "WO/{$yearMonth}/%")
+            ->orderByDesc('work_order_auto')
+            ->first();
+
+        $number = $last ? (int) substr($last->work_order_auto, -4) + 1 : 1;
+
+        return "WO/{$yearMonth}/".str_pad((string) $number, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -90,7 +113,7 @@ class CodeGeneratorHelper
     {
         $yearMonth = date('ym');
 
-        $last = \App\Models\CMW\Transaction\ArInvoiceHeader::withTrashed()
+        $last = ArInvoiceHeader::withTrashed()
             ->where('code', 'like', "INV/{$yearMonth}/%")
             ->orderByDesc('code')
             ->first();
@@ -111,7 +134,7 @@ class CodeGeneratorHelper
     {
         $yearMonth = date('ym');
 
-        $last = \App\Models\CMW\Transaction\ReturnHeader::withTrashed()
+        $last = ReturnHeader::withTrashed()
             ->where('code', 'like', "RTN/{$yearMonth}/%")
             ->orderByDesc('code')
             ->first();

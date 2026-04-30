@@ -24,6 +24,9 @@ class StockAdjustmentHeader extends BaseModel
         'date',
         'currency_id',
         'warehouse_id',
+        'order_header_id',
+        'work_order_auto',
+        'work_order_manual',
         'status',
         'remarks',
     ];
@@ -46,6 +49,11 @@ class StockAdjustmentHeader extends BaseModel
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function orderHeader(): BelongsTo
+    {
+        return $this->belongsTo(OrderHeader::class);
     }
 
     public function details(): HasMany

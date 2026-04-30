@@ -133,6 +133,46 @@
         </div>
     </flux:card>
 
+    {{-- Work Order --}}
+    @if($order->work_order_auto)
+        <flux:card class="mb-6">
+            <flux:heading size="lg" class="mb-4">Work Order</flux:heading>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <flux:text class="text-sm text-zinc-500">WO Auto</flux:text>
+                    <flux:text class="font-medium">{{ $order->work_order_auto }}</flux:text>
+                </div>
+
+                @if(in_array($order->status, ['ORDER', 'DELIVERY']))
+                    @can('edit sales order')
+                        <div class="flex items-end gap-2">
+                            <flux:input
+                                wire:model="work_order_manual"
+                                label="WO Manual"
+                                placeholder="Enter manual work order number"
+                                maxlength="100"
+                                class="flex-1" />
+                            <flux:button wire:click="saveWorkOrderManual" variant="primary" icon="check">
+                                Save
+                            </flux:button>
+                        </div>
+                    @else
+                        <div>
+                            <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
+                            <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
+                        </div>
+                    @endcan
+                @else
+                    <div>
+                        <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
+                        <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
+                    </div>
+                @endif
+            </div>
+        </flux:card>
+    @endif
+
     {{-- Cancellation / Rejection Reason Callout --}}
     @if($order->status === 'CANCELLED' && $order->rejection_reason)
         <flux:callout color="red" icon="no-symbol" class="mb-6">

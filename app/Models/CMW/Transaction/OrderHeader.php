@@ -32,6 +32,8 @@ class OrderHeader extends BaseModel
         'status',
         'approved_by',
         'approved_at',
+        'work_order_auto',
+        'work_order_manual',
         'rejection_reason',
         'subtotal',
         'discount',
