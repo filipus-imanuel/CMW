@@ -26,6 +26,8 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->string('work_order_auto', 50)->nullable()->unique();
             $table->string('work_order_manual', 100)->nullable();
+            $table->date('production_date')->nullable();
+            $table->string('production_status', 20)->default('ongoing'); // ongoing, finish
             $table->string('rejection_reason', 1024)->nullable();
             $table->decimal('subtotal', 13, 2)->default(0);
             $table->decimal('discount', 13, 2)->default(0);

@@ -48,6 +48,7 @@ class Edit extends Component
             'inputs.order_header_id' => 'nullable|exists:order_headers,id',
             'inputs.work_order_auto' => 'nullable|string|max:50',
             'inputs.work_order_manual' => 'nullable|string|max:100',
+            'inputs.production_date' => 'nullable|date',
             'inputs.remarks' => 'nullable|string|max:1024',
             'lines' => 'required|array|min:1',
             'lines.*.item_id' => 'required|exists:items,id',
@@ -113,6 +114,7 @@ class Edit extends Component
             'order_header_id' => $this->header->order_header_id ?? '',
             'work_order_auto' => $this->header->work_order_auto ?? '',
             'work_order_manual' => $this->header->work_order_manual ?? '',
+            'production_date' => $this->header->production_date?->format('Y-m-d') ?? '',
             'remarks' => $this->header->remarks,
         ];
 
@@ -214,6 +216,7 @@ class Edit extends Component
         $this->inputs['order_header_id'] = '';
         $this->inputs['work_order_auto'] = '';
         $this->inputs['work_order_manual'] = '';
+        $this->inputs['production_date'] = '';
         unset($this->orderOptions);
     }
 
@@ -237,6 +240,7 @@ class Edit extends Component
         if (! $value) {
             $this->inputs['work_order_auto'] = '';
             $this->inputs['work_order_manual'] = '';
+            $this->inputs['production_date'] = '';
 
             return;
         }
@@ -244,6 +248,7 @@ class Edit extends Component
         $order = OrderHeader::find($value);
         $this->inputs['work_order_auto'] = $order?->work_order_auto ?? '';
         $this->inputs['work_order_manual'] = $order?->work_order_manual ?? '';
+        $this->inputs['production_date'] = $order?->production_date?->format('Y-m-d') ?? '';
     }
 
     public function addLine(): void
@@ -347,6 +352,7 @@ class Edit extends Component
     /**
      * When warehouse changes, re-fetch system quantities for all lines
      * and refresh items dropdown to only show items assigned to the selected warehouse.
+     * UOM selection is preserved — it depends on the item, not the warehouse.
      */
     public function updatedInputsWarehouseId(): void
     {
@@ -360,8 +366,6 @@ class Edit extends Component
         }
 
         foreach ($this->lines as $index => $line) {
-            $this->lines[$index]['item_uom_id'] = '';
-            $this->lines[$index]['uom_options'] = [];
             if (! empty($line['item_id'])) {
                 $this->fetchSystemQuantity($index);
             }
@@ -388,6 +392,7 @@ class Edit extends Component
                     'order_header_id' => $validated['inputs']['order_header_id'] ?: null,
                     'work_order_auto' => $validated['inputs']['work_order_auto'] ?: null,
                     'work_order_manual' => $validated['inputs']['work_order_manual'] ?: null,
+                    'production_date' => $validated['inputs']['production_date'] ?: null,
                     'remarks' => $validated['inputs']['remarks'] ?? null,
                     'updated_by' => Auth::id(),
                 ]);

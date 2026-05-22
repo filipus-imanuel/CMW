@@ -38,6 +38,9 @@ use App\Livewire\Partners\CustomerAddresses\Index as CustomerAddressIndex;
 use App\Livewire\Partners\Customers\Index as CustomerIndex;
 use App\Livewire\Partners\SupplierAddresses\Index as SupplierAddressIndex;
 use App\Livewire\Partners\Suppliers\Index as SupplierIndex;
+use App\Livewire\Production\Edit as ProductionEdit;
+use App\Livewire\Production\Finished as ProductionFinished;
+use App\Livewire\Production\Index as ProductionIndex;
 use App\Livewire\Sales\Approval\Index as SalesOrderApprovalIndex;
 use App\Livewire\Sales\Approval\Show as SalesOrderApprovalShow;
 use App\Livewire\Sales\Invoice\Index\Paid as InvoicePaidIndex;
@@ -250,6 +253,12 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/create/{invoiceId}', PaymentCreate::class)->name('create');
                 Route::get('/{id}', PaymentShow::class)->name('show');
             });
+        });
+
+        Route::prefix('production')->name('production.')->group(function () {
+            Route::get('/', ProductionIndex::class)->name('index');
+            Route::get('/finished', ProductionFinished::class)->name('finished');
+            Route::get('/{id}/edit', ProductionEdit::class)->name('edit');
         });
     });
 });

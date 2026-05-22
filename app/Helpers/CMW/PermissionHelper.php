@@ -75,6 +75,13 @@ class PermissionHelper
             ],
 
             // ══════════════════════════════════════════════════════════════
+            // PRODUCTION
+            // ══════════════════════════════════════════════════════════════
+            'production' => [
+                'production order' => ['view', 'edit'],
+            ],
+
+            // ══════════════════════════════════════════════════════════════
             // WAREHOUSE
             // ══════════════════════════════════════════════════════════════
             'warehouse' => [
@@ -235,6 +242,12 @@ class PermissionHelper
                     || str_contains($permission, 'stock adjustment')
                     || str_contains($permission, 'delivery order')
                     || str_contains($permission, 'warehouse return');
+            })),
+            'Production' => array_values(array_filter($allPermissions, function ($permission) {
+                // Production gets view/edit on production order, plus view & create on stock adjustment
+                return str_contains($permission, 'production order')
+                    || ($permission === 'view stock adjustment')
+                    || ($permission === 'create stock adjustment');
             })),
             default => throw new InvalidArgumentException("Unknown role: {$role}"),
         };

@@ -141,6 +141,10 @@
                 <flux:text class="font-medium">{{ $header->work_order_manual ?? '-' }}</flux:text>
             </div>
             <div>
+                <flux:text class="text-sm text-zinc-500">Production Date</flux:text>
+                <flux:text class="font-medium">{{ $header->production_date?->format('d M Y') ?? '-' }}</flux:text>
+            </div>
+            <div>
                 <flux:text class="text-sm text-zinc-500">Created By</flux:text>
                 <flux:text class="font-medium">{{ $header->createdBy?->name ?? '-' }}</flux:text>
             </div>

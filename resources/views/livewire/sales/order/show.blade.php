@@ -153,6 +153,11 @@
                                 placeholder="Enter manual work order number"
                                 maxlength="100"
                                 class="flex-1" />
+                            <flux:date-picker
+                                wire:model="production_date"
+                                label="Production Date"
+                                clearable
+                                class="flex-1" />
                             <flux:button wire:click="saveWorkOrderManual" variant="primary" icon="check">
                                 Save
                             </flux:button>
@@ -162,11 +167,19 @@
                             <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
                             <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
                         </div>
+                        <div>
+                            <flux:text class="text-sm text-zinc-500">Production Date</flux:text>
+                            <flux:text class="font-medium">{{ $order->production_date?->format('d M Y') ?? '-' }}</flux:text>
+                        </div>
                     @endcan
                 @else
                     <div>
                         <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
                         <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-sm text-zinc-500">Production Date</flux:text>
+                        <flux:text class="font-medium">{{ $order->production_date?->format('d M Y') ?? '-' }}</flux:text>
                     </div>
                 @endif
             </div>

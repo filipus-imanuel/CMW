@@ -27,6 +27,7 @@ class StockAdjustmentHeader extends BaseModel
         'order_header_id',
         'work_order_auto',
         'work_order_manual',
+        'production_date',
         'status',
         'remarks',
     ];
@@ -35,6 +36,7 @@ class StockAdjustmentHeader extends BaseModel
     {
         return [
             'date' => 'date',
+            'production_date' => 'date',
             'is_active' => 'boolean',
             'is_edit_locked' => 'boolean',
             'is_delete_locked' => 'boolean',

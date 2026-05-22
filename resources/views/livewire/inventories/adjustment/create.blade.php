@@ -103,6 +103,14 @@
                         maxlength="100"
                     />
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <flux:date-picker
+                        wire:model="inputs.production_date"
+                        label="Production Date"
+                        clearable
+                    />
+                </div>
             </div>
         </flux:card>
 
@@ -218,11 +226,21 @@
             @endif
         </flux:card>
 
+        {{-- Pending Approval Warning --}}
+        @if($this->hasPendingApproval)
+            <flux:callout variant="warning" icon="exclamation-triangle" class="mb-6">
+                <flux:callout.heading>Save Blocked</flux:callout.heading>
+                <flux:callout.text>
+                    The selected Sales Order has one or more items with a price pending approval. Resolve the approval before saving this adjustment.
+                </flux:callout.text>
+            </flux:callout>
+        @endif
+
         {{-- Footer Actions --}}
         <div class="flex gap-2">
             <flux:spacer />
             <flux:button :href="route('inventories.stock-adjustments.index')" variant="ghost" wire:navigate>Cancel</flux:button>
-            <flux:button type="submit" variant="primary">Save as Draft</flux:button>
+            <flux:button type="submit" variant="primary" :disabled="$this->hasPendingApproval">Save as Draft</flux:button>
         </div>
     </form>
 </div>

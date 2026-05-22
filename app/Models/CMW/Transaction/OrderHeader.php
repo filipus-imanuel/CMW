@@ -15,6 +15,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderHeader extends BaseModel
 {
+    public const PRODUCTION_ONGOING = 'ongoing';
+
+    public const PRODUCTION_FINISH = 'finish';
+
     protected $table = 'order_headers';
 
     protected $fillable = [
@@ -34,6 +38,8 @@ class OrderHeader extends BaseModel
         'approved_at',
         'work_order_auto',
         'work_order_manual',
+        'production_date',
+        'production_status',
         'rejection_reason',
         'subtotal',
         'discount',
@@ -47,6 +53,7 @@ class OrderHeader extends BaseModel
             'date' => 'date',
             'delivery_date' => 'date',
             'approved_at' => 'datetime',
+            'production_date' => 'date',
             'tax_rate' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',

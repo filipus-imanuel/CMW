@@ -21,6 +21,8 @@ class Show extends Component
 
     public ?string $work_order_manual = null;
 
+    public ?string $production_date = null;
+
     public function mount($id): void
     {
         $this->authorize('view sales order');
@@ -43,6 +45,7 @@ class Show extends Component
         }
 
         $this->work_order_manual = $this->order->work_order_manual;
+        $this->production_date = $this->order->production_date?->format('Y-m-d');
     }
 
     /**
@@ -61,18 +64,21 @@ class Show extends Component
 
         $this->validate([
             'work_order_manual' => 'nullable|string|max:100',
+            'production_date' => 'nullable|date',
         ]);
 
         DB::transaction(function () {
             $this->order->update([
                 'work_order_manual' => $this->work_order_manual,
+                'production_date' => $this->production_date ?: null,
                 'updated_by' => Auth::id(),
             ]);
 
-            // Cascade to linked stock adjustments so they reflect the latest WO manual.
+            // Cascade to linked stock adjustments so they reflect the latest WO manual & production date.
             StockAdjustmentHeader::where('order_header_id', $this->order->id)
                 ->update([
                     'work_order_manual' => $this->work_order_manual,
+                    'production_date' => $this->production_date ?: null,
                     'updated_by' => Auth::id(),
                 ]);
         });

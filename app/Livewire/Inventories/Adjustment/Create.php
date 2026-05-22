@@ -5,8 +5,12 @@ namespace App\Livewire\Inventories\Adjustment;
 use App\Helpers\CMW\CodeGeneratorHelper;
 use App\Helpers\CMW\PopulateDataHelper;
 use App\Models\CMW\Inventory\InventoryLedger;
+use App\Models\CMW\Inventory\ItemPrice;
 use App\Models\CMW\Inventory\ItemUom;
+use App\Models\CMW\Inventory\PendingItemPrice;
 use App\Models\CMW\Transaction\OrderHeader;
+use App\Models\CMW\Transaction\ReturnDetail;
+use App\Models\CMW\Transaction\ReturnHeader;
 use App\Models\CMW\Transaction\StockAdjustmentDetail;
 use App\Models\CMW\Transaction\StockAdjustmentHeader;
 use Exception;
@@ -47,6 +51,7 @@ class Create extends Component
             'inputs.order_header_id' => 'nullable|exists:order_headers,id',
             'inputs.work_order_auto' => 'nullable|string|max:50',
             'inputs.work_order_manual' => 'nullable|string|max:100',
+            'inputs.production_date' => 'nullable|date',
             'inputs.remarks' => 'nullable|string|max:1024',
             'lines' => 'required|array|min:1',
             'lines.*.item_id' => 'required|exists:items,id',
@@ -86,6 +91,7 @@ class Create extends Component
             'order_header_id' => '',
             'work_order_auto' => '',
             'work_order_manual' => '',
+            'production_date' => '',
             'remarks' => '',
         ];
 
@@ -95,6 +101,18 @@ class Create extends Component
         $this->soDateTo = now()->format('Y-m-d');
 
         $this->loadDropdowns();
+
+        // Preselect Sales Order when navigating from production list
+        $preselectId = request()->query('order_header_id');
+        if ($preselectId && is_numeric($preselectId)) {
+            $exists = OrderHeader::whereIn('status', ['ORDER', 'DELIVERY', 'FINISH', 'FINAL'])
+                ->where('id', (int) $preselectId)
+                ->exists();
+            if ($exists) {
+                $this->inputs['order_header_id'] = (int) $preselectId;
+                $this->updatedInputsOrderHeaderId((int) $preselectId);
+            }
+        }
     }
 
     private function loadDropdowns(): void
@@ -167,6 +185,8 @@ class Create extends Component
         $this->inputs['order_header_id'] = '';
         $this->inputs['work_order_auto'] = '';
         $this->inputs['work_order_manual'] = '';
+        $this->inputs['production_date'] = '';
+        $this->lines = [];
         unset($this->orderOptions);
     }
 
@@ -190,6 +210,8 @@ class Create extends Component
         if (! $value) {
             $this->inputs['work_order_auto'] = '';
             $this->inputs['work_order_manual'] = '';
+            $this->inputs['production_date'] = '';
+            $this->lines = [];
 
             return;
         }
@@ -197,6 +219,98 @@ class Create extends Component
         $order = OrderHeader::find($value);
         $this->inputs['work_order_auto'] = $order?->work_order_auto ?? '';
         $this->inputs['work_order_manual'] = $order?->work_order_manual ?? '';
+        $this->inputs['production_date'] = $order?->production_date?->format('Y-m-d') ?? '';
+
+        $this->populateLinesFromOrder((int) $value);
+    }
+
+    /**
+     * Auto-populate adjustment lines from the linked SO's unfulfilled items.
+     * Unfulfilled qty = ordered - delivered (ongoing/finished) + redelivery (finished ITEM returns).
+     * Skips items already fully delivered.
+     */
+    private function populateLinesFromOrder(int $orderId): void
+    {
+        $order = OrderHeader::with(['details.item', 'details.itemUom.uom'])->find($orderId);
+        if (! $order) {
+            $this->lines = [];
+
+            return;
+        }
+
+        $this->lines = [];
+
+        foreach ($order->details as $detail) {
+            $deliveredQty = (float) $detail->deliveryDetails()
+                ->whereHas('header', fn ($q) => $q->whereIn('status', ['ongoing', 'finished']))
+                ->sum('quantity_sent');
+
+            $redeliveryQty = (float) ReturnDetail::whereHas('deliveryDetail', function ($q) use ($detail) {
+                $q->where('order_detail_id', $detail->id);
+            })
+                ->whereHas('header', function ($q) {
+                    $q->where('status', ReturnHeader::STATUS_FINISH)
+                        ->where('return_type', 'ITEM');
+                })
+                ->sum('quantity_redelivery');
+
+            $remaining = (float) $detail->quantity - $deliveredQty + $redeliveryQty;
+            if ($remaining <= 0) {
+                continue;
+            }
+
+            $uomOptions = $detail->item_id
+                ? PopulateDataHelper::getItemUomsByItem((int) $detail->item_id)
+                : [];
+
+            $this->lines[] = [
+                'item_id' => $detail->item_id,
+                'item_uom_id' => $detail->item_uom_id,
+                'uom_options' => $uomOptions,
+                'quantity_system' => '0.00',
+                'quantity_actual' => '0.00',
+                'quantity_difference' => '0.00',
+                'remarks' => '',
+            ];
+
+            $this->fetchSystemQuantity(count($this->lines) - 1);
+        }
+    }
+
+    /**
+     * Does the linked SO have any item with a pending price approval?
+     * Mirrors the gate used in Sales\Request\Search::addItem.
+     */
+    #[Computed]
+    public function hasPendingApproval(): bool
+    {
+        $orderId = $this->inputs['order_header_id'] ?? null;
+        if (! $orderId) {
+            return false;
+        }
+
+        $order = OrderHeader::with('partner', 'details:id,order_header_id,item_uom_id')->find($orderId);
+        $categoryPriceId = $order?->partner?->category_price_id;
+        if (! $order || ! $categoryPriceId) {
+            return false;
+        }
+
+        $itemUomIds = $order->details->pluck('item_uom_id')->filter()->unique()->all();
+        if (empty($itemUomIds)) {
+            return false;
+        }
+
+        $itemPriceIds = ItemPrice::whereIn('item_uom_id', $itemUomIds)
+            ->where('category_price_id', $categoryPriceId)
+            ->pluck('id');
+
+        if ($itemPriceIds->isEmpty()) {
+            return false;
+        }
+
+        return PendingItemPrice::whereIn('item_price_id', $itemPriceIds)
+            ->where('status', 'pending')
+            ->exists();
     }
 
     public function addLine(): void
@@ -307,6 +421,7 @@ class Create extends Component
     /**
      * When warehouse changes, re-fetch system quantities for all lines
      * and refresh items dropdown to only show items assigned to the selected warehouse.
+     * UOM selection is preserved — it depends on the item, not the warehouse.
      */
     public function updatedInputsWarehouseId(): void
     {
@@ -320,8 +435,6 @@ class Create extends Component
         }
 
         foreach ($this->lines as $index => $line) {
-            $this->lines[$index]['item_uom_id'] = '';
-            $this->lines[$index]['uom_options'] = [];
             if (! empty($line['item_id'])) {
                 $this->fetchSystemQuantity($index);
             }
@@ -331,6 +444,17 @@ class Create extends Component
     public function store(): void
     {
         $this->authorize('create stock adjustment');
+
+        if ($this->hasPendingApproval) {
+            Flux::toast(
+                heading: 'Save Blocked',
+                text: 'The linked Sales Order has one or more items pending price approval. Resolve the approval before saving this adjustment.',
+                variant: 'warning',
+                position: 'top right',
+            );
+
+            return;
+        }
 
         try {
             $validated = $this->validate();
@@ -343,6 +467,7 @@ class Create extends Component
                     'order_header_id' => $validated['inputs']['order_header_id'] ?: null,
                     'work_order_auto' => $validated['inputs']['work_order_auto'] ?: null,
                     'work_order_manual' => $validated['inputs']['work_order_manual'] ?: null,
+                    'production_date' => $validated['inputs']['production_date'] ?: null,
                     'status' => StockAdjustmentHeader::STATUS_DRAFT,
                     'remarks' => $validated['inputs']['remarks'] ?? null,
                     'created_by' => Auth::id(),

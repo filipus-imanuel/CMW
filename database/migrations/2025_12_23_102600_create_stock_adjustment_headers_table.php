@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('order_header_id')->nullable()->constrained('order_headers');
             $table->string('work_order_auto', 50)->nullable();
             $table->string('work_order_manual', 100)->nullable();
+            $table->date('production_date')->nullable();
             $table->string('status', 20)->default('draft');
             $table->string('remarks', 1024)->nullable();
             $table->boolean('is_edit_locked')->default(false);

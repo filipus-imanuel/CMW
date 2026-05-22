@@ -95,6 +95,13 @@
                     @endcan
                 </flux:navlist.group>
 
+                @can('view production order')
+                <flux:navlist.group :heading="__('Production')" expandable :expanded="request()->routeIs('production.*')" class="grid">
+                    <flux:navlist.item icon="cog-6-tooth" :href="route('production.index')" :current="request()->routeIs('production.index') || request()->routeIs('production.edit')" wire:navigate>{{ __('Ongoing') }}</flux:navlist.item>
+                    <flux:navlist.item icon="check-circle" :href="route('production.finished')" :current="request()->routeIs('production.finished')" wire:navigate>{{ __('Finished') }}</flux:navlist.item>
+                </flux:navlist.group>
+                @endcan
+
                 @can('view delivery order')
                 <flux:navlist.group :heading="__('Warehouse')" expandable :expanded="request()->routeIs('warehouses.*')" class="grid">
                     <flux:navlist.item icon="inbox-arrow-down" :href="route('warehouses.delivery.upcoming')" :current="request()->routeIs('warehouses.delivery.upcoming') || request()->routeIs('warehouses.delivery.create')" wire:navigate>{{ __('Upcoming SO') }}</flux:navlist.item>

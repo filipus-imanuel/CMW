@@ -21,6 +21,7 @@ class RoleSeeder extends Seeder
             'Sales',
             'Purchasing',
             'Warehouse',
+            'Production',
             'Management',
             'Admin',
         ];

@@ -42,6 +42,7 @@ On confirm or cancel: `is_edit_locked = true`, `is_delete_locked = true`.
 | `order_header_id` | FK → order_headers, nullable | Optional link to a Sales Order (WO traceability) |
 | `work_order_auto` | string(50), nullable | Snapshot of linked SO's auto WO at time of save |
 | `work_order_manual` | string(100), nullable | Manual WO; kept in sync via cascade from `Sales\Order\Show::saveWorkOrderManual()` |
+| `production_date` | date, nullable | Production target date; kept in sync via cascade from `Sales\Order\Show::saveWorkOrderManual()` |
 | `status` | string | `draft` / `confirmed` / `cancelled` |
 | `remarks` | text | Optional |
 | `is_edit_locked` | boolean | Locked after confirm/cancel |
@@ -71,7 +72,7 @@ On confirm or cancel: `is_edit_locked = true`, `is_delete_locked = true`.
 ### 4.1 Create (`Create.php`)
 
 - **Permission**: `create stock adjustment`
-- **Header fields**: `$inputs[]` pattern — `date`, `warehouse_id`, `order_header_id`, `work_order_auto`, `work_order_manual`, `remarks`
+- **Header fields**: `$inputs[]` pattern — `date`, `warehouse_id`, `order_header_id`, `work_order_auto`, `work_order_manual`, `production_date`, `remarks`
 - **Lines**: dynamic array — `item_id`, `item_uom_id`, `quantity_actual`, `remarks`
 - **System qty auto-fetch**: when `item_id` or `item_uom_id` changes, `fetchSystemQuantity()` queries ledger for latest balance (base UOM) and converts to selected UOM
 - **Warehouse filter**: changing `warehouse_id` filters `dropdown_items` to only items assigned to that warehouse via `PopulateDataHelper::getItemsByWarehouse()`
@@ -82,8 +83,9 @@ On confirm or cancel: `is_edit_locked = true`, `is_delete_locked = true`.
   - `soSearch` is a debounced (300ms), server-side LIKE across `code_order`, `code_request`, `work_order_auto`, `work_order_manual`
   - `orderOptions` is a `#[Computed]` property returning at most 20 rows (status ∈ `ORDER`, `DELIVERY`, `FINISH`, `FINAL`) plus the currently selected SO pinned
   - View renders `flux:select` as `variant="combobox"` with `:filter="false"` and a `<x-slot name="input">` wired to `soSearch`
-  - Selecting an SO pre-fills `work_order_auto` (read-only) and `work_order_manual` (editable) via `updatedInputsOrderHeaderId()`
+  - Selecting an SO pre-fills `work_order_auto` (read-only), `work_order_manual` (editable), and `production_date` (editable) via `updatedInputsOrderHeaderId()`
   - Index `(status, date)` on `order_headers` keeps the lookup fast even on large datasets
+  - **Preselect via query param**: navigating with `?order_header_id={id}` (e.g. from the Production "Create Adjustment" shortcut) auto-selects the SO on mount, after validating the ID belongs to a SO in `ORDER`/`DELIVERY`/`FINISH`/`FINAL` status
 - **Store**: Creates header (status=DRAFT) + detail lines in a DB transaction, then redirects to Show
 
 ### 4.2 Edit (`Edit.php`)
@@ -91,7 +93,7 @@ On confirm or cancel: `is_edit_locked = true`, `is_delete_locked = true`.
 - **Permission**: `edit stock adjustment`
 - **Status guard**: only DRAFT can be edited; redirects to Show if confirmed/cancelled
 - **Lock guard**: checks `is_edit_locked`
-- **Populate**: loads existing header + details into `$inputs[]` and `$lines[]` (including `order_header_id`, `work_order_auto`, `work_order_manual`)
+- **Populate**: loads existing header + details into `$inputs[]` and `$lines[]` (including `order_header_id`, `work_order_auto`, `work_order_manual`, `production_date`)
 - **SO combobox**: same server-side / debounced behavior as Create; the originally-linked SO is also pinned so its label persists across filter/search changes
 - **Update**: in DB transaction — updates header (including SO/WO fields), upserts detail lines, soft-deletes removed lines (`deleted_by` set + `delete()`)
 
@@ -99,7 +101,7 @@ On confirm or cancel: `is_edit_locked = true`, `is_delete_locked = true`.
 
 - **Permission**: `view stock adjustment`
 - **Eager loads**: `warehouse`, `orderHeader`, `details.item`, `details.itemUom.uom`, `createdBy`, `updatedBy`, `inventoryLedgers`
-- Displays linked SO code, `work_order_auto`, and `work_order_manual` (read-only); `work_order_manual` reflects the latest value cascaded from the SO
+- Displays linked SO code, `work_order_auto`, `work_order_manual`, and `production_date` (read-only); `work_order_manual` and `production_date` reflect the latest values cascaded from the SO
 - **Actions**: Confirm (draft only), Cancel (draft or confirmed)
 
 ### 4.4 Index / DataTable (`IndexDataTable.php`)

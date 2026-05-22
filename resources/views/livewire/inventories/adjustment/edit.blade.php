@@ -104,6 +104,14 @@
                         maxlength="100"
                     />
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <flux:date-picker
+                        wire:model="inputs.production_date"
+                        label="Production Date"
+                        clearable
+                    />
+                </div>
             </div>
         </flux:card>
 
