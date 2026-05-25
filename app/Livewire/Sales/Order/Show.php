@@ -5,7 +5,6 @@ namespace App\Livewire\Sales\Order;
 use App\Helpers\CMW\CodeGeneratorHelper;
 use App\Models\CMW\Transaction\OrderDetail;
 use App\Models\CMW\Transaction\OrderHeader;
-use App\Models\CMW\Transaction\StockAdjustmentHeader;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,14 +18,32 @@ class Show extends Component
 
     public string $cancellation_reason = '';
 
-    public ?string $work_order_manual = null;
-
-    public ?string $production_date = null;
-
     public function mount($id): void
     {
         $this->authorize('view sales order');
 
+        $this->loadOrder($id);
+
+        // Guard: allow INIT, ORDER, DELIVERY, FINISH, REJECTED, or CANCELLED status
+        if (! in_array($this->order->status, ['INIT', 'ORDER', 'DELIVERY', 'FINISH', 'REJECTED', 'CANCELLED'])) {
+            $this->redirectRoute('sales.order.index.ongoing', navigate: true);
+
+            return;
+        }
+    }
+
+    /**
+     * Reload the order with all relations so the page reflects the latest server state.
+     */
+    public function refreshOrder(): void
+    {
+        $this->loadOrder($this->order->id);
+
+        Flux::toast('Order refreshed.', variant: 'success', position: 'top-end');
+    }
+
+    protected function loadOrder(int $id): void
+    {
         $this->order = OrderHeader::with([
             'partner', 'company', 'itemCategory', 'currency',
             'details.item', 'details.itemUom.uom',
@@ -36,57 +53,6 @@ class Show extends Component
             'returns.deliveryHeader',
             'deliverySchedules',
         ])->findOrFail($id);
-
-        // Guard: allow INIT, ORDER, DELIVERY, FINISH, REJECTED, or CANCELLED status
-        if (! in_array($this->order->status, ['INIT', 'ORDER', 'DELIVERY', 'FINISH', 'REJECTED', 'CANCELLED'])) {
-            $this->redirectRoute('sales.order.index.ongoing', navigate: true);
-
-            return;
-        }
-
-        $this->work_order_manual = $this->order->work_order_manual;
-        $this->production_date = $this->order->production_date?->format('Y-m-d');
-    }
-
-    /**
-     * Save the manually-entered Work Order number on an ongoing SO.
-     * Editable only while status is ORDER or DELIVERY.
-     */
-    public function saveWorkOrderManual(): void
-    {
-        $this->authorize('edit sales order');
-
-        if (! in_array($this->order->status, ['ORDER', 'DELIVERY'])) {
-            Flux::toast('Work Order can only be edited while status is ORDER or DELIVERY.', variant: 'danger', position: 'top-end');
-
-            return;
-        }
-
-        $this->validate([
-            'work_order_manual' => 'nullable|string|max:100',
-            'production_date' => 'nullable|date',
-        ]);
-
-        DB::transaction(function () {
-            $this->order->update([
-                'work_order_manual' => $this->work_order_manual,
-                'production_date' => $this->production_date ?: null,
-                'updated_by' => Auth::id(),
-            ]);
-
-            // Cascade to linked stock adjustments so they reflect the latest WO manual & production date.
-            StockAdjustmentHeader::where('order_header_id', $this->order->id)
-                ->update([
-                    'work_order_manual' => $this->work_order_manual,
-                    'production_date' => $this->production_date ?: null,
-                    'updated_by' => Auth::id(),
-                ]);
-        });
-
-        $this->order->refresh();
-
-        Flux::toast('Work Order updated.', variant: 'success', position: 'top-end');
-        $this->dispatch('shp.sales.order.refresh');
     }
 
     /**

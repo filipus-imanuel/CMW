@@ -29,14 +29,20 @@
             @endif
         </flux:subheading>
 
-        @if($order->code_order)
-            @can('view sales order')
-                <flux:button variant="primary" size="sm" icon="arrow-down-tray"
-                    href="{{ route('sales.order.pdf', $order->id) }}" target="_blank">
-                    Download PDF
-                </flux:button>
-            @endcan
-        @endif
+        <div class="flex items-center gap-2">
+            <flux:button variant="ghost" size="sm" icon="arrow-path" wire:click="refreshOrder">
+                Refresh
+            </flux:button>
+
+            @if($order->code_order)
+                @can('view sales order')
+                    <flux:button variant="primary" size="sm" icon="arrow-down-tray"
+                        href="{{ route('sales.order.pdf', $order->id) }}" target="_blank">
+                        Download PDF
+                    </flux:button>
+                @endcan
+            @endif
+        </div>
     </div>
 
     {{-- Order Information --}}
@@ -138,50 +144,19 @@
         <flux:card class="mb-6">
             <flux:heading size="lg" class="mb-4">Work Order</flux:heading>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <flux:text class="text-sm text-zinc-500">WO Auto</flux:text>
                     <flux:text class="font-medium">{{ $order->work_order_auto }}</flux:text>
                 </div>
-
-                @if(in_array($order->status, ['ORDER', 'DELIVERY']))
-                    @can('edit sales order')
-                        <div class="flex items-end gap-2">
-                            <flux:input
-                                wire:model="work_order_manual"
-                                label="WO Manual"
-                                placeholder="Enter manual work order number"
-                                maxlength="100"
-                                class="flex-1" />
-                            <flux:date-picker
-                                wire:model="production_date"
-                                label="Production Date"
-                                clearable
-                                class="flex-1" />
-                            <flux:button wire:click="saveWorkOrderManual" variant="primary" icon="check">
-                                Save
-                            </flux:button>
-                        </div>
-                    @else
-                        <div>
-                            <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
-                            <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
-                        </div>
-                        <div>
-                            <flux:text class="text-sm text-zinc-500">Production Date</flux:text>
-                            <flux:text class="font-medium">{{ $order->production_date?->format('d M Y') ?? '-' }}</flux:text>
-                        </div>
-                    @endcan
-                @else
-                    <div>
-                        <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
-                        <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
-                    </div>
-                    <div>
-                        <flux:text class="text-sm text-zinc-500">Production Date</flux:text>
-                        <flux:text class="font-medium">{{ $order->production_date?->format('d M Y') ?? '-' }}</flux:text>
-                    </div>
-                @endif
+                <div>
+                    <flux:text class="text-sm text-zinc-500">WO Manual</flux:text>
+                    <flux:text class="font-medium">{{ $order->work_order_manual ?? '-' }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-zinc-500">Production Date</flux:text>
+                    <flux:text class="font-medium">{{ $order->production_date?->format('d M Y') ?? '-' }}</flux:text>
+                </div>
             </div>
         </flux:card>
     @endif
